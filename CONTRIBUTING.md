@@ -2,7 +2,7 @@
 
 MarketTwin is a C++20-first synthetic equity exchange and research platform. The matching engine, order book, event scheduler, simulation clock, and trading agents belong in C++. Python, the API, and the dashboard sit outside a run.
 
-`architecture.md` is the implementation contract. Read sections 1–12 and the current phase before changing core behavior. This repository is in **Phase 0**: the native build, tests, and tooling. Do not add matching, agents, services, or deployment infrastructure ahead of that contract.
+`architecture.md` is the implementation contract. Read sections 1–12 and the current phase before changing core behavior. This repository has completed **Phase 1A**: the native exchange, matching invariants, and randomized reference-model tests. The next scope is Phase 1B (kernel and trace). Keep agents, accounting, services, and deployment infrastructure in their assigned later phases. Exchange behavior is specified in `docs/adr/0001-exchange-semantics.md`.
 
 ## Conventions
 

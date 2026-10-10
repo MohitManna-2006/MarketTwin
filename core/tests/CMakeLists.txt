@@ -7,6 +7,8 @@
 
 add_executable(
   markettwin_tests
+  unit/exchange/matching_engine_test.cpp
+  property/exchange_trace_test.cpp
   unit/version_test.cpp
   unit/simulation/simulation_test.cpp
 )

@@ -1,4 +1,9 @@
-add_library(markettwin_core src/common/version.cpp src/simulation/simulation.cpp)
+add_library(markettwin_core
+  src/common/version.cpp
+  src/simulation/simulation.cpp
+  src/exchange/order_book.cpp
+  src/exchange/matching_engine.cpp
+)
 add_library(markettwin::core ALIAS markettwin_core)
 
 target_include_directories(

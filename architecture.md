@@ -269,6 +269,16 @@ struct Order {
 9. IOC and market residual is canceled; do not store unfilled market orders.
 10. Emit normalized execution and order-status events with deterministic IDs and sequencing.
 
+### 6.3.1 Phase 1A resolved policies
+
+[ADR 0001](docs/adr/0001-exchange-semantics.md) defines the native exchange contract:
+transactional whole-incoming-order self-trade rejection; lifetime uniqueness of
+accepted IDs; configured symbol/agent validation and resource bounds; explicit
+market IOC with zero unused price; caller-assigned monotone arrival timestamps and
+sequences; checked level aggregates; immutable snapshots; exchange-local trade
+ordinals and cumulative status quantities. The global scheduler and serialized
+trace remain Phase 1B work. Synchronous command call order resolves exchange races.
+
 ### 6.4 Data structures
 
 - Two ordered maps by price: bids descending, asks ascending; `std::map` with correct comparators.

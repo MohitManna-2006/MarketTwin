@@ -17,12 +17,12 @@ FastAPI research API                  (planned)
         |  coarse-grained jobs
 Python research and AI tools          (planned)
         |  pybind11 or the native CLI, once per run
-C++20 simulation                      (in progress: library skeleton only)
+C++20 simulation                      (implemented: exchange core; kernel planned)
         one logical thread per run
         event scheduler, matching engine, agents, accounting, telemetry
 ```
 
-Planned native boundaries, not yet implemented:
+Subsystem boundaries (exchange implemented; later subsystems planned):
 
 | Area | Responsibility |
 | --- | --- |
@@ -40,24 +40,73 @@ A single run stays deterministic and logically single-threaded. Independent runs
 
 ## Current status
 
-**Phase 0 — repository foundation.** The CMake build, `markettwin_core`, a version CLI, GoogleTest, formatter config, and GitHub Actions CI are in place.
+**Phase 1A — core order-book semantics.** The C++ exchange implements validated orders, price-time matching, snapshots, and ownership-aware cancellation. The Phase 0 build, version CLI, no-op simulation boundary, and CI remain in place.
 
 Implemented now:
 
 - C++20 library target `markettwin::core`
 - CLI that prints the engine version
-- No-op `markettwin::Simulation` used to lock the future run boundary and prove linkage
+- Strong integer price, quantity, identity, timestamp, and sequence types
+- Single-symbol `MatchingEngine` with ordered bid/ask maps, FIFO lists, and an ID index
+- Limit GTC/IOC and market IOC orders, partial fills, and residual cancellation
+- Structured execution/status reports, transactional rejection, and self-trade prevention
+- Immutable depth snapshots, optional best quotes, and full book/index invariant checks
+- Unit tests and 32 seeded randomized traces (1,000 actions each), repeated against a fresh engine and an independent vector-based reference matcher
+- No-op `markettwin::Simulation` retained as the future run boundary
 - GoogleTest suite and CTest, including CLI checks
 - Optional AddressSanitizer and UndefinedBehaviorSanitizer build
 - Optional Google Benchmark target, off unless requested
 
 Not implemented:
 
-- Order book, matching, agents, accounting, scenarios, or replay
+- Event scheduler, trading agents, accounting, scenarios, or persisted replay
 - Python bindings, FastAPI, PostgreSQL, Redis, or the React app
 - Experiment comparison, AI research tools, or artifact export
 
 `markettwin::Simulation::run()` returns a completed summary with zero events. It does not simulate a market.
+
+## Native exchange API
+
+Include `markettwin/exchange/matching_engine.hpp` and link `markettwin::core`.
+An engine represents one symbol and owns its book for its lifetime. All commands
+are synchronous on one logical thread; the future kernel supplies arrival metadata.
+
+```cpp
+using namespace markettwin;
+MatchingEngine exchange{ExchangeConfig{
+    .symbol = SymbolId{1}, .agents = {AgentId{1}, AgentId{2}}}};
+
+Order ask{
+    .id = OrderId{1}, .owner = AgentId{1}, .symbol = SymbolId{1},
+    .side = Side::Sell, .type = OrderType::Limit, .limit_price = PriceTicks{100},
+    .original_quantity = Quantity{10}, .remaining_quantity = Quantity{10},
+    .tif = TimeInForce::Gtc, .arrival_time = SimTime{0}, .arrival_sequence = Sequence{1}};
+auto accepted = exchange.submit(ask);
+
+Order buy{
+    .id = OrderId{2}, .owner = AgentId{2}, .symbol = SymbolId{1},
+    .side = Side::Buy, .type = OrderType::Market, .limit_price = PriceTicks{0},
+    .original_quantity = Quantity{4}, .remaining_quantity = Quantity{4},
+    .tif = TimeInForce::Ioc, .arrival_time = SimTime{0}, .arrival_sequence = Sequence{2}};
+auto filled = exchange.submit(buy); // Four shares at the resting price of 100 ticks.
+auto depth = exchange.snapshot(5);  // Ask: six shares at 100 ticks.
+auto canceled = exchange.cancel(OrderId{1}, AgentId{1});
+exchange.verify_invariants();
+```
+
+`ExecutionReport::incoming` holds the final incoming status and cumulative filled,
+canceled, and resting quantities. `trades` and `order_updates` preserve match order;
+maker updates precede the final incoming update. Rejections carry `RejectReason`
+and leave the exchange unchanged. Quotes and order lookup return `std::optional`.
+
+[ADR 0001](docs/adr/0001-exchange-semantics.md) specifies self-trade rejection,
+accepted-ID uniqueness, input validation, ordering, resource limits, and failure
+semantics. Arrival sequences must increase and timestamps cannot regress across
+accepted submissions. Prices are integer ticks and quantity units are shares/lots;
+no currency scale or ledger arithmetic is implied by these records.
+
+The CLI still supports only version/help. Phase 1B will connect the exchange to a
+scheduler, CLI run configuration, canonical trace, and exchange replay.
 
 ## Prerequisites
 
@@ -146,13 +195,15 @@ ctest --test-dir build/debug --output-on-failure
 
 Release and sanitizer presets have matching test presets (`release`, `debug-sanitizers`). Tests use GoogleTest and do not need a database, network service, or market data feed. GoogleTest 1.15.2 is fetched by CMake from a pinned tarball.
 
-Future test directories, reserved and empty for now:
+Test layout:
 
-- `core/tests/unit/exchange/` — matching and order validation
-- `core/tests/unit/simulation/` — scheduler and kernel
-- `core/tests/integration/` — cross-subsystem runs
-- `core/tests/property/` — randomized invariant traces
-- `core/tests/replay/` — digest and divergence checks
+- `core/tests/unit/exchange/` — matching, validation, snapshots, cancel lifecycle, and numeric bounds
+- `core/tests/property/` — reference-model comparison, determinism, and per-order conservation after every action
+- `core/tests/unit/simulation/` — Phase 0 no-op boundary tests
+- `core/tests/integration/` and `core/tests/replay/` — reserved for Phase 1B and later
+
+The randomized tests print the seed and action number on failure. ASan/UBSan run
+these same tests through the existing CI configuration.
 
 ## Benchmarks
 
@@ -194,7 +245,8 @@ research/                       reserved for experiment notes and analysis
 services/api/                   reserved for the research API
 apps/web/                       reserved for the dashboard
 infra/                          reserved for local deployment files
-configs/  schemas/  docs/adr/   reserved for scenarios, schemas, and ADRs
+configs/  schemas/             reserved for scenarios and schemas
+docs/adr/                      accepted implementation decisions
 ```
 
 `research/` is the placeholder from the Phase 0 brief. The architecture places importable Python modules under `python/markettwin/`. Both directories are empty until that work starts.
@@ -220,12 +272,12 @@ Useful CMake options:
 
 ## Phases
 
-Status follows [`architecture.md`](architecture.md) section 20. Only Phase 0 is started.
+Status follows [`architecture.md`](architecture.md) section 20. Phase 1A is implemented; Phase 1B is next.
 
 | Phase | Scope | State |
 | --- | --- | --- |
 | 0 | CMake, CI, formatter, test runner, version CLI, no-op simulation type | Present in this tree |
-| 1A | Order-book semantics and matching invariants | Not started |
+| 1A | Order-book semantics and matching invariants | Implemented and locally verified |
 | 1B | Event kernel, canonical trace, exchange replay | Not started |
 | 2A | Trading agents, latency, shocks | Not started |
 | 2B | Accounting, artifacts, paired experiments | Not started |

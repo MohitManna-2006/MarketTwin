@@ -1,0 +1,6 @@
+---
+InheritParentConfig: true
+CheckOptions:
+  # GoogleTest assertions expand to nested control flow; assess handwritten logic.
+  - key: readability-function-cognitive-complexity.IgnoreMacros
+    value: true
