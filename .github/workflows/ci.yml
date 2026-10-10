@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu Debug ASan/UBSan
+            os: ubuntu-24.04
+            build_type: Debug
+            sanitizers: ON
+          - name: Ubuntu Release
+            os: ubuntu-24.04
+            build_type: Release
+            sanitizers: OFF
+          - name: macOS Debug
+            os: macos-latest
+            build_type: Debug
+            sanitizers: OFF
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build g++
+          cmake --version
+          g++ --version
+          ninja --version
+
+      - name: Check toolchain (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cmake --version
+          c++ --version
+          if ! command -v ninja >/dev/null 2>&1; then
+            brew install ninja
+          fi
+          ninja --version
+
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          -DMARKETTWIN_BUILD_TESTS=ON
+          -DMARKETTWIN_BUILD_BENCHMARKS=OFF
+          -DMARKETTWIN_ENABLE_SANITIZERS=${{ matrix.sanitizers }}
+          -DMARKETTWIN_WARNINGS_AS_ERRORS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure

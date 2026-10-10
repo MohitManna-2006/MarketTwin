@@ -1,0 +1,31 @@
+# Out-of-source builds and local presets
+/build/
+/out/
+/cmake-build-*/
+CMakeUserPresets.json
+
+# CMake / Ninja debris if a build is ever configured in-source
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+Testing/
+
+# Generated simulation artifacts
+/data/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.dSYM
+
+# Python and Node tooling reserved for later phases
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+node_modules/
+dist/
