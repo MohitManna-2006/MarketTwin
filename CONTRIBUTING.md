@@ -2,7 +2,7 @@
 
 MarketTwin is a C++20-first synthetic equity exchange and research platform. The matching engine, order book, event scheduler, simulation clock, and trading agents belong in C++. Python, the API, and the dashboard sit outside a run.
 
-`architecture.md` is the implementation contract. Read sections 1–12 and the current phase before changing core behavior. This repository has completed **Phase 1A**: the native exchange, matching invariants, and randomized reference-model tests. The next scope is Phase 1B (kernel and trace). Keep agents, accounting, services, and deployment infrastructure in their assigned later phases. Exchange behavior is specified in `docs/adr/0001-exchange-semantics.md`.
+`architecture.md` is the implementation contract. Read sections 1–12 and the current phase before changing core behavior. This repository has completed **Phase 1B**: the native exchange, the logical-time kernel, the canonical command/execution trace, and exchange replay. The next scope is Phase 2A (trading agents and scenario processes). Keep accounting, services, and deployment infrastructure in their assigned later phases. Exchange behavior is specified in `docs/adr/0001-exchange-semantics.md`; ordering, trace format, and replay in `docs/adr/0002-kernel-trace-and-replay.md`.
 
 ## Conventions
 
@@ -27,4 +27,4 @@ scripts/lint.sh build/debug
 
 ## Review expectations
 
-A change should name the tests it adds and the commands that were run. Generated run output under `data/` and secrets stay untracked. Leave future-phase directories empty until that phase starts.
+A change should name the tests it adds and the commands that were run. A change to any canonical record, digest input, or ordering rule changes `core/tests/replay/golden/phase1b_summary.json`; that needs a schema or engine version decision and an ADR, not a quiet fixture refresh. Generated run output under `data/` and secrets stay untracked. Leave future-phase directories empty until that phase starts.

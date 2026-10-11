@@ -276,8 +276,8 @@ transactional whole-incoming-order self-trade rejection; lifetime uniqueness of
 accepted IDs; configured symbol/agent validation and resource bounds; explicit
 market IOC with zero unused price; caller-assigned monotone arrival timestamps and
 sequences; checked level aggregates; immutable snapshots; exchange-local trade
-ordinals and cumulative status quantities. The global scheduler and serialized
-trace remain Phase 1B work. Synchronous command call order resolves exchange races.
+ordinals and cumulative status quantities. The Phase 1B kernel (section 7.4) is the
+sole caller: it stamps arrival metadata, and its dispatch order resolves exchange races.
 
 ### 6.4 Data structures
 
@@ -332,6 +332,16 @@ trace remain Phase 1B work. Synchronous command call order resolves exchange rac
 - Agents only observe delivered data; the engine is not allowed to hand them future prices, other agents' private parameters, or undelivered fills.
 - Zero-latency events at a common timestamp still have strict sequence order.
 - The simulation should document whether event order allows an agent to react within the same timestamp and why.
+
+### 7.4 Phase 1B resolved policies
+
+[ADR 0002](docs/adr/0002-kernel-trace-and-replay.md) defines the implemented kernel:
+a heap ordered by `(timestamp_ns, scheduler_sequence)`; a separate centrally allocated
+trace sequence that orders commands and their outcomes in dispatch order and supplies
+order arrival sequences and causation IDs; an inclusive horizon; and recorded terminal
+reasons (`QueueEmpty`, `Horizon`, `EventLimit`, `Requested`). The Phase 1B payload set is
+scripted submit, cancel, snapshot, and stop. The remaining 7.2 categories and all of
+7.3 arrive with agents in Phase 2A.
 
 ## 8. Agents and behavioral model
 
@@ -470,6 +480,16 @@ A trustworthy market simulator must reproduce order-book transitions from an ord
 - Schema incompatibility is explicit, not silently ignored.
 - Replay divergence reports first differing event, preceding event context, expected/actual book state or trade, and associated run manifest.
 - Event logs are append-only after finalization; a completed run manifest includes checksums for every artifact.
+
+### 11.6 Phase 1B resolved format
+
+[ADR 0002](docs/adr/0002-kernel-trace-and-replay.md) fixes format version 1: canonical
+compact JSON with sorted keys and integer-only numbers, `config.json`, `commands.jsonl`,
+`trace.jsonl`, and a `manifest.json` published last. Digests are SHA-256 over exact bytes.
+Exchange replay (mode 1 of 11.3) is implemented and byte-compares every command before
+dispatch and every output after it. Because Phase 1B has no floating-point or stochastic
+calculation, its golden digests are also checked across toolchains. Parquet artifacts and
+failed-run diagnostics manifests (section 13) remain Phase 2B work.
 
 ## 12. C++ API contracts and concurrency model
 

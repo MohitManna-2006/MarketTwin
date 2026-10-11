@@ -1,4 +1,4 @@
-add_executable(markettwin_bench simulation_noop_bench.cpp)
+add_executable(markettwin_bench exchange_bench.cpp)
 target_link_libraries(markettwin_bench PRIVATE markettwin::core benchmark::benchmark)
 target_compile_features(markettwin_bench PRIVATE cxx_std_20)
 markettwin_set_warnings(markettwin_bench)

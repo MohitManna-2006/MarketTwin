@@ -98,6 +98,19 @@ std::size_t OrderBook::size() const noexcept {
   return index_.size();
 }
 
+std::vector<Order> OrderBook::ordered_orders() const {
+  std::vector<Order> orders;
+  orders.reserve(size());
+  const auto append = [&](const auto& levels) {
+    for (const auto& [price, level] : levels) {
+      orders.insert(orders.end(), level.orders.begin(), level.orders.end());
+    }
+  };
+  append(bids_);
+  append(asks_);
+  return orders;
+}
+
 Quantity OrderBook::level_quantity(Side side, PriceTicks price) const {
   const auto lookup = [price](const auto& levels) {
     const auto found = levels.find(price);

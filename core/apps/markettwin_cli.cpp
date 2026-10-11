@@ -1,36 +1,53 @@
+#include "markettwin/common/run_error.hpp"
 #include "markettwin/common/version.hpp"
+#include "markettwin/simulation/simulation.hpp"
+#include "markettwin/telemetry/replay.hpp"
 
 #include <iostream>
 #include <string>
 #include <string_view>
 
 namespace {
-
 void print_usage(std::ostream& output) {
-  output << "Usage: markettwin [--version] [--help]\n"
-         << "Print the MarketTwin engine version.\n"
-         << "This build does not run simulations or accept orders.\n";
+  output << "Usage: markettwin --version | --help\n"
+         << "       markettwin run --config CONFIG.json --output NEW_DIRECTORY\n"
+         << "       markettwin replay --input RUN_DIRECTORY\n";
 }
 
-} // namespace
-
-int main(int argc, char** argv) {
-  if (argc != 2) {
-    print_usage(std::cerr);
-    return 2;
-  }
-
-  const std::string_view argument{argv[1]};
-  if (argument == "--version") {
-    const std::string_view engine_version = markettwin::version();
-    std::cout << "MarketTwin " << std::string{engine_version} << '\n';
+int execute(int argc, char** argv) {
+  if (argc == 2 && std::string_view{argv[1]} == "--version") {
+    std::cout << "MarketTwin " << markettwin::version() << '\n';
     return 0;
   }
-  if (argument == "--help" || argument == "-h") {
+  if (argc == 2 && (std::string_view{argv[1]} == "--help" || std::string_view{argv[1]} == "-h")) {
     print_usage(std::cout);
     return 0;
   }
-
+  if (argc == 6 && std::string_view{argv[1]} == "run" && std::string_view{argv[2]} == "--config" &&
+      std::string_view{argv[4]} == "--output") {
+    markettwin::Simulation simulation{markettwin::load_config(argv[3]), argv[5]};
+    std::cout << markettwin::summary_json(simulation.run()) << '\n';
+    return 0;
+  }
+  if (argc == 4 && std::string_view{argv[1]} == "replay" &&
+      std::string_view{argv[2]} == "--input") {
+    const auto result = markettwin::verify_replay(argv[3]);
+    std::cout << markettwin::replay_result_json(result) << '\n';
+    return result.verified ? 0 : 1;
+  }
   print_usage(std::cerr);
   return 2;
+}
+} // namespace
+
+int main(int argc, char** argv) {
+  try {
+    return execute(argc, argv);
+  } catch (const markettwin::RunError& error) {
+    std::cerr << error.code() << " at sequence " << error.sequence().value() << ": " << error.what()
+              << '\n';
+  } catch (const std::exception& error) {
+    std::cerr << "RunFailed: " << error.what() << '\n';
+  }
+  return 1;
 }

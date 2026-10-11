@@ -1,5 +1,17 @@
 include(FetchContent)
 
+set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+set(JSON_Install OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(nlohmann_json
+  URL "https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz"
+  URL_HASH SHA256=d6c65aca6b1ed68e7a182f4757257b107ae403032760ed6ef121c9d55e81757d
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(nlohmann_json)
+get_target_property(_markettwin_json_includes nlohmann_json INTERFACE_INCLUDE_DIRECTORIES)
+set_target_properties(nlohmann_json PROPERTIES
+  INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${_markettwin_json_includes}")
+
 # Pins are release tarballs with SHA256 hashes so a clean configure does not float to a new commit.
 set(MARKETTWIN_GOOGLETEST_URL
     "https://github.com/google/googletest/archive/refs/tags/v1.15.2.tar.gz"

@@ -42,13 +42,15 @@ public:
   [[nodiscard]] OrderBookSnapshot snapshot(std::size_t depth) const;
   [[nodiscard]] std::optional<Order> find(OrderId id) const;
   [[nodiscard]] std::size_t size() const noexcept;
+  // Full deterministic state: bids then asks, each in price/FIFO order.
+  [[nodiscard]] std::vector<Order> ordered_orders() const;
   // Throws logic_error on internal corruption. Available in all build profiles.
   void verify_invariants() const;
 
 private:
   friend class MatchingEngine;
   struct Handle {
-    Side side;
+    Side side = Side::Buy;
     PriceTicks price;
     std::list<Order>::iterator order;
   };

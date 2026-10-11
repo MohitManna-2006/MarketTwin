@@ -1,0 +1,14 @@
+{
+  "book_digest": "f5b3180c18b933f9ad7b0f7ce655fdbefe0bf35a7b1e18413488e10d1a1dd71c",
+  "commands_digest": "abc5f9dc92f953e1417e528d42032ec64d7358b19a66fee079c638af5325c6c1",
+  "config_digest": "0efaa560162b3da1dc1d082df3f6ca76f77e39d8e0d14064a0ca212570520de7",
+  "event_count": 14,
+  "final_time_ns": 100,
+  "resting_order_count": 1,
+  "seed": 42,
+  "status": "Completed",
+  "stop_reason": "Requested",
+  "trace_digest": "b4c351504e1260a3a350962d731019c9ca11f5ac4ba7321ff59714762a3f5c3f",
+  "trade_count": 3,
+  "trade_digest": "1943efd08b1a3d6f8ff2348dcbeaf570d2161146201bdc326a6402afc98aa9da"
+}
