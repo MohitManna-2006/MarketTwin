@@ -40,6 +40,8 @@ public:
 
   [[nodiscard]] std::optional<PriceTicks> best_bid() const noexcept;
   [[nodiscard]] std::optional<PriceTicks> best_ask() const noexcept;
+  // Best level on a side without building a snapshot.
+  [[nodiscard]] std::optional<BookLevel> top(Side side) const noexcept;
   [[nodiscard]] OrderBookSnapshot snapshot(std::size_t depth) const;
   [[nodiscard]] std::optional<Order> find(OrderId id) const;
   [[nodiscard]] std::size_t size() const noexcept;

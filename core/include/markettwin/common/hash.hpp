@@ -9,6 +9,17 @@
 
 namespace markettwin {
 
+using Sha256State = std::array<std::uint32_t, 8>;
+using Sha256Block = std::array<std::uint8_t, 64>;
+
+namespace detail {
+// One compression round over a 64-byte block. sha256_compress uses the CPU's SHA-2
+// instructions when the build targets them and is otherwise the portable function;
+// both are exposed so tests can hold them to the same output.
+void sha256_compress(Sha256State& state, const Sha256Block& block) noexcept;
+void sha256_compress_portable(Sha256State& state, const Sha256Block& block) noexcept;
+} // namespace detail
+
 // SHA-256 modulo-2^32 arithmetic is intentional; this type never holds financial values.
 class Sha256 {
 public:
@@ -16,12 +27,11 @@ public:
   [[nodiscard]] std::string digest() const;
 
 private:
-  void compress();
-  std::array<std::uint32_t, 8> state_{
+  Sha256State state_{
       0x6a09e667U, 0xbb67ae85U, 0x3c6ef372U, 0xa54ff53aU,
       0x510e527fU, 0x9b05688cU, 0x1f83d9abU, 0x5be0cd19U,
   };
-  std::array<std::uint8_t, 64> buffer_{};
+  Sha256Block buffer_{};
   std::size_t used_ = 0;
   std::uint64_t bytes_ = 0;
 };

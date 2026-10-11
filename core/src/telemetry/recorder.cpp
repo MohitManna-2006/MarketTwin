@@ -6,10 +6,6 @@ namespace markettwin {
 namespace {
 using codec::Json;
 
-Json optional_id(std::uint64_t value) {
-  return value == 0 ? Json(nullptr) : Json(value);
-}
-
 std::string_view command_kind(const Command& command) {
   if (std::holds_alternative<Order>(command)) {
     return "OrderArrival";
@@ -44,13 +40,12 @@ Recorder::Recorder(const RunConfig& config, RecordSink& sink)
       },
   };
   header.update({{"channel", "commands"}});
-  write(TraceChannel::Commands, header, {});
+  append(TraceChannel::Commands, header.dump() + '\n', {});
   header.update({{"channel", "execution"}});
-  write(TraceChannel::Execution, header, {});
+  append(TraceChannel::Execution, header.dump() + '\n', {});
 }
 
-void Recorder::write(TraceChannel channel, const Json& record, Sequence sequence) {
-  const auto line = record.dump() + '\n';
+void Recorder::append(TraceChannel channel, const std::string& line, Sequence sequence) {
   if (line.size() > codec::kMaxRecordBytes || line.size() > config_.max_trace_bytes - bytes_) {
     throw RunError{"ResourceLimit", "canonical trace exceeds byte budget", sequence};
   }
@@ -60,51 +55,63 @@ void Recorder::write(TraceChannel channel, const Json& record, Sequence sequence
   bytes_ += line.size();
 }
 
-Json Recorder::envelope(const Event& event, Sequence sequence, std::string_view kind,
-                        const Json& payload, AgentId actor, OrderId correlation,
-                        Sequence causation) const {
-  return {
-      {"schema_version", 1},
-      {"run_id", config_.run_id},
-      {"sequence", sequence.value()},
-      {"timestamp_ns", event.timestamp.value()},
-      {"kind", kind},
-      {"scheduler_sequence", optional_id(event.scheduler_sequence.value())},
-      {"actor_id", optional_id(actor.value())},
-      {"correlation_id", optional_id(correlation.value())},
-      {"causation_id", optional_id(causation.value())},
-      {"payload", payload},
-      {"payload_digest", sha256(payload.dump())},
+// Writes the envelope directly in canonical form: sorted keys, compact, integers only.
+// The payload is already canonical, and run IDs and kinds never need escaping, so this
+// produces the bytes a JSON library would while serializing the payload exactly once.
+void Recorder::write(TraceChannel channel, const Event& event, Sequence sequence,
+                     std::string_view kind, const std::string& payload, AgentId actor,
+                     OrderId correlation, Sequence causation) {
+  const auto optional_id = [this](std::string_view key, std::uint64_t value) {
+    line_.append(key);
+    if (value == 0) {
+      line_.append("null");
+    } else {
+      line_.append(std::to_string(value));
+    }
   };
+  line_.clear();
+  optional_id(R"({"actor_id":)", actor.value());
+  optional_id(R"(,"causation_id":)", causation.value());
+  optional_id(R"(,"correlation_id":)", correlation.value());
+  line_.append(R"(,"kind":")").append(kind);
+  line_.append(R"(","payload":)").append(payload);
+  line_.append(R"(,"payload_digest":")").append(sha256(payload));
+  line_.append(R"(","run_id":")").append(config_.run_id);
+  optional_id(R"(","scheduler_sequence":)", event.scheduler_sequence.value());
+  line_.append(R"(,"schema_version":1,"sequence":)").append(std::to_string(sequence.value()));
+  line_.append(R"(,"timestamp_ns":)").append(std::to_string(event.timestamp.value()));
+  line_.append("}\n");
+  append(channel, line_, sequence);
 }
 
-Sequence Recorder::command(const Event& event) {
+Sequence Recorder::command(const Event& event, const Command& command) {
   const auto sequence = sequence_.next();
   AgentId actor;
   OrderId correlation;
-  if (const auto* order = std::get_if<Order>(&event.command)) {
+  if (const auto* order = std::get_if<Order>(&command)) {
     actor = order->owner;
     correlation = order->id;
-  } else if (const auto* cancel = std::get_if<CancelCommand>(&event.command)) {
+  } else if (const auto* cancel = std::get_if<CancelCommand>(&command)) {
     actor = cancel->owner;
     correlation = cancel->order_id;
   }
-  write(TraceChannel::Commands,
-        envelope(event, sequence, command_kind(event.command), codec::command(event.command), actor,
-                 correlation, {}),
-        sequence);
+  write(TraceChannel::Commands, event, sequence, command_kind(command),
+        codec::command(command).dump(), actor, correlation, {});
   return sequence;
 }
 
 void Recorder::outcome(const Event& cause, Sequence causation, std::string_view kind,
-                       const Json& payload, AgentId actor, OrderId correlation) {
-  const auto sequence = sequence_.next();
-  write(TraceChannel::Execution,
-        envelope(cause, sequence, kind, payload, actor, correlation, causation), sequence);
+                       const std::string& payload, AgentId actor, OrderId correlation) {
+  write(TraceChannel::Execution, cause, sequence_.next(), kind, payload, actor, correlation,
+        causation);
 }
 
-void Recorder::record_trade(const Trade& trade) {
-  trades_hash_.update(codec::trade(trade).dump() + '\n');
+void Recorder::trade(const Event& cause, Sequence causation, const Trade& trade) {
+  const auto payload = codec::trade(trade);
+  trades_hash_.update(payload);
+  trades_hash_.update("\n");
+  write(TraceChannel::Execution, cause, sequence_.next(), "Trade", payload, trade.taker_agent_id,
+        trade.aggressor_order_id, causation);
 }
 
 void Recorder::finish(RunSummary& summary) {
@@ -113,9 +120,9 @@ void Recorder::finish(RunSummary& summary) {
   const Event terminal_event{
       .timestamp = summary.final_time,
       .scheduler_sequence = {},
-      .command = StopCommand{},
+      .payload = StopCommand{},
   };
-  outcome(terminal_event, {}, "RunCompleted", codec::terminal(summary));
+  outcome(terminal_event, {}, "RunCompleted", codec::terminal(summary).dump());
   summary.commands_digest = commands_hash_.digest();
   summary.trace_digest = trace_hash_.digest();
 }

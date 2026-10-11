@@ -72,6 +72,6 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
-      - name: Exchange benchmark smoke (Release)
+      - name: Benchmark smoke (Release)
         if: matrix.build_type == 'Release'
         run: ./build/core/benchmarks/markettwin_bench --benchmark_min_time=0.01s --benchmark_repetitions=1

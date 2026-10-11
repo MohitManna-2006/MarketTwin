@@ -343,6 +343,18 @@ reasons (`QueueEmpty`, `Horizon`, `EventLimit`, `Requested`). The Phase 1B paylo
 scripted submit, cancel, snapshot, and stop. The remaining 7.2 categories and all of
 7.3 arrive with agents in Phase 2A.
 
+### 7.5 Phase 2A resolved policies
+
+[ADR 0003](docs/adr/0003-agents-rng-latency-and-scenarios.md) adds the remaining 7.2
+categories as scheduler payloads. Exchange commands and exogenous outcomes (fundamental
+updates, shock transitions) are logged; wakeups and deliveries are regenerated on replay.
+Each agent has fixed order-entry, report, and market-data delays, with optional uniform
+jitter on order entry drawn from the agent's latency stream; every path is FIFO per
+agent. An agent with zero latency may react within the same timestamp: its message is
+scheduled at the current time with a later scheduler sequence, so it follows everything
+already queued for that time. The queue is seeded with scripted commands, then shocks,
+the fundamental tick, sampling, and first wakeups in agent order.
+
 ## 8. Agents and behavioral model
 
 ### 8.1 Agent interface
@@ -398,6 +410,19 @@ class ITradingAgent {
 - Avoids concentration in zero-liquidity loops by configurable arrival rates and ranges.
 - Uses independent RNG streams per agent.
 
+### 8.7 Phase 2A resolved policies
+
+[ADR 0003](docs/adr/0003-agents-rng-latency-and-scenarios.md) fixes the implemented
+contract. The interface in 8.1 is kept except that callbacks append intents through an
+`AgentActions` handle instead of returning a vector. The environment, not the policy,
+owns each agent's delivered market data, working orders, position view, limits, and
+random streams, and drops intents that would breach the agent's limits. Random numbers
+come from xoshiro256\*\* streams keyed by seed, stream kind, and agent, sampled with
+integer-only algorithms, so a seed gives identical runs across toolchains. Every policy
+references the delivered midpoint, else the last delivered trade, else the scenario
+reference. Agents track shares only; cash, cost basis, and the cash constraint in 8.2
+arrive with the Phase 2B ledger.
+
 ## 9. Market scenarios and digital-twin fidelity
 
 ### 9.1 Synthetic reference price
@@ -429,6 +454,18 @@ class ITradingAgent {
 - A successful result is comparative strategy behavior under an explicit simulated model, not proof of real-world profitability.
 - At least one experiment should test sensitivity to parameter choices and random seeds.
 - Show failed/null results and confidence intervals, not only the best-performing path.
+
+### 9.5 Phase 2A resolved scenarios
+
+[ADR 0003](docs/adr/0003-agents-rng-latency-and-scenarios.md) defines the fundamental as
+an integer mean-reverting random walk in milliticks, logged at every step and never
+written into a trade price. Implemented shocks are `FundamentalJump`,
+`LiquidityWithdrawal`, and `VolatilityRegime`, each logged at every transition with
+half-open `[start, end)` intervals; overlapping regimes or withdrawals for one agent are
+rejected. Order-flow imbalance, latency degradation, and quote-withdrawal stress are not
+implemented. Scenario runs use run config schema 2; scripted configs remain schema 1.
+`configs/baseline.json` is the reference one-hour market, with `fundamental_shock.json`,
+`liquidity_shock.json`, and `volatility_shock.json` as single-shock variants of it.
 
 ## 10. Accounting, mark-to-market, and risk
 
@@ -490,6 +527,13 @@ Exchange replay (mode 1 of 11.3) is implemented and byte-compares every command 
 dispatch and every output after it. Because Phase 1B has no floating-point or stochastic
 calculation, its golden digests are also checked across toolchains. Parquet artifacts and
 failed-run diagnostics manifests (section 13) remain Phase 2B work.
+
+From Phase 2A ([ADR 0003](docs/adr/0003-agents-rng-latency-and-scenarios.md)) the same
+verification is full deterministic simulation replay (mode 2 of 11.3) for scenario runs:
+agent decisions are regenerated from the config and seed, and each resulting command must
+match the command log before it reaches the exchange. The engine's stochastic
+calculations are integer-only, so scenario golden digests are checked across toolchains
+as well.
 
 ## 12. C++ API contracts and concurrency model
 

@@ -27,6 +27,7 @@ public:
   [[nodiscard]] OrderBookSnapshot snapshot(std::size_t depth) const {
     return book_.snapshot(depth);
   }
+  [[nodiscard]] SymbolId symbol() const noexcept { return config_.symbol; }
   [[nodiscard]] std::optional<PriceTicks> best_bid() const noexcept { return book_.best_bid(); }
   [[nodiscard]] std::optional<PriceTicks> best_ask() const noexcept { return book_.best_ask(); }
   void verify_invariants() const;

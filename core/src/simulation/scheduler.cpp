@@ -17,29 +17,29 @@ bool Scheduler::Later::operator()(const Event& left, const Event& right) const n
   return left.scheduler_sequence > right.scheduler_sequence;
 }
 
-Sequence Scheduler::schedule(SimTime timestamp, const Command& command) {
+Sequence Scheduler::schedule(SimTime timestamp, const EventPayload& payload) {
   if (stop_reason_) {
     throw RunError{"SchedulerStopped", "cannot schedule into a terminated scheduler"};
   }
   if (timestamp < now_) {
     throw RunError{"PastEvent", "cannot schedule before the current logical clock"};
   }
-  if (command.valueless_by_exception()) {
+  if (payload.valueless_by_exception()) {
     throw RunError{"InvalidPayload", "event command has no payload"};
   }
   if (queue_.size() >= limits_.max_queue) {
     throw RunError{"QueueCapacity", "scheduler queue capacity exceeded"};
   }
   const auto id = sequence_.next();
-  queue_.push(Event{.timestamp = timestamp, .scheduler_sequence = id, .command = command});
+  queue_.push(Event{.timestamp = timestamp, .scheduler_sequence = id, .payload = payload});
   return id;
 }
 
-Sequence Scheduler::schedule_after(SimTime delay, const Command& command) {
+Sequence Scheduler::schedule_after(SimTime delay, const EventPayload& payload) {
   if (delay.value() > std::numeric_limits<std::uint64_t>::max() - now_.value()) {
     throw RunError{"TimeOverflow", "scheduled delay overflows logical time"};
   }
-  return schedule(SimTime{now_.value() + delay.value()}, command);
+  return schedule(SimTime{now_.value() + delay.value()}, payload);
 }
 
 std::optional<Event> Scheduler::next() {

@@ -50,6 +50,7 @@ void validate_config(const RunConfig& config) {
   for (const auto& item : config.commands) {
     validate_command(item, config);
   }
+  validate_scenario(config);
 }
 
 RunConfig parse_config(std::string_view text) {

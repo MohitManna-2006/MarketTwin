@@ -2,6 +2,7 @@
 #define MARKETTWIN_SIMULATION_CONFIG_HPP
 
 #include "markettwin/exchange/matching_engine.hpp"
+#include "markettwin/simulation/scenario.hpp"
 #include "markettwin/simulation/scheduler.hpp"
 
 #include <filesystem>
@@ -18,6 +19,9 @@ struct RunConfig {
   std::uint64_t tick_size_minor = 1;
   std::uint64_t max_trace_bytes = 268'435'456;
   std::vector<ScheduledCommand> commands;
+  // Absent for a purely scripted run. Present, it adds agents, a fundamental process,
+  // and shocks, and the config serializes as schema version 2.
+  std::optional<ScenarioConfig> scenario;
 };
 
 void validate_config(const RunConfig& config);

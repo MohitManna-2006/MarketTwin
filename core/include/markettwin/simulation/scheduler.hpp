@@ -19,8 +19,8 @@ struct SchedulerLimits {
 class Scheduler {
 public:
   explicit Scheduler(SchedulerLimits limits = {});
-  [[nodiscard]] Sequence schedule(SimTime timestamp, const Command& command);
-  [[nodiscard]] Sequence schedule_after(SimTime delay, const Command& command);
+  [[nodiscard]] Sequence schedule(SimTime timestamp, const EventPayload& payload);
+  [[nodiscard]] Sequence schedule_after(SimTime delay, const EventPayload& payload);
   [[nodiscard]] std::optional<Event> next();
   void request_stop() noexcept;
   [[nodiscard]] SimTime now() const noexcept { return now_; }

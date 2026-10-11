@@ -1,4 +1,5 @@
 #include "markettwin/common/hash.hpp"
+#include "markettwin/common/rng.hpp"
 
 #include <gtest/gtest.h>
 #include <string>
@@ -28,5 +29,20 @@ TEST(Sha256Test, IncrementalDigestDoesNotMutateState) {
     split.update(std::string_view{input}.substr(0, 31));
     split.update(std::string_view{input}.substr(31));
     EXPECT_EQ(split.digest(), markettwin::sha256(input));
+  }
+}
+
+TEST(Sha256Test, AcceleratedAndPortableCompressionAgreeOnRandomBlocks) {
+  markettwin::Rng rng{11, markettwin::RngStream::Fundamental};
+  markettwin::Sha256State accelerated{};
+  markettwin::Sha256State portable{};
+  for (int block = 0; block < 500; ++block) {
+    markettwin::Sha256Block bytes{};
+    for (auto& byte : bytes) {
+      byte = static_cast<std::uint8_t>(rng.uniform_below(256));
+    }
+    markettwin::detail::sha256_compress(accelerated, bytes);
+    markettwin::detail::sha256_compress_portable(portable, bytes);
+    ASSERT_EQ(accelerated, portable) << "block " << block;
   }
 }

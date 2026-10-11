@@ -1,10 +1,20 @@
 add_library(markettwin_core
   src/common/version.cpp
   src/common/hash.cpp
+  src/common/rng.cpp
+  src/agents/agent.cpp
+  src/agents/market_maker.cpp
+  src/agents/momentum.cpp
+  src/agents/value.cpp
+  src/agents/noise.cpp
   src/simulation/config.cpp
+  src/simulation/scenario.cpp
+  src/simulation/fundamental.cpp
+  src/simulation/population.cpp
   src/simulation/scheduler.cpp
   src/simulation/kernel.cpp
   src/telemetry/codec.cpp
+  src/telemetry/scenario_codec.cpp
   src/telemetry/recorder.cpp
   src/telemetry/artifacts.cpp
   src/telemetry/replay.cpp

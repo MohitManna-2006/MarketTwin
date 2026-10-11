@@ -2,10 +2,20 @@
 
 #include "markettwin/common/run_error.hpp"
 
+#include <algorithm>
 #include <bit>
+#include <cstring>
 #include <limits>
 
+#ifdef __ARM_FEATURE_SHA2
+#include <arm_neon.h>
+#endif
+
 namespace markettwin {
+// The compression loops index fixed-size arrays with loop counters whose bounds are the
+// array sizes. Checked access here costs more than the hashing itself.
+// NOLINTBEGIN(cppcoreguidelines-pro-bounds-constant-array-index,
+// cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 namespace {
 constexpr std::array<std::uint32_t, 64> kRoundConstants{
     0x428a2f98U, 0x71374491U, 0xb5c0fbcfU, 0xe9b5dba5U, 0x3956c25bU, 0x59f111f1U, 0x923f82a4U,
@@ -19,29 +29,58 @@ constexpr std::array<std::uint32_t, 64> kRoundConstants{
     0x748f82eeU, 0x78a5636fU, 0x84c87814U, 0x8cc70208U, 0x90befffaU, 0xa4506cebU, 0xbef9a3f7U,
     0xc67178f2U,
 };
+
+#ifdef __ARM_FEATURE_SHA2
+// ARMv8 SHA-2 instructions: four rounds per step, with the state split as ABCD and EFGH.
+void compress_accelerated(Sha256State& state, const Sha256Block& block) noexcept {
+  auto abcd = vld1q_u32(state.data());
+  auto efgh = vld1q_u32(state.data() + 4);
+  const auto abcd_saved = abcd;
+  const auto efgh_saved = efgh;
+  std::array<uint32x4_t, 4> message{};
+  for (std::size_t lane = 0; lane < message.size(); ++lane) {
+    message[lane] = vreinterpretq_u32_u8(vrev32q_u8(vld1q_u8(block.data() + (lane * 16))));
+  }
+  for (std::size_t step = 0; step < 16; ++step) {
+    const auto lane = step & 3U;
+    const auto scheduled = vaddq_u32(message[lane], vld1q_u32(kRoundConstants.data() + (step * 4)));
+    const auto previous = abcd;
+    abcd = vsha256hq_u32(abcd, efgh, scheduled);
+    efgh = vsha256h2q_u32(efgh, previous, scheduled);
+    if (step < 12) {
+      message[lane] = vsha256su1q_u32(vsha256su0q_u32(message[lane], message[(step + 1) & 3U]),
+                                      message[(step + 2) & 3U], message[(step + 3) & 3U]);
+    }
+  }
+  vst1q_u32(state.data(), vaddq_u32(abcd, abcd_saved));
+  vst1q_u32(state.data() + 4, vaddq_u32(efgh, efgh_saved));
+}
+#endif
+
 } // namespace
 
-void Sha256::compress() {
+namespace detail {
+
+void sha256_compress_portable(Sha256State& state, const Sha256Block& block) noexcept {
   std::array<std::uint32_t, 64> words{};
   for (std::size_t index = 0; index < 16; ++index) {
     const auto offset = index * 4;
-    words.at(index) = (std::uint32_t{buffer_.at(offset)} << 24U) |
-                      (std::uint32_t{buffer_.at(offset + 1)} << 16U) |
-                      (std::uint32_t{buffer_.at(offset + 2)} << 8U) |
-                      std::uint32_t{buffer_.at(offset + 3)};
+    words[index] = (std::uint32_t{block[offset]} << 24U) |
+                   (std::uint32_t{block[offset + 1]} << 16U) |
+                   (std::uint32_t{block[offset + 2]} << 8U) | std::uint32_t{block[offset + 3]};
   }
   for (std::size_t index = 16; index < words.size(); ++index) {
-    const auto earlier = words.at(index - 15);
-    const auto later = words.at(index - 2);
+    const auto earlier = words[index - 15];
+    const auto later = words[index - 2];
     const auto sigma0 = std::rotr(earlier, 7) ^ std::rotr(earlier, 18) ^ (earlier >> 3U);
     const auto sigma1 = std::rotr(later, 17) ^ std::rotr(later, 19) ^ (later >> 10U);
-    words.at(index) = words.at(index - 16) + sigma0 + words.at(index - 7) + sigma1;
+    words[index] = words[index - 16] + sigma0 + words[index - 7] + sigma1;
   }
-  auto [a, b, c, d, e, f, g, h] = state_;
+  auto [a, b, c, d, e, f, g, h] = state;
   for (std::size_t index = 0; index < words.size(); ++index) {
     const auto sigma1 = std::rotr(e, 6) ^ std::rotr(e, 11) ^ std::rotr(e, 25);
     const auto choose = (e & f) ^ (~e & g);
-    const auto first = h + sigma1 + choose + kRoundConstants.at(index) + words.at(index);
+    const auto first = h + sigma1 + choose + kRoundConstants[index] + words[index];
     const auto sigma0 = std::rotr(a, 2) ^ std::rotr(a, 13) ^ std::rotr(a, 22);
     const auto majority = (a & b) ^ (a & c) ^ (b & c);
     h = g;
@@ -53,11 +92,23 @@ void Sha256::compress() {
     b = a;
     a = first + sigma0 + majority;
   }
-  const std::array<std::uint32_t, 8> working{a, b, c, d, e, f, g, h};
-  for (std::size_t index = 0; index < state_.size(); ++index) {
-    state_.at(index) += working.at(index);
+  const Sha256State working{a, b, c, d, e, f, g, h};
+  for (std::size_t index = 0; index < state.size(); ++index) {
+    state[index] += working[index];
   }
 }
+
+void sha256_compress(Sha256State& state, const Sha256Block& block) noexcept {
+#ifdef __ARM_FEATURE_SHA2
+  compress_accelerated(state, block);
+#else
+  sha256_compress_portable(state, block);
+#endif
+}
+
+} // namespace detail
+// NOLINTEND(cppcoreguidelines-pro-bounds-constant-array-index,
+// cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
 void Sha256::update(std::string_view bytes) {
   constexpr auto kMaxBytes = std::numeric_limits<std::uint64_t>::max() / 8;
@@ -65,10 +116,13 @@ void Sha256::update(std::string_view bytes) {
     throw RunError{"HashLengthOverflow", "SHA-256 bit length exceeds 64 bits"};
   }
   bytes_ += bytes.size();
-  for (const auto byte : bytes) {
-    buffer_.at(used_++) = static_cast<std::uint8_t>(byte);
+  while (!bytes.empty()) {
+    const auto take = std::min(bytes.size(), buffer_.size() - used_);
+    std::memcpy(buffer_.data() + used_, bytes.data(), take);
+    used_ += take;
+    bytes.remove_prefix(take);
     if (used_ == buffer_.size()) {
-      compress();
+      detail::sha256_compress(state_, buffer_);
       used_ = 0;
     }
   }
@@ -81,7 +135,7 @@ std::string Sha256::digest() const {
     while (copy.used_ < 64) {
       copy.buffer_.at(copy.used_++) = 0;
     }
-    copy.compress();
+    detail::sha256_compress(copy.state_, copy.buffer_);
     copy.used_ = 0;
   }
   while (copy.used_ < 56) {
@@ -91,7 +145,7 @@ std::string Sha256::digest() const {
   for (std::size_t index = 0; index < 8; ++index) {
     copy.buffer_.at(63 - index) = static_cast<std::uint8_t>(bits >> (index * 8));
   }
-  copy.compress();
+  detail::sha256_compress(copy.state_, copy.buffer_);
   constexpr std::string_view kHex = "0123456789abcdef";
   std::string output;
   output.reserve(64);
