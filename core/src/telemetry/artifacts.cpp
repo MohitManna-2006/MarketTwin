@@ -52,11 +52,13 @@ void write_file(const std::filesystem::path& path, std::string_view contents) {
 } // namespace
 
 RunArtifacts artifact_paths(const std::filesystem::path& directory) {
-  return {.directory = directory,
-          .config = directory / "config.json",
-          .commands = directory / "commands.jsonl",
-          .trace = directory / "trace.jsonl",
-          .manifest = directory / "manifest.json"};
+  return {
+      .directory = directory,
+      .config = directory / "config.json",
+      .commands = directory / "commands.jsonl",
+      .trace = directory / "trace.jsonl",
+      .manifest = directory / "manifest.json",
+  };
 }
 
 RunSummary write_run(const RunConfig& config, const std::filesystem::path& directory) {
@@ -76,20 +78,30 @@ RunSummary write_run(const RunConfig& config, const std::filesystem::path& direc
     for (const auto& path : {paths.config, paths.commands, paths.trace}) {
       std::filesystem::rename(path.string() + ".partial", path);
     }
-    const Json manifest{{"schema_version", 1},
-                        {"status", "Completed"},
-                        {"run_id", config.run_id},
-                        {"engine_version", version()},
-                        {"hash_algorithm", "sha256"},
-                        {"provenance",
-                         {{"git_revision", MARKETTWIN_GIT_REVISION},
-                          {"compiler", MARKETTWIN_COMPILER},
-                          {"build_type", MARKETTWIN_BUILD_TYPE}}},
-                        {"summary", codec::summary(summary)},
-                        {"artifacts",
-                         {{"config.json", sha256(config_bytes)},
-                          {"commands.jsonl", summary.commands_digest},
-                          {"trace.jsonl", summary.trace_digest}}}};
+    const Json manifest{
+        {"schema_version", 1},
+        {"status", "Completed"},
+        {"run_id", config.run_id},
+        {"engine_version", version()},
+        {"hash_algorithm", "sha256"},
+        {
+            "provenance",
+            {
+                {"git_revision", MARKETTWIN_GIT_REVISION},
+                {"compiler", MARKETTWIN_COMPILER},
+                {"build_type", MARKETTWIN_BUILD_TYPE},
+            },
+        },
+        {"summary", codec::summary(summary)},
+        {
+            "artifacts",
+            {
+                {"config.json", sha256(config_bytes)},
+                {"commands.jsonl", summary.commands_digest},
+                {"trace.jsonl", summary.trace_digest},
+            },
+        },
+    };
     write_file(paths.manifest.string() + ".partial", manifest.dump() + '\n');
     std::filesystem::rename(paths.manifest.string() + ".partial", paths.manifest);
     return summary;

@@ -40,32 +40,34 @@ public:
       }
       const auto quantity = std::min(remaining, best->remaining_quantity.value());
       const auto ordinal = trades_ + report.trades.size() + 1;
-      report.trades.push_back(
-          {.id = TradeId{ordinal},
-           .symbol = incoming.symbol,
-           .buy_order_id = incoming.side == Side::Buy ? incoming.id : best->id,
-           .sell_order_id = incoming.side == Side::Sell ? incoming.id : best->id,
-           .aggressor_order_id = incoming.id,
-           .resting_order_id = best->id,
-           .maker_agent_id = best->owner,
-           .taker_agent_id = incoming.owner,
-           .price_ticks = best->limit_price,
-           .quantity = Quantity{quantity},
-           .timestamp = incoming.arrival_time,
-           .sequence = Sequence{ordinal},
-           .arrival_sequence = incoming.arrival_sequence});
+      report.trades.push_back({
+          .id = TradeId{ordinal},
+          .symbol = incoming.symbol,
+          .buy_order_id = incoming.side == Side::Buy ? incoming.id : best->id,
+          .sell_order_id = incoming.side == Side::Sell ? incoming.id : best->id,
+          .aggressor_order_id = incoming.id,
+          .resting_order_id = best->id,
+          .maker_agent_id = best->owner,
+          .taker_agent_id = incoming.owner,
+          .price_ticks = best->limit_price,
+          .quantity = Quantity{quantity},
+          .timestamp = incoming.arrival_time,
+          .sequence = Sequence{ordinal},
+          .arrival_sequence = incoming.arrival_sequence,
+      });
       remaining -= quantity;
       best->remaining_quantity = Quantity{best->remaining_quantity.value() - quantity};
-      report.order_updates.push_back(
-          {.order_id = best->id,
-           .owner = best->owner,
-           .state = best->remaining_quantity.value() == 0 ? OrderState::Filled
-                                                          : OrderState::PartiallyFilled,
-           .reason = RejectReason::None,
-           .filled_quantity =
-               Quantity{best->original_quantity.value() - best->remaining_quantity.value()},
-           .canceled_quantity = {},
-           .resting_quantity = best->remaining_quantity});
+      report.order_updates.push_back({
+          .order_id = best->id,
+          .owner = best->owner,
+          .state = best->remaining_quantity.value() == 0 ? OrderState::Filled
+                                                         : OrderState::PartiallyFilled,
+          .reason = RejectReason::None,
+          .filled_quantity =
+              Quantity{best->original_quantity.value() - best->remaining_quantity.value()},
+          .canceled_quantity = {},
+          .resting_quantity = best->remaining_quantity,
+      });
       if (best->remaining_quantity.value() == 0) {
         working.erase(best);
       }
@@ -171,20 +173,21 @@ Order random_order(std::mt19937_64& random, std::uint64_t step, AgentId owner) {
   const auto id = random() % 10 == 0 ? (random() % step) + 1 : step;
   const auto type = random() % 5 == 0 ? OrderType::Market : OrderType::Limit;
   const auto quantity = Quantity{(random() % 25) + 1};
-  return Order{.id = OrderId{id},
-               .owner = owner,
-               .symbol = SymbolId{1},
-               .side = random() % 2 == 0 ? Side::Buy : Side::Sell,
-               .type = type,
-               .limit_price = type == OrderType::Market
-                                  ? PriceTicks{}
-                                  : PriceTicks{90 + static_cast<std::int64_t>(random() % 21)},
-               .original_quantity = quantity,
-               .remaining_quantity = quantity,
-               .tif = type == OrderType::Market || random() % 4 == 0 ? TimeInForce::Ioc
-                                                                     : TimeInForce::Gtc,
-               .arrival_time = SimTime{step / 10},
-               .arrival_sequence = Sequence{step}};
+  return Order{
+      .id = OrderId{id},
+      .owner = owner,
+      .symbol = SymbolId{1},
+      .side = random() % 2 == 0 ? Side::Buy : Side::Sell,
+      .type = type,
+      .limit_price = type == OrderType::Market
+                         ? PriceTicks{}
+                         : PriceTicks{90 + static_cast<std::int64_t>(random() % 21)},
+      .original_quantity = quantity,
+      .remaining_quantity = quantity,
+      .tif = type == OrderType::Market || random() % 4 == 0 ? TimeInForce::Ioc : TimeInForce::Gtc,
+      .arrival_time = SimTime{step / 10},
+      .arrival_sequence = Sequence{step},
+  };
 }
 
 class ExchangePropertyTest : public ::testing::TestWithParam<std::uint64_t> {};
@@ -192,8 +195,10 @@ class ExchangePropertyTest : public ::testing::TestWithParam<std::uint64_t> {};
 TEST_P(ExchangePropertyTest, RepeatedRandomTraceMatchesReferenceAndConservesEveryOrder) {
   const auto seed = GetParam();
   std::mt19937_64 random{seed};
-  const ExchangeConfig config{.symbol = SymbolId{1},
-                              .agents = {AgentId{1}, AgentId{2}, AgentId{3}, AgentId{4}}};
+  const ExchangeConfig config{
+      .symbol = SymbolId{1},
+      .agents = {AgentId{1}, AgentId{2}, AgentId{3}, AgentId{4}},
+  };
   MatchingEngine engine{config};
   MatchingEngine repeated{config};
   ReferenceExchange reference;
@@ -215,10 +220,11 @@ TEST_P(ExchangePropertyTest, RepeatedRandomTraceMatchesReferenceAndConservesEver
       ASSERT_EQ(actual, repeated.submit(order));
       ASSERT_EQ(actual, reference.submit(order));
       if (actual.accepted()) {
-        dispositions.emplace(order.id,
-                             Disposition{.original = order.original_quantity.value(),
-                                         .filled = 0,
-                                         .canceled = actual.incoming.canceled_quantity.value()});
+        dispositions.emplace(order.id, Disposition{
+                                           .original = order.original_quantity.value(),
+                                           .filled = 0,
+                                           .canceled = actual.incoming.canceled_quantity.value(),
+                                       });
         for (const auto& trade : actual.trades) {
           ASSERT_GT(trade.quantity.value(), 0U);
           ASSERT_NE(trade.maker_agent_id, trade.taker_agent_id);

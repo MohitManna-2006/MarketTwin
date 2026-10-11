@@ -14,17 +14,19 @@ ExchangeConfig config() {
 
 Order limit(std::uint64_t id, Side side, std::int64_t price, std::uint64_t quantity,
             std::uint64_t owner = 1) {
-  return {.id = OrderId{id},
-          .owner = AgentId{owner},
-          .symbol = SymbolId{1},
-          .side = side,
-          .type = OrderType::Limit,
-          .limit_price = PriceTicks{price},
-          .original_quantity = Quantity{quantity},
-          .remaining_quantity = Quantity{quantity},
-          .tif = TimeInForce::Gtc,
-          .arrival_time = SimTime{10},
-          .arrival_sequence = Sequence{id}};
+  return {
+      .id = OrderId{id},
+      .owner = AgentId{owner},
+      .symbol = SymbolId{1},
+      .side = side,
+      .type = OrderType::Limit,
+      .limit_price = PriceTicks{price},
+      .original_quantity = Quantity{quantity},
+      .remaining_quantity = Quantity{quantity},
+      .tif = TimeInForce::Gtc,
+      .arrival_time = SimTime{10},
+      .arrival_sequence = Sequence{id},
+  };
 }
 
 Order market(std::uint64_t id, Side side, std::uint64_t quantity, std::uint64_t owner = 2) {
@@ -86,15 +88,15 @@ TEST(ExchangeTest, EmptyBookAndSnapshotBounds) {
 TEST(ExchangeTest, InvalidConfigurationsHaveStructuredErrors) {
   std::array<ExchangeConfig, 9> invalid;
   invalid.fill(config());
-  invalid[0].symbol = SymbolId{};
-  invalid[1].agents.clear();
-  invalid[2].agents.emplace_back();
-  invalid[3].agents.emplace_back(1);
-  invalid[4].max_order_quantity = Quantity{};
-  invalid[5].max_active_orders = 0;
-  invalid[6].max_accepted_orders = 0;
-  invalid[7].max_trades = 0;
-  invalid[8].max_snapshot_depth = 0;
+  invalid.at(0).symbol = SymbolId{};
+  invalid.at(1).agents.clear();
+  invalid.at(2).agents.emplace_back();
+  invalid.at(3).agents.emplace_back(1);
+  invalid.at(4).max_order_quantity = Quantity{};
+  invalid.at(5).max_active_orders = 0;
+  invalid.at(6).max_accepted_orders = 0;
+  invalid.at(7).max_trades = 0;
+  invalid.at(8).max_snapshot_depth = 0;
   for (const auto& settings : invalid) {
     try {
       const MatchingEngine engine{settings};
@@ -173,10 +175,10 @@ TEST_P(MatchingSidesTest, BestPriceThenFifoAndPartialRestingPriority) {
   const auto result = engine.submit(limit(4, taker_side, 100, 5, 2));
   ASSERT_TRUE(result.accepted());
   ASSERT_EQ(result.trades.size(), 2U);
-  EXPECT_EQ(result.trades[0].resting_order_id, OrderId{2});
-  EXPECT_EQ(result.trades[0].quantity, Quantity{3});
-  EXPECT_EQ(result.trades[1].resting_order_id, OrderId{3});
-  EXPECT_EQ(result.trades[1].quantity, Quantity{2});
+  EXPECT_EQ(result.trades.at(0).resting_order_id, OrderId{2});
+  EXPECT_EQ(result.trades.at(0).quantity, Quantity{3});
+  EXPECT_EQ(result.trades.at(1).resting_order_id, OrderId{3});
+  EXPECT_EQ(result.trades.at(1).quantity, Quantity{2});
   for (const auto& trade : result.trades) {
     EXPECT_EQ(trade.price_ticks, PriceTicks{best});
     EXPECT_EQ(trade.maker_agent_id, AgentId{1});
@@ -188,8 +190,8 @@ TEST_P(MatchingSidesTest, BestPriceThenFifoAndPartialRestingPriority) {
     EXPECT_EQ(trade.sell_order_id, taker_side == Side::Sell ? OrderId{4} : trade.resting_order_id);
   }
   ASSERT_EQ(result.order_updates.size(), 3U);
-  EXPECT_EQ(result.order_updates[0].state, OrderState::Filled);
-  EXPECT_EQ(result.order_updates[1].state, OrderState::PartiallyFilled);
+  EXPECT_EQ(result.order_updates.at(0).state, OrderState::Filled);
+  EXPECT_EQ(result.order_updates.at(1).state, OrderState::PartiallyFilled);
   EXPECT_EQ(result.incoming.state, OrderState::Filled);
   const auto partial = engine.book().find(OrderId{3});
   if (partial.has_value()) {
@@ -200,13 +202,13 @@ TEST_P(MatchingSidesTest, BestPriceThenFifoAndPartialRestingPriority) {
   ASSERT_TRUE(engine.submit(limit(5, maker_side, best, 2)).accepted());
   const auto sweep = engine.submit(market(6, taker_side, 20));
   ASSERT_EQ(sweep.trades.size(), 3U);
-  EXPECT_EQ(sweep.trades[0].resting_order_id, OrderId{3});
-  EXPECT_EQ(sweep.trades[1].resting_order_id, OrderId{5});
-  EXPECT_EQ(sweep.trades[2].resting_order_id, OrderId{1});
-  EXPECT_EQ(sweep.trades[2].price_ticks, PriceTicks{100});
-  EXPECT_EQ(sweep.trades[0].id, TradeId{3});
-  EXPECT_EQ(sweep.trades[2].id, TradeId{5});
-  EXPECT_EQ(sweep.trades[2].sequence, Sequence{5});
+  EXPECT_EQ(sweep.trades.at(0).resting_order_id, OrderId{3});
+  EXPECT_EQ(sweep.trades.at(1).resting_order_id, OrderId{5});
+  EXPECT_EQ(sweep.trades.at(2).resting_order_id, OrderId{1});
+  EXPECT_EQ(sweep.trades.at(2).price_ticks, PriceTicks{100});
+  EXPECT_EQ(sweep.trades.at(0).id, TradeId{3});
+  EXPECT_EQ(sweep.trades.at(2).id, TradeId{5});
+  EXPECT_EQ(sweep.trades.at(2).sequence, Sequence{5});
   EXPECT_EQ(sweep.incoming.filled_quantity, Quantity{10});
   EXPECT_EQ(sweep.incoming.canceled_quantity, Quantity{10});
   EXPECT_EQ(engine.book().size(), 0U);
@@ -267,7 +269,7 @@ TEST_P(MatchingSidesTest, SelfTradeRejectsBeforeEarlierExternalFills) {
   expect_rejected(engine, market(3, side, 3), RejectReason::SelfTrade);
   const auto before_own = engine.submit(market(3, side, 2));
   ASSERT_EQ(before_own.trades.size(), 1U);
-  EXPECT_EQ(before_own.trades[0].id, TradeId{1});
+  EXPECT_EQ(before_own.trades.at(0).id, TradeId{1});
   const auto own = engine.book().find(OrderId{2});
   if (own.has_value()) {
     EXPECT_EQ(own->remaining_quantity, Quantity{2});
@@ -275,7 +277,7 @@ TEST_P(MatchingSidesTest, SelfTradeRejectsBeforeEarlierExternalFills) {
     FAIL() << "expected resting order to exist";
   }
   expect_rejected(engine, market(4, side, 1), RejectReason::SelfTrade);
-  auto outside = limit(4, side, side == Side::Buy ? 99 : 101, 1, 2);
+  const auto outside = limit(4, side, side == Side::Buy ? 99 : 101, 1, 2);
   EXPECT_TRUE(engine.submit(outside).accepted());
   EXPECT_NO_THROW(engine.verify_invariants());
 }
@@ -296,7 +298,7 @@ TEST_P(MatchingSidesTest, LimitSweepsSeveralPricesAtRestingPrices) {
   for (std::size_t index = 0; index < 3; ++index) {
     const auto expected_price = side == Side::Buy ? 99 + static_cast<std::int64_t>(index)
                                                   : 102 - static_cast<std::int64_t>(index);
-    EXPECT_EQ(report.trades[index].price_ticks, PriceTicks{expected_price});
+    EXPECT_EQ(report.trades.at(index).price_ticks, PriceTicks{expected_price});
   }
   EXPECT_NO_THROW(engine.verify_invariants());
 }
@@ -345,8 +347,8 @@ TEST(ExchangeTest, SnapshotSortsAggregatesTruncatesAndOwnsItsValues) {
   EXPECT_EQ(engine.snapshot(1).bids.size(), 1U);
   EXPECT_EQ(engine.snapshot(1).asks.size(), 1U);
   EXPECT_TRUE(engine.cancel(OrderId{2}, AgentId{1}).canceled());
-  EXPECT_EQ(saved.bids[0].quantity, Quantity{9});
-  EXPECT_EQ(engine.snapshot(2).bids[0].quantity, Quantity{5});
+  EXPECT_EQ(saved.bids.at(0).quantity, Quantity{9});
+  EXPECT_EQ(engine.snapshot(2).bids.at(0).quantity, Quantity{5});
   EXPECT_EQ(engine.best_bid(), PriceTicks{99});
   EXPECT_EQ(engine.best_ask(), PriceTicks{101});
 }
@@ -426,7 +428,7 @@ TEST(ExchangeTest, LifetimeOrderAndTradeLimitsRejectWithoutPartialFills) {
   expect_rejected(engine, market(3, Side::Buy, 3), RejectReason::TradeLimit);
   const auto first = engine.submit(market(3, Side::Buy, 2));
   ASSERT_EQ(first.trades.size(), 1U);
-  EXPECT_EQ(first.trades[0].id, TradeId{1});
+  EXPECT_EQ(first.trades.at(0).id, TradeId{1});
   expect_rejected(engine, market(4, Side::Buy, 1), RejectReason::TradeLimit);
   EXPECT_TRUE(engine.submit(limit(4, Side::Buy, 99, 1, 2)).accepted());
 }
@@ -441,8 +443,8 @@ TEST(ExchangeTest, FullWidthQuantitiesAndPricesNeverWrap) {
   expect_rejected(engine, limit(2, Side::Sell, price, 1), RejectReason::QuantityOverflow);
   const auto result = engine.submit(market(2, Side::Buy, maximum));
   ASSERT_EQ(result.trades.size(), 1U);
-  EXPECT_EQ(result.trades[0].quantity, Quantity{maximum});
-  EXPECT_EQ(result.trades[0].price_ticks, PriceTicks{price});
+  EXPECT_EQ(result.trades.at(0).quantity, Quantity{maximum});
+  EXPECT_EQ(result.trades.at(0).price_ticks, PriceTicks{price});
   EXPECT_EQ(result.incoming.filled_quantity, Quantity{maximum});
   EXPECT_TRUE(engine.submit(limit(3, Side::Buy, 1, maximum)).accepted());
   expect_rejected(engine, limit(4, Side::Buy, 1, 1), RejectReason::QuantityOverflow);

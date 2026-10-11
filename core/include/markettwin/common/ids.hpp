@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_COMMON_IDS_HPP
+#define MARKETTWIN_COMMON_IDS_HPP
 
 #include "markettwin/common/types.hpp"
 
@@ -10,3 +11,4 @@ using AgentId = StrongInteger<struct AgentIdTag, std::uint64_t>;
 using SymbolId = StrongInteger<struct SymbolIdTag, std::uint64_t>;
 
 } // namespace markettwin
+#endif // MARKETTWIN_COMMON_IDS_HPP

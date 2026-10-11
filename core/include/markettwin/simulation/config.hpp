@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_SIMULATION_CONFIG_HPP
+#define MARKETTWIN_SIMULATION_CONFIG_HPP
 
 #include "markettwin/exchange/matching_engine.hpp"
 #include "markettwin/simulation/scheduler.hpp"
@@ -25,3 +26,4 @@ void validate_config(const RunConfig& config);
 [[nodiscard]] std::string canonical_config(const RunConfig& config);
 
 } // namespace markettwin
+#endif // MARKETTWIN_SIMULATION_CONFIG_HPP

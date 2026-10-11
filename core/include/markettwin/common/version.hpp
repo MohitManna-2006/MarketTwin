@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_COMMON_VERSION_HPP
+#define MARKETTWIN_COMMON_VERSION_HPP
 
 #include <string_view>
 
@@ -8,3 +9,4 @@ namespace markettwin {
 [[nodiscard]] std::string_view version() noexcept;
 
 } // namespace markettwin
+#endif // MARKETTWIN_COMMON_VERSION_HPP

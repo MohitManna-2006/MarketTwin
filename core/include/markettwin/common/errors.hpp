@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_COMMON_ERRORS_HPP
+#define MARKETTWIN_COMMON_ERRORS_HPP
 
 #include <stdexcept>
 
@@ -25,7 +26,7 @@ enum class RejectReason {
   OrderNotFound,
   NotOwner,
   InvalidConfig,
-  InvalidDepth
+  InvalidDepth,
 };
 
 class ExchangeError : public std::invalid_argument {
@@ -39,3 +40,4 @@ private:
 };
 
 } // namespace markettwin
+#endif // MARKETTWIN_COMMON_ERRORS_HPP

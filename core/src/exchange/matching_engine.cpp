@@ -16,13 +16,15 @@ OrderStatus resting_status(const Order& order) {
   } else if (filled == Quantity{}) {
     state = OrderState::Resting;
   }
-  return {.order_id = order.id,
-          .owner = order.owner,
-          .state = state,
-          .reason = RejectReason::None,
-          .filled_quantity = filled,
-          .canceled_quantity = {},
-          .resting_quantity = order.remaining_quantity};
+  return {
+      .order_id = order.id,
+      .owner = order.owner,
+      .state = state,
+      .reason = RejectReason::None,
+      .filled_quantity = filled,
+      .canceled_quantity = {},
+      .resting_quantity = order.remaining_quantity,
+  };
 }
 
 bool crosses(const Order& order, PriceTicks price) {
@@ -113,19 +115,21 @@ MatchingEngine::MatchPlan MatchingEngine::plan_matches(const Order& order,
       }
       const auto quantity = std::min(plan.remaining, maker.remaining_quantity);
       const std::uint64_t ordinal = trade_count_ + plan.report.trades.size() + 1;
-      plan.report.trades.push_back({.id = TradeId{ordinal},
-                                    .symbol = order.symbol,
-                                    .buy_order_id = order.side == Side::Buy ? order.id : maker.id,
-                                    .sell_order_id = order.side == Side::Sell ? order.id : maker.id,
-                                    .aggressor_order_id = order.id,
-                                    .resting_order_id = maker.id,
-                                    .maker_agent_id = maker.owner,
-                                    .taker_agent_id = order.owner,
-                                    .price_ticks = price,
-                                    .quantity = quantity,
-                                    .timestamp = order.arrival_time,
-                                    .sequence = Sequence{ordinal},
-                                    .arrival_sequence = order.arrival_sequence});
+      plan.report.trades.push_back({
+          .id = TradeId{ordinal},
+          .symbol = order.symbol,
+          .buy_order_id = order.side == Side::Buy ? order.id : maker.id,
+          .sell_order_id = order.side == Side::Sell ? order.id : maker.id,
+          .aggressor_order_id = order.id,
+          .resting_order_id = maker.id,
+          .maker_agent_id = maker.owner,
+          .taker_agent_id = order.owner,
+          .price_ticks = price,
+          .quantity = quantity,
+          .timestamp = order.arrival_time,
+          .sequence = Sequence{ordinal},
+          .arrival_sequence = order.arrival_sequence,
+      });
       auto updated = maker;
       updated.remaining_quantity = checked_subtract(maker.remaining_quantity, quantity);
       plan.report.order_updates.push_back(resting_status(updated));
@@ -141,13 +145,15 @@ MatchingEngine::MatchPlan MatchingEngine::plan_matches(const Order& order,
 ExecutionReport MatchingEngine::submit(const Order& order) {
   const auto reject = [&](RejectReason reason) {
     ExecutionReport report;
-    report.incoming = {.order_id = order.id,
-                       .owner = order.owner,
-                       .state = OrderState::Rejected,
-                       .reason = reason,
-                       .filled_quantity = {},
-                       .canceled_quantity = {},
-                       .resting_quantity = {}};
+    report.incoming = {
+        .order_id = order.id,
+        .owner = order.owner,
+        .state = OrderState::Rejected,
+        .reason = reason,
+        .filled_quantity = {},
+        .canceled_quantity = {},
+        .resting_quantity = {},
+    };
     report.order_updates.push_back(report.incoming);
     return report;
   };
@@ -199,13 +205,18 @@ ExecutionReport MatchingEngine::submit(const Order& order) {
 }
 
 CancelResult MatchingEngine::cancel(OrderId id, AgentId owner) {
-  CancelResult result{.order = {.order_id = id,
-                                .owner = owner,
-                                .state = OrderState::Rejected,
-                                .reason = RejectReason::None,
-                                .filled_quantity = {},
-                                .canceled_quantity = {},
-                                .resting_quantity = {}}};
+  CancelResult result{
+      .order =
+          {
+              .order_id = id,
+              .owner = owner,
+              .state = OrderState::Rejected,
+              .reason = RejectReason::None,
+              .filled_quantity = {},
+              .canceled_quantity = {},
+              .resting_quantity = {},
+          },
+  };
   if (!agents_.contains(owner.value())) {
     result.order.reason = RejectReason::InvalidOwner;
     return result;

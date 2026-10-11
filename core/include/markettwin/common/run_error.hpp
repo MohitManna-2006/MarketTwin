@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_COMMON_RUN_ERROR_HPP
+#define MARKETTWIN_COMMON_RUN_ERROR_HPP
 
 #include "markettwin/common/types.hpp"
 
@@ -40,3 +41,4 @@ private:
 };
 
 } // namespace markettwin
+#endif // MARKETTWIN_COMMON_RUN_ERROR_HPP

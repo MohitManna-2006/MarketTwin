@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_EXCHANGE_ORDER_HPP
+#define MARKETTWIN_EXCHANGE_ORDER_HPP
 
 #include "markettwin/common/ids.hpp"
 
@@ -24,3 +25,4 @@ struct Order {
 };
 
 } // namespace markettwin
+#endif // MARKETTWIN_EXCHANGE_ORDER_HPP

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_TELEMETRY_REPLAY_HPP
+#define MARKETTWIN_TELEMETRY_REPLAY_HPP
 
 #include "markettwin/simulation/simulation.hpp"
 
@@ -21,3 +22,4 @@ struct ReplayResult {
 [[nodiscard]] std::string summary_json(const RunSummary& summary);
 
 } // namespace markettwin
+#endif // MARKETTWIN_TELEMETRY_REPLAY_HPP

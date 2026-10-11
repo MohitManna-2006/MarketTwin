@@ -14,7 +14,7 @@ void print_usage(std::ostream& output) {
          << "       markettwin replay --input RUN_DIRECTORY\n";
 }
 
-int execute(int argc, char** argv) {
+int execute(int argc, char* const* argv) {
   if (argc == 2 && std::string_view{argv[1]} == "--version") {
     std::cout << "MarketTwin " << markettwin::version() << '\n';
     return 0;
@@ -40,7 +40,7 @@ int execute(int argc, char** argv) {
 }
 } // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char* const* argv) {
   try {
     return execute(argc, argv);
   } catch (const markettwin::RunError& error) {

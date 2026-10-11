@@ -92,8 +92,16 @@ Json load_manifest(const RunArtifacts& paths) {
       codec::unsigned_integer(manifest.at("schema_version")) != 1) {
     throw RunError{"UnsupportedSchema", "unsupported manifest schema"};
   }
-  codec::fields(manifest, {"schema_version", "status", "run_id", "engine_version", "hash_algorithm",
-                           "provenance", "summary", "artifacts"});
+  codec::fields(manifest, {
+                              "schema_version",
+                              "status",
+                              "run_id",
+                              "engine_version",
+                              "hash_algorithm",
+                              "provenance",
+                              "summary",
+                              "artifacts",
+                          });
   if (codec::text(manifest.at("status")) != "Completed") {
     throw RunError{"IncompleteArtifacts", "manifest is not complete"};
   }
@@ -115,9 +123,11 @@ void verify_manifest(const Json& manifest, const RunConfig& config, const RunSum
       manifest.at("summary") != codec::summary(summary)) {
     throw RunError{"SummaryMismatch", "manifest run identity or terminal summary differs"};
   }
-  const Json expected{{"config.json", sha256(config_bytes)},
-                      {"commands.jsonl", summary.commands_digest},
-                      {"trace.jsonl", summary.trace_digest}};
+  const Json expected{
+      {"config.json", sha256(config_bytes)},
+      {"commands.jsonl", summary.commands_digest},
+      {"trace.jsonl", summary.trace_digest},
+  };
   if (manifest.at("artifacts") != expected) {
     throw RunError{"ChecksumMismatch", "manifest artifact checksum differs"};
   }
@@ -155,15 +165,17 @@ ReplayResult verify_replay(const std::filesystem::path& directory) {
 }
 
 std::string replay_result_json(const ReplayResult& result) {
-  return Json{{"verified", result.verified},
-              {"code", result.code},
-              {"message", result.message},
-              {"sequence", result.sequence.value()},
-              {"expected", result.expected},
-              {"actual", result.actual},
-              {"previous_command", result.previous_command},
-              {"previous_output", result.previous_output},
-              {"summary", result.verified ? codec::summary(result.summary) : Json(nullptr)}}
+  return Json{
+      {"verified", result.verified},
+      {"code", result.code},
+      {"message", result.message},
+      {"sequence", result.sequence.value()},
+      {"expected", result.expected},
+      {"actual", result.actual},
+      {"previous_command", result.previous_command},
+      {"previous_output", result.previous_output},
+      {"summary", result.verified ? codec::summary(result.summary) : Json(nullptr)},
+  }
       .dump();
 }
 

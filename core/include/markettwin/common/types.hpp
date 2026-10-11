@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_COMMON_TYPES_HPP
+#define MARKETTWIN_COMMON_TYPES_HPP
 
 #include <compare>
 #include <cstdint>
@@ -38,3 +39,4 @@ using Sequence = StrongInteger<struct SequenceTag, std::uint64_t>;
 }
 
 } // namespace markettwin
+#endif // MARKETTWIN_COMMON_TYPES_HPP

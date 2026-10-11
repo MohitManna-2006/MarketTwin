@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_SIMULATION_EVENT_HPP
+#define MARKETTWIN_SIMULATION_EVENT_HPP
 
 #include "markettwin/exchange/order.hpp"
 
@@ -36,3 +37,4 @@ struct Event {
 enum class StopReason { QueueEmpty, Horizon, EventLimit, Requested };
 
 } // namespace markettwin
+#endif // MARKETTWIN_SIMULATION_EVENT_HPP

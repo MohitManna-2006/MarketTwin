@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_EXCHANGE_MATCHING_ENGINE_HPP
+#define MARKETTWIN_EXCHANGE_MATCHING_ENGINE_HPP
 
 #include "markettwin/exchange/execution.hpp"
 #include "markettwin/exchange/order_book.hpp"
@@ -52,3 +53,4 @@ private:
 };
 
 } // namespace markettwin
+#endif // MARKETTWIN_EXCHANGE_MATCHING_ENGINE_HPP

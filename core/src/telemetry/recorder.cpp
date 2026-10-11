@@ -26,20 +26,26 @@ std::string_view command_kind(const Command& command) {
 
 Recorder::Recorder(const RunConfig& config, RecordSink& sink)
     : config_(config), sink_(sink), config_digest_(sha256(canonical_config(config))) {
-  Json header{{"schema_version", 1},
-              {"kind", "Header"},
-              {"run_id", config.run_id},
-              {"engine_version", version()},
-              {"config_digest", config_digest_},
-              {"hash_algorithm", "sha256"},
-              {"units",
-               {{"price", "ticks"},
-                {"quantity", "shares"},
-                {"time", "ns"},
-                {"tick_size_minor", config.tick_size_minor}}}};
-  header["channel"] = "commands";
+  Json header{
+      {"schema_version", 1},
+      {"kind", "Header"},
+      {"run_id", config.run_id},
+      {"engine_version", version()},
+      {"config_digest", config_digest_},
+      {"hash_algorithm", "sha256"},
+      {
+          "units",
+          {
+              {"price", "ticks"},
+              {"quantity", "shares"},
+              {"time", "ns"},
+              {"tick_size_minor", config.tick_size_minor},
+          },
+      },
+  };
+  header.update({{"channel", "commands"}});
   write(TraceChannel::Commands, header, {});
-  header["channel"] = "execution";
+  header.update({{"channel", "execution"}});
   write(TraceChannel::Execution, header, {});
 }
 
@@ -57,17 +63,19 @@ void Recorder::write(TraceChannel channel, const Json& record, Sequence sequence
 Json Recorder::envelope(const Event& event, Sequence sequence, std::string_view kind,
                         const Json& payload, AgentId actor, OrderId correlation,
                         Sequence causation) const {
-  return {{"schema_version", 1},
-          {"run_id", config_.run_id},
-          {"sequence", sequence.value()},
-          {"timestamp_ns", event.timestamp.value()},
-          {"kind", kind},
-          {"scheduler_sequence", optional_id(event.scheduler_sequence.value())},
-          {"actor_id", optional_id(actor.value())},
-          {"correlation_id", optional_id(correlation.value())},
-          {"causation_id", optional_id(causation.value())},
-          {"payload", payload},
-          {"payload_digest", sha256(payload.dump())}};
+  return {
+      {"schema_version", 1},
+      {"run_id", config_.run_id},
+      {"sequence", sequence.value()},
+      {"timestamp_ns", event.timestamp.value()},
+      {"kind", kind},
+      {"scheduler_sequence", optional_id(event.scheduler_sequence.value())},
+      {"actor_id", optional_id(actor.value())},
+      {"correlation_id", optional_id(correlation.value())},
+      {"causation_id", optional_id(causation.value())},
+      {"payload", payload},
+      {"payload_digest", sha256(payload.dump())},
+  };
 }
 
 Sequence Recorder::command(const Event& event) {
@@ -103,7 +111,10 @@ void Recorder::finish(RunSummary& summary) {
   summary.config_digest = config_digest_;
   summary.trade_digest = trades_hash_.digest();
   const Event terminal_event{
-      .timestamp = summary.final_time, .scheduler_sequence = {}, .command = StopCommand{}};
+      .timestamp = summary.final_time,
+      .scheduler_sequence = {},
+      .command = StopCommand{},
+  };
   outcome(terminal_event, {}, "RunCompleted", codec::terminal(summary));
   summary.commands_digest = commands_hash_.digest();
   summary.trace_digest = trace_hash_.digest();

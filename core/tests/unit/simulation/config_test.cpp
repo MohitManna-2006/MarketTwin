@@ -14,7 +14,8 @@ using Json = nlohmann::json;
 TEST(ConfigTest, CanonicalRoundTripAndRegistrationOrderAreStable) {
   auto config = test::fixture();
   config.seed = std::numeric_limits<std::uint64_t>::max();
-  config.commands[1].command = test::order(std::numeric_limits<std::uint64_t>::max(), Side::Sell);
+  config.commands.at(1).command =
+      test::order(std::numeric_limits<std::uint64_t>::max(), Side::Sell);
   const auto bytes = canonical_config(config);
   EXPECT_EQ(canonical_config(parse_config(bytes)), bytes);
   std::ranges::reverse(config.exchange.agents);
@@ -29,36 +30,36 @@ TEST(ConfigTest, RejectsMalformedNumericInputsEnumsAndUnknownFields) {
   };
   for (const Json& bad : {Json(-1), Json(1.5), Json(true), Json("12"), Json(nullptr)}) {
     auto invalid = valid;
-    invalid["seed"] = bad;
+    invalid.at("seed") = bad;
     reject(invalid);
   }
   auto invalid = valid;
-  invalid["commands"][1]["command"]["limit_price_ticks"] =
+  invalid.at("commands").at(1).at("command").at("limit_price_ticks") =
       std::numeric_limits<std::uint64_t>::max();
   reject(invalid);
   invalid = valid;
-  invalid["commands"][1]["command"]["side"] = "Bid";
+  invalid.at("commands").at(1).at("command").at("side") = "Bid";
   reject(invalid);
   invalid = valid;
-  invalid["unknown"] = 1;
+  invalid.update({{"unknown", 1}});
   reject(invalid);
   invalid = valid;
   invalid.erase("run_id");
   reject(invalid);
   invalid = valid;
-  invalid["commands"][1]["command"]["arrival_sequence"] = 1;
+  invalid.at("commands").at(1).at("command").update({{"arrival_sequence", 1}});
   reject(invalid);
   invalid = valid;
-  invalid["commands"][0]["command"]["depth"] = 0;
+  invalid.at("commands").at(0).at("command").at("depth") = 0;
   reject(invalid);
   invalid = valid;
-  invalid["schema_version"] = 2;
+  invalid.at("schema_version") = 2;
   reject(invalid);
   invalid = valid;
-  invalid["run_id"] = "../run";
+  invalid.at("run_id") = "../run";
   reject(invalid);
   invalid = valid;
-  invalid["max_queue"] = 1;
+  invalid.at("max_queue") = 1;
   reject(invalid);
 }
 
@@ -78,10 +79,10 @@ TEST(ConfigTest, RejectsDuplicateKeysHugeIntegersTrailingDataAndExcessiveNesting
 
 TEST(ConfigTest, NativeCallersCannotBypassBoundaryValidation) {
   auto config = test::fixture();
-  std::get<Order>(config.commands[1].command).arrival_time = SimTime{1};
+  std::get<Order>(config.commands.at(1).command).arrival_time = SimTime{1};
   EXPECT_THROW(Simulation{config}, RunError);
   config = test::fixture();
-  std::get<Order>(config.commands[1].command).remaining_quantity = Quantity{4};
+  std::get<Order>(config.commands.at(1).command).remaining_quantity = Quantity{4};
   EXPECT_THROW(Simulation{config}, RunError);
   config = test::fixture();
   config.exchange.agents = {AgentId{1}, AgentId{1}};

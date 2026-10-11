@@ -19,10 +19,10 @@ void validate_command(const ScheduledCommand& item, const RunConfig& config) {
       throw RunError{"InvalidConfig", "kernel owns arrival metadata; new quantities must agree"};
     }
   }
-  if (const auto* sample = std::get_if<SnapshotCommand>(&item.command)) {
-    if (sample->depth == 0 || sample->depth > config.exchange.max_snapshot_depth) {
-      throw RunError{"InvalidConfig", "snapshot depth outside configured bounds"};
-    }
+  if (const auto* sample = std::get_if<SnapshotCommand>(&item.command);
+      sample != nullptr &&
+      (sample->depth == 0 || sample->depth > config.exchange.max_snapshot_depth)) {
+    throw RunError{"InvalidConfig", "snapshot depth outside configured bounds"};
   }
 }
 } // namespace

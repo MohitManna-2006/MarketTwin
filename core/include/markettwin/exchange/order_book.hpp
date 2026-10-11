@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_EXCHANGE_ORDER_BOOK_HPP
+#define MARKETTWIN_EXCHANGE_ORDER_BOOK_HPP
 
 #include "markettwin/exchange/price_level.hpp"
 
@@ -67,3 +68,4 @@ private:
 };
 
 } // namespace markettwin
+#endif // MARKETTWIN_EXCHANGE_ORDER_BOOK_HPP

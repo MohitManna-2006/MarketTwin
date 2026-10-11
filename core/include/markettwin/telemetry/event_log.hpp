@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_TELEMETRY_EVENT_LOG_HPP
+#define MARKETTWIN_TELEMETRY_EVENT_LOG_HPP
 
 #include "markettwin/common/types.hpp"
 
@@ -27,3 +28,4 @@ public:
 };
 
 } // namespace markettwin
+#endif // MARKETTWIN_TELEMETRY_EVENT_LOG_HPP

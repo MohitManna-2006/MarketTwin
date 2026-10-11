@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_SIMULATION_SIMULATION_HPP
+#define MARKETTWIN_SIMULATION_SIMULATION_HPP
 
 #include "markettwin/simulation/config.hpp"
 
@@ -44,3 +45,4 @@ private:
 };
 
 } // namespace markettwin
+#endif // MARKETTWIN_SIMULATION_SIMULATION_HPP

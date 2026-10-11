@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_EXCHANGE_PRICE_LEVEL_HPP
+#define MARKETTWIN_EXCHANGE_PRICE_LEVEL_HPP
 
 #include "markettwin/exchange/order.hpp"
 
@@ -12,3 +13,4 @@ struct PriceLevel {
 };
 
 } // namespace markettwin
+#endif // MARKETTWIN_EXCHANGE_PRICE_LEVEL_HPP

@@ -25,9 +25,11 @@ TEST(SchedulerTest, OrdersByTimeThenInsertionAndSupportsDynamicSameTimeInsertion
 }
 
 TEST(SchedulerTest, RejectsPastQueueOverflowAndTimeOverflowWithoutConsumingSequence) {
-  Scheduler scheduler{{.horizon = SimTime{std::numeric_limits<std::uint64_t>::max()},
-                       .max_events = 10,
-                       .max_queue = 1}};
+  Scheduler scheduler{{
+      .horizon = SimTime{std::numeric_limits<std::uint64_t>::max()},
+      .max_events = 10,
+      .max_queue = 1,
+  }};
   EXPECT_EQ(scheduler.schedule(SimTime{10}, StopCommand{}), Sequence{1});
   EXPECT_THROW(static_cast<void>(scheduler.schedule(SimTime{20}, StopCommand{})), RunError);
   EXPECT_TRUE(scheduler.next());

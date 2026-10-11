@@ -17,31 +17,31 @@ constexpr std::array<std::uint32_t, 64> kRoundConstants{
     0xc24b8b70U, 0xc76c51a3U, 0xd192e819U, 0xd6990624U, 0xf40e3585U, 0x106aa070U, 0x19a4c116U,
     0x1e376c08U, 0x2748774cU, 0x34b0bcb5U, 0x391c0cb3U, 0x4ed8aa4aU, 0x5b9cca4fU, 0x682e6ff3U,
     0x748f82eeU, 0x78a5636fU, 0x84c87814U, 0x8cc70208U, 0x90befffaU, 0xa4506cebU, 0xbef9a3f7U,
-    0xc67178f2U};
-}
+    0xc67178f2U,
+};
+} // namespace
 
-// Every subscript below is bounded by a fixed-size std::array and its loop or block counter.
-// NOLINTBEGIN(cppcoreguidelines-pro-bounds-constant-array-index)
 void Sha256::compress() {
   std::array<std::uint32_t, 64> words{};
   for (std::size_t index = 0; index < 16; ++index) {
     const auto offset = index * 4;
-    words[index] = (std::uint32_t{buffer_[offset]} << 24) |
-                   (std::uint32_t{buffer_[offset + 1]} << 16) |
-                   (std::uint32_t{buffer_[offset + 2]} << 8) | buffer_[offset + 3];
+    words.at(index) = (std::uint32_t{buffer_.at(offset)} << 24U) |
+                      (std::uint32_t{buffer_.at(offset + 1)} << 16U) |
+                      (std::uint32_t{buffer_.at(offset + 2)} << 8U) |
+                      std::uint32_t{buffer_.at(offset + 3)};
   }
   for (std::size_t index = 16; index < words.size(); ++index) {
-    const auto earlier = words[index - 15];
-    const auto later = words[index - 2];
-    const auto sigma0 = std::rotr(earlier, 7) ^ std::rotr(earlier, 18) ^ (earlier >> 3);
-    const auto sigma1 = std::rotr(later, 17) ^ std::rotr(later, 19) ^ (later >> 10);
-    words[index] = words[index - 16] + sigma0 + words[index - 7] + sigma1;
+    const auto earlier = words.at(index - 15);
+    const auto later = words.at(index - 2);
+    const auto sigma0 = std::rotr(earlier, 7) ^ std::rotr(earlier, 18) ^ (earlier >> 3U);
+    const auto sigma1 = std::rotr(later, 17) ^ std::rotr(later, 19) ^ (later >> 10U);
+    words.at(index) = words.at(index - 16) + sigma0 + words.at(index - 7) + sigma1;
   }
   auto [a, b, c, d, e, f, g, h] = state_;
   for (std::size_t index = 0; index < words.size(); ++index) {
     const auto sigma1 = std::rotr(e, 6) ^ std::rotr(e, 11) ^ std::rotr(e, 25);
     const auto choose = (e & f) ^ (~e & g);
-    const auto first = h + sigma1 + choose + kRoundConstants[index] + words[index];
+    const auto first = h + sigma1 + choose + kRoundConstants.at(index) + words.at(index);
     const auto sigma0 = std::rotr(a, 2) ^ std::rotr(a, 13) ^ std::rotr(a, 22);
     const auto majority = (a & b) ^ (a & c) ^ (b & c);
     h = g;
@@ -55,7 +55,7 @@ void Sha256::compress() {
   }
   const std::array<std::uint32_t, 8> working{a, b, c, d, e, f, g, h};
   for (std::size_t index = 0; index < state_.size(); ++index) {
-    state_[index] += working[index];
+    state_.at(index) += working.at(index);
   }
 }
 
@@ -66,7 +66,7 @@ void Sha256::update(std::string_view bytes) {
   }
   bytes_ += bytes.size();
   for (const auto byte : bytes) {
-    buffer_[used_++] = static_cast<std::uint8_t>(byte);
+    buffer_.at(used_++) = static_cast<std::uint8_t>(byte);
     if (used_ == buffer_.size()) {
       compress();
       used_ = 0;
@@ -76,20 +76,20 @@ void Sha256::update(std::string_view bytes) {
 
 std::string Sha256::digest() const {
   auto copy = *this;
-  copy.buffer_[copy.used_++] = 0x80;
+  copy.buffer_.at(copy.used_++) = 0x80;
   if (copy.used_ > 56) {
     while (copy.used_ < 64) {
-      copy.buffer_[copy.used_++] = 0;
+      copy.buffer_.at(copy.used_++) = 0;
     }
     copy.compress();
     copy.used_ = 0;
   }
   while (copy.used_ < 56) {
-    copy.buffer_[copy.used_++] = 0;
+    copy.buffer_.at(copy.used_++) = 0;
   }
   const auto bits = bytes_ * 8;
   for (std::size_t index = 0; index < 8; ++index) {
-    copy.buffer_[63 - index] = static_cast<std::uint8_t>(bits >> (index * 8));
+    copy.buffer_.at(63 - index) = static_cast<std::uint8_t>(bits >> (index * 8));
   }
   copy.compress();
   constexpr std::string_view kHex = "0123456789abcdef";
@@ -97,13 +97,11 @@ std::string Sha256::digest() const {
   output.reserve(64);
   for (const auto word : copy.state_) {
     for (int shift = 28; shift >= 0; shift -= 4) {
-      output.push_back(kHex[(word >> shift) & 0x0fU]);
+      output.push_back(kHex.at((word >> static_cast<unsigned>(shift)) & 0x0fU));
     }
   }
   return output;
 }
-
-// NOLINTEND(cppcoreguidelines-pro-bounds-constant-array-index)
 
 std::string sha256(std::string_view bytes) {
   Sha256 hash;

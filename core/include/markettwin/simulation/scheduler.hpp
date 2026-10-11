@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_SIMULATION_SCHEDULER_HPP
+#define MARKETTWIN_SIMULATION_SCHEDULER_HPP
 
 #include "markettwin/common/run_error.hpp"
 #include "markettwin/simulation/event.hpp"
@@ -40,3 +41,4 @@ private:
 };
 
 } // namespace markettwin
+#endif // MARKETTWIN_SIMULATION_SCHEDULER_HPP

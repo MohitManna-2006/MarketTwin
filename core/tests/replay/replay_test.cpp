@@ -57,8 +57,8 @@ TEST(ReplayTest, ChangedConfigFailsAtFirstCommandBeforeMutatingExchange) {
   const test::TempDirectory directory;
   static_cast<void>(Simulation{test::fixture(), directory.run()}.run());
   auto config = test::fixture();
-  std::get<Order>(config.commands[1].command).original_quantity = Quantity{6};
-  std::get<Order>(config.commands[1].command).remaining_quantity = Quantity{6};
+  std::get<Order>(config.commands.at(1).command).original_quantity = Quantity{6};
+  std::get<Order>(config.commands.at(1).command).remaining_quantity = Quantity{6};
   test::write(directory.run() / "config.json", canonical_config(config) + '\n');
   const auto result = verify_replay(directory.run());
   EXPECT_FALSE(result.verified);
@@ -102,19 +102,19 @@ TEST(ReplayTest, RejectsSchemaEngineChecksumAndSummaryTampering) {
   const auto path = root.run() / "manifest.json";
   const auto original = Json::parse(test::read(path));
   auto changed = original;
-  changed["schema_version"] = 2;
+  changed.at("schema_version") = 2;
   test::write(path, changed.dump());
   EXPECT_EQ(verify_replay(root.run()).code, "UnsupportedSchema");
   changed = original;
-  changed["engine_version"] = "0.0.0";
+  changed.at("engine_version") = "0.0.0";
   test::write(path, changed.dump());
   EXPECT_EQ(verify_replay(root.run()).code, "UnsupportedVersion");
   changed = original;
-  changed["artifacts"]["trace.jsonl"] = std::string(64, '0');
+  changed.at("artifacts").at("trace.jsonl") = std::string(64, '0');
   test::write(path, changed.dump());
   EXPECT_EQ(verify_replay(root.run()).code, "ChecksumMismatch");
   changed = original;
-  changed["summary"]["book_digest"] = std::string(64, '0');
+  changed.at("summary").at("book_digest") = std::string(64, '0');
   test::write(path, changed.dump());
   EXPECT_EQ(verify_replay(root.run()).code, "SummaryMismatch");
 }
@@ -136,13 +136,15 @@ TEST(ReplayTest, ExistingDirectoriesAreNeverOverwrittenAndFailedRunsHaveNoManife
 
 TEST(ReplayTest, FinalBookDigestIncludesOwnersAndFifoNotOnlyAggregates) {
   auto config = test::fixture();
-  config.commands = {test::at(0, test::order(1, Side::Sell)),
-                     test::at(0, test::order(2, Side::Sell))};
+  config.commands = {
+      test::at(0, test::order(1, Side::Sell)),
+      test::at(0, test::order(2, Side::Sell)),
+  };
   const auto first = Simulation{config}.run();
-  std::swap(config.commands[0], config.commands[1]);
+  std::swap(config.commands.at(0), config.commands.at(1));
   const auto reordered = Simulation{config}.run();
   EXPECT_NE(first.book_digest, reordered.book_digest);
-  std::get<Order>(config.commands[0].command).owner = AgentId{2};
+  std::get<Order>(config.commands.at(0).command).owner = AgentId{2};
   EXPECT_NE(reordered.book_digest, Simulation{config}.run().book_digest);
 }
 

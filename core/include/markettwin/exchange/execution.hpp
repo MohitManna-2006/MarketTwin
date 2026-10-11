@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARKETTWIN_EXCHANGE_EXECUTION_HPP
+#define MARKETTWIN_EXCHANGE_EXECUTION_HPP
 
 #include "markettwin/common/errors.hpp"
 #include "markettwin/exchange/order.hpp"
@@ -52,3 +53,4 @@ struct CancelResult {
 };
 
 } // namespace markettwin
+#endif // MARKETTWIN_EXCHANGE_EXECUTION_HPP

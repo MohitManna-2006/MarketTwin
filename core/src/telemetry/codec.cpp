@@ -28,17 +28,23 @@ std::string_view enum_name(Enum value, const std::array<std::string_view, Size>&
 constexpr std::array<std::string_view, 2> kSides{"Buy", "Sell"};
 constexpr std::array<std::string_view, 2> kOrderTypes{"Limit", "Market"};
 constexpr std::array<std::string_view, 2> kTifs{"Gtc", "Ioc"};
-constexpr std::array<std::string_view, 5> kStates{"Rejected", "Resting", "PartiallyFilled",
-                                                  "Filled", "Canceled"};
+constexpr std::array<std::string_view, 5> kStates{
+    "Rejected", "Resting", "PartiallyFilled", "Filled", "Canceled",
+};
 constexpr std::array<std::string_view, 21> kReasons{
     "None",         "InvalidOrderId",   "DuplicateOrderId", "UnknownSymbol",
     "InvalidOwner", "InvalidSide",      "InvalidOrderType", "InvalidTimeInForce",
     "InvalidPrice", "InvalidQuantity",  "QuantityLimit",    "InvalidArrival",
     "SelfTrade",    "QuantityOverflow", "ActiveOrderLimit", "AcceptedOrderLimit",
     "TradeLimit",   "OrderNotFound",    "NotOwner",         "InvalidConfig",
-    "InvalidDepth"};
-constexpr std::array<std::string_view, 4> kStops{"QueueEmpty", "Horizon", "EventLimit",
-                                                 "Requested"};
+    "InvalidDepth",
+};
+constexpr std::array<std::string_view, 4> kStops{
+    "QueueEmpty",
+    "Horizon",
+    "EventLimit",
+    "Requested",
+};
 
 template <typename Enum, std::size_t Size>
 Enum read_enum(const Json& value, const std::array<std::string_view, Size>& names) {
@@ -73,18 +79,27 @@ Json exchange_config(const ExchangeConfig& value) {
   for (const auto id : agents) {
     ids.push_back(id.value());
   }
-  return {{"symbol", value.symbol.value()},
-          {"agents", ids},
-          {"max_order_quantity", value.max_order_quantity.value()},
-          {"max_active_orders", value.max_active_orders},
-          {"max_accepted_orders", value.max_accepted_orders},
-          {"max_trades", value.max_trades},
-          {"max_snapshot_depth", value.max_snapshot_depth}};
+  return {
+      {"symbol", value.symbol.value()},
+      {"agents", ids},
+      {"max_order_quantity", value.max_order_quantity.value()},
+      {"max_active_orders", value.max_active_orders},
+      {"max_accepted_orders", value.max_accepted_orders},
+      {"max_trades", value.max_trades},
+      {"max_snapshot_depth", value.max_snapshot_depth},
+  };
 }
 
 ExchangeConfig read_exchange(const Json& value) {
-  fields(value, {"symbol", "agents", "max_order_quantity", "max_active_orders",
-                 "max_accepted_orders", "max_trades", "max_snapshot_depth"});
+  fields(value, {
+                    "symbol",
+                    "agents",
+                    "max_order_quantity",
+                    "max_active_orders",
+                    "max_accepted_orders",
+                    "max_trades",
+                    "max_snapshot_depth",
+                });
   ExchangeConfig result;
   result.symbol = SymbolId{unsigned_integer(value.at("symbol"))};
   const auto& agents = value.at("agents");
@@ -115,10 +130,9 @@ Json parse(std::string_view input) {
       keys.emplace_back();
     } else if (event == Json::parse_event_t::object_end) {
       keys.pop_back();
-    } else if (event == Json::parse_event_t::key) {
-      if (!keys.back().insert(parsed.get<std::string>()).second) {
-        throw RunError{"InvalidJson", "duplicate JSON object key"};
-      }
+    } else if (event == Json::parse_event_t::key &&
+               !keys.back().insert(parsed.get<std::string>()).second) {
+      throw RunError{"InvalidJson", "duplicate JSON object key"};
     }
     return true;
   };
@@ -182,19 +196,24 @@ std::string text(const Json& value) {
 
 Json command(const Command& value) {
   if (const auto* input = std::get_if<Order>(&value)) {
-    return {{"kind", "Submit"},
-            {"id", input->id.value()},
-            {"owner", input->owner.value()},
-            {"symbol", input->symbol.value()},
-            {"side", enum_name(input->side, kSides)},
-            {"type", enum_name(input->type, kOrderTypes)},
-            {"limit_price_ticks", input->limit_price.value()},
-            {"quantity", input->original_quantity.value()},
-            {"tif", enum_name(input->tif, kTifs)}};
+    return {
+        {"kind", "Submit"},
+        {"id", input->id.value()},
+        {"owner", input->owner.value()},
+        {"symbol", input->symbol.value()},
+        {"side", enum_name(input->side, kSides)},
+        {"type", enum_name(input->type, kOrderTypes)},
+        {"limit_price_ticks", input->limit_price.value()},
+        {"quantity", input->original_quantity.value()},
+        {"tif", enum_name(input->tif, kTifs)},
+    };
   }
   if (const auto* input = std::get_if<CancelCommand>(&value)) {
     return {
-        {"kind", "Cancel"}, {"order_id", input->order_id.value()}, {"owner", input->owner.value()}};
+        {"kind", "Cancel"},
+        {"order_id", input->order_id.value()},
+        {"owner", input->owner.value()},
+    };
   }
   if (const auto* input = std::get_if<SnapshotCommand>(&value)) {
     return {{"kind", "Snapshot"}, {"depth", input->depth}};
@@ -215,8 +234,10 @@ Command read_command(const Json& value) {
   }
   if (kind == "Cancel") {
     fields(value, {"kind", "order_id", "owner"});
-    return CancelCommand{.order_id = OrderId{unsigned_integer(value.at("order_id"))},
-                         .owner = AgentId{unsigned_integer(value.at("owner"))}};
+    return CancelCommand{
+        .order_id = OrderId{unsigned_integer(value.at("order_id"))},
+        .owner = AgentId{unsigned_integer(value.at("owner"))},
+    };
   }
   if (kind == "Snapshot") {
     fields(value, {"kind", "depth"});
@@ -235,16 +256,18 @@ Json config(const RunConfig& value) {
     commands.push_back(
         {{"timestamp_ns", item.timestamp.value()}, {"command", command(item.command)}});
   }
-  return {{"schema_version", 1},
-          {"run_id", value.run_id},
-          {"seed", value.seed},
-          {"tick_size_minor", value.tick_size_minor},
-          {"exchange", exchange_config(value.exchange)},
-          {"horizon_ns", value.limits.horizon.value()},
-          {"max_events", value.limits.max_events},
-          {"max_queue", value.limits.max_queue},
-          {"max_trace_bytes", value.max_trace_bytes},
-          {"commands", commands}};
+  return {
+      {"schema_version", 1},
+      {"run_id", value.run_id},
+      {"seed", value.seed},
+      {"tick_size_minor", value.tick_size_minor},
+      {"exchange", exchange_config(value.exchange)},
+      {"horizon_ns", value.limits.horizon.value()},
+      {"max_events", value.limits.max_events},
+      {"max_queue", value.limits.max_queue},
+      {"max_trace_bytes", value.max_trace_bytes},
+      {"commands", commands},
+  };
 }
 
 RunConfig read_config(const Json& value) {
@@ -252,8 +275,18 @@ RunConfig read_config(const Json& value) {
       unsigned_integer(value.at("schema_version")) != 1) {
     throw RunError{"UnsupportedSchema", "expected run config schema version 1"};
   }
-  fields(value, {"schema_version", "run_id", "seed", "tick_size_minor", "exchange", "horizon_ns",
-                 "max_events", "max_queue", "max_trace_bytes", "commands"});
+  fields(value, {
+                    "schema_version",
+                    "run_id",
+                    "seed",
+                    "tick_size_minor",
+                    "exchange",
+                    "horizon_ns",
+                    "max_events",
+                    "max_queue",
+                    "max_trace_bytes",
+                    "commands",
+                });
   RunConfig result;
   result.run_id = text(value.at("run_id"));
   result.seed = unsigned_integer(value.at("seed"));
@@ -269,8 +302,10 @@ RunConfig read_config(const Json& value) {
   }
   for (const auto& item : commands) {
     fields(item, {"timestamp_ns", "command"});
-    result.commands.push_back({.timestamp = SimTime{unsigned_integer(item.at("timestamp_ns"))},
-                               .command = read_command(item.at("command"))});
+    result.commands.push_back({
+        .timestamp = SimTime{unsigned_integer(item.at("timestamp_ns"))},
+        .command = read_command(item.at("command")),
+    });
   }
   validate_config(result);
   return result;
@@ -279,74 +314,92 @@ RunConfig read_config(const Json& value) {
 Json order(const Order& value) {
   auto output = command(Command{value});
   output.erase("kind");
-  output["remaining_quantity"] = value.remaining_quantity.value();
-  output["arrival_time_ns"] = value.arrival_time.value();
-  output["arrival_sequence"] = value.arrival_sequence.value();
+  output.update({
+      {"remaining_quantity", value.remaining_quantity.value()},
+      {"arrival_time_ns", value.arrival_time.value()},
+      {"arrival_sequence", value.arrival_sequence.value()},
+  });
   return output;
 }
 
 Json trade(const Trade& value) {
-  return {{"id", value.id.value()},
-          {"symbol", value.symbol.value()},
-          {"buy_order_id", value.buy_order_id.value()},
-          {"sell_order_id", value.sell_order_id.value()},
-          {"aggressor_order_id", value.aggressor_order_id.value()},
-          {"resting_order_id", value.resting_order_id.value()},
-          {"maker_agent_id", value.maker_agent_id.value()},
-          {"taker_agent_id", value.taker_agent_id.value()},
-          {"price_ticks", value.price_ticks.value()},
-          {"quantity", value.quantity.value()},
-          {"timestamp_ns", value.timestamp.value()},
-          {"execution_sequence", value.sequence.value()},
-          {"arrival_sequence", value.arrival_sequence.value()}};
+  return {
+      {"id", value.id.value()},
+      {"symbol", value.symbol.value()},
+      {"buy_order_id", value.buy_order_id.value()},
+      {"sell_order_id", value.sell_order_id.value()},
+      {"aggressor_order_id", value.aggressor_order_id.value()},
+      {"resting_order_id", value.resting_order_id.value()},
+      {"maker_agent_id", value.maker_agent_id.value()},
+      {"taker_agent_id", value.taker_agent_id.value()},
+      {"price_ticks", value.price_ticks.value()},
+      {"quantity", value.quantity.value()},
+      {"timestamp_ns", value.timestamp.value()},
+      {"execution_sequence", value.sequence.value()},
+      {"arrival_sequence", value.arrival_sequence.value()},
+  };
 }
 
 Json status(const OrderStatus& value) {
-  return {{"order_id", value.order_id.value()},
-          {"owner", value.owner.value()},
-          {"state", enum_name(value.state, kStates)},
-          {"reason", enum_name(value.reason, kReasons)},
-          {"filled_quantity", value.filled_quantity.value()},
-          {"canceled_quantity", value.canceled_quantity.value()},
-          {"resting_quantity", value.resting_quantity.value()}};
+  return {
+      {"order_id", value.order_id.value()},
+      {"owner", value.owner.value()},
+      {"state", enum_name(value.state, kStates)},
+      {"reason", enum_name(value.reason, kReasons)},
+      {"filled_quantity", value.filled_quantity.value()},
+      {"canceled_quantity", value.canceled_quantity.value()},
+      {"resting_quantity", value.resting_quantity.value()},
+  };
 }
 
 Json snapshot(const OrderBookSnapshot& value) {
   const auto levels = [](const auto& input) {
     auto output = Json::array();
     for (const auto& level : input) {
-      output.push_back({{"price_ticks", level.price.value()},
-                        {"quantity", level.quantity.value()},
-                        {"order_count", level.order_count}});
+      output.push_back({
+          {"price_ticks", level.price.value()},
+          {"quantity", level.quantity.value()},
+          {"order_count", level.order_count},
+      });
     }
     return output;
   };
-  return {{"symbol", value.symbol.value()},
-          {"bids", levels(value.bids)},
-          {"asks", levels(value.asks)},
-          {"best_bid_ticks",
-           value.bids.empty() ? Json(nullptr) : Json(value.bids.front().price.value())},
-          {"best_ask_ticks",
-           value.asks.empty() ? Json(nullptr) : Json(value.asks.front().price.value())}};
+  return {
+      {"symbol", value.symbol.value()},
+      {"bids", levels(value.bids)},
+      {"asks", levels(value.asks)},
+      {
+          "best_bid_ticks",
+          value.bids.empty() ? Json(nullptr) : Json(value.bids.front().price.value()),
+      },
+      {
+          "best_ask_ticks",
+          value.asks.empty() ? Json(nullptr) : Json(value.asks.front().price.value()),
+      },
+  };
 }
 
 Json terminal(const RunSummary& value) {
-  return {{"status", "Completed"},
-          {"stop_reason", enum_name(value.stop_reason, kStops)},
-          {"event_count", value.event_count},
-          {"trade_count", value.trade_count},
-          {"seed", value.seed},
-          {"final_time_ns", value.final_time.value()},
-          {"resting_order_count", value.resting_order_count},
-          {"book_digest", value.book_digest},
-          {"trade_digest", value.trade_digest}};
+  return {
+      {"status", "Completed"},
+      {"stop_reason", enum_name(value.stop_reason, kStops)},
+      {"event_count", value.event_count},
+      {"trade_count", value.trade_count},
+      {"seed", value.seed},
+      {"final_time_ns", value.final_time.value()},
+      {"resting_order_count", value.resting_order_count},
+      {"book_digest", value.book_digest},
+      {"trade_digest", value.trade_digest},
+  };
 }
 
 Json summary(const RunSummary& value) {
   auto output = terminal(value);
-  output["config_digest"] = value.config_digest;
-  output["commands_digest"] = value.commands_digest;
-  output["trace_digest"] = value.trace_digest;
+  output.update({
+      {"config_digest", value.config_digest},
+      {"commands_digest", value.commands_digest},
+      {"trace_digest", value.trace_digest},
+  });
   return output;
 }
 
