@@ -330,6 +330,21 @@ test("AI research requires approval and reports native evidence", async ({ page,
   await expect(
     page.getByText("The native evidence table contains the paired result."),
   ).toBeVisible();
+  const activity = page.locator("details", { hasText: "TOOL ACTIVITY" });
+  await activity.locator("summary").click();
+  for (const width of [1796, 900]) {
+    await page.setViewportSize({ width, height: 900 });
+    const first = activity.locator("li").first();
+    const timestamp = await first.locator("time").boundingBox();
+    const operation = await first.locator("span").first().boundingBox();
+    expect(timestamp).not.toBeNull();
+    expect(operation).not.toBeNull();
+    if (timestamp && operation) {
+      const separatedHorizontally = timestamp.x + timestamp.width <= operation.x;
+      const separatedVertically = timestamp.y + timestamp.height <= operation.y;
+      expect(separatedHorizontally || separatedVertically).toBe(true);
+    }
+  }
   const { violations } = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();

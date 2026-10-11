@@ -463,11 +463,16 @@ export function AIResearchPage() {
                     {row.events.map((event) => (
                       <li
                         key={event.id}
-                        className="grid grid-cols-[130px_1fr_auto] gap-3 text-xs text-fg-3"
+                        className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 border-b border-line-subtle pb-2 text-xs text-fg-3 last:border-b-0 sm:grid-cols-[190px_minmax(0,1fr)_auto]"
                       >
-                        <time className="num">{event.created_at}</time>
-                        <span>{label(event.operation)}</span>
-                        <span className="text-accent">{event.status}</span>
+                        <time
+                          className="num col-span-2 whitespace-nowrap sm:col-span-1"
+                          dateTime={event.created_at}
+                        >
+                          {event.created_at}
+                        </time>
+                        <span className="min-w-0 break-words">{label(event.operation)}</span>
+                        <span className="whitespace-nowrap text-accent">{event.status}</span>
                       </li>
                     ))}
                   </ol>
