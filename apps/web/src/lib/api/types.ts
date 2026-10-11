@@ -40,6 +40,123 @@ export type ExperimentDetail = Schemas["ExperimentDetail"];
 export type ExperimentStatus = ExperimentSummary["status"];
 export type CellRun = Schemas["CellRun"];
 
+export interface HistoricalProvider {
+  id: "local_file" | "alpaca";
+  configured: boolean;
+  feeds: string[];
+  coverage: string;
+  cost: string;
+}
+
+export interface HistoricalQuality {
+  status: "ok" | "warnings";
+  records_imported: number;
+  trade_records: number;
+  quote_records: number;
+  traded_quantity: number;
+  duplicates: number;
+  out_of_order: number;
+  locked_quotes: number;
+  crossed_quotes: number;
+  gaps_over_five_minutes: number;
+  gap_markers: {
+    kind: "trade" | "quote";
+    from_timestamp_ns: string;
+    to_timestamp_ns: string;
+    duration_ns: string;
+  }[];
+}
+
+export interface HistoricalMetrics {
+  trade_count: number;
+  traded_quantity: number;
+  last_trade_micro_usd: number | null;
+  high_trade_micro_usd: number | null;
+  low_trade_micro_usd: number | null;
+  vwap_micro_usd: number | null;
+  quote_update_count: number;
+  trade_arrival_rate_millihertz: number | null;
+  quote_update_rate_millihertz: number | null;
+  mean_quoted_spread_micro_usd: number | null;
+  coverage_ns: number;
+  trade_to_trade_return_observations: number;
+  trade_to_trade_return_volatility_ppb: number | null;
+  quote_state_time: Record<string, number>;
+  methodology: Record<string, string>;
+  units: Record<string, string>;
+  scope: string;
+}
+
+export interface HistoricalImport {
+  id: string;
+  provider: string;
+  feed: string;
+  symbol: string;
+  start_time: string | null;
+  end_time: string | null;
+  status: "pending" | "running" | "completed" | "failed";
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  manifest: Record<string, unknown> | null;
+  error_code: string | null;
+  error_message: string | null;
+}
+
+export interface HistoricalSession extends HistoricalImport {
+  observation_kind: "REAL HISTORICAL DATA" | "FABRICATED TEST DATA";
+  quality: HistoricalQuality;
+  metrics: HistoricalMetrics;
+}
+
+export interface HistoricalEvent {
+  sequence: number;
+  kind: "trade" | "quote";
+  timestamp_ns: string;
+  source_timestamp: string;
+  venue: string;
+  price_micro_usd?: number;
+  quantity?: number;
+  trade_id?: string | number | null;
+  bid_micro_usd?: number;
+  ask_micro_usd?: number;
+  bid_size?: number;
+  ask_size?: number;
+}
+
+export interface HistoricalSample {
+  sequence: number;
+  timestamp_ns: string;
+  last_trade_micro_usd: number | null;
+  bid_micro_usd: number | null;
+  ask_micro_usd: number | null;
+  bid_size: number | null;
+  ask_size: number | null;
+  quote_state: string;
+}
+
+export interface HistoricalPage<T> {
+  session_id: string;
+  offset: number;
+  records: T[];
+  next_offset: number | null;
+}
+
+export interface HistoricalComparison {
+  synthetic_run_id: string;
+  historical_session_id: string;
+  purpose: string;
+  metrics: {
+    name: string;
+    synthetic: number | null;
+    historical: number | null;
+    unit: string;
+    compatible: boolean;
+    note: string;
+  }[];
+  limitations: string[];
+}
+
 export type Column = (number | null)[];
 
 export const MARKET_COLUMNS = [

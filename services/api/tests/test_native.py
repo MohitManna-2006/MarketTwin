@@ -27,8 +27,33 @@ def smoke_experiment() -> dict:
 def test_reports_the_linked_engine_and_its_schemas() -> None:
     info = markettwin.build_info()
     assert markettwin.version() == info["engine_version"] == "0.4.0"
-    assert {info["experiment_schema"], info["accounting_schema"], info["metrics_schema"]} == {1}
+    assert {
+        info["experiment_schema"],
+        info["accounting_schema"],
+        info["metrics_schema"],
+        info["historical_schema"],
+        info["historical_normalization_version"],
+    } == {1}
     assert info["compiler"] and info["build_type"]
+
+
+def test_historical_binding_imports_and_verifies_observations(tmp_path: Path) -> None:
+    source = REPOSITORY / "core" / "tests" / "fixtures" / "historical" / "aapl_records.jsonl"
+    output = tmp_path / "historical"
+    manifest = markettwin.import_historical_jsonl(
+        source,
+        output,
+        {
+            "symbol": "AAPL",
+            "provider": "fixture",
+            "feed": "fabricated_l1",
+            "acquired_at": "2024-03-11T00:00:00Z",
+        },
+    )
+    assert manifest["kind"] == "observed_historical_market"
+    assert manifest["record_count"] == 5
+    assert manifest["git_revision"]
+    assert markettwin.verify_historical(output)["verified"] is True
 
 
 def test_a_run_through_the_binding_is_the_run_the_cli_golden_pins(tmp_path: Path) -> None:

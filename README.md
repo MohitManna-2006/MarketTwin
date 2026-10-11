@@ -43,6 +43,12 @@ A single run stays deterministic and logically single-threaded. Independent runs
 
 ## Current status
 
+**Phase 4A — observed historical equity data.** Fabricated offline L1 fixtures and
+authorized Alpaca IEX/SIP records can be retained, normalized by C++ into exact
+micro-dollar/UTC-nanosecond records, quality checked, replayed, verified, and inspected
+in a separate Historical workspace. Historical observations never enter the synthetic
+exchange and are not hypothetical executions.
+
 **Phase 3A — bindings, research API, and the research terminal.** The engine can now be driven from a browser: configure a scenario, run it, scrub through its recorded market with price, depth, agents, and events moving together, compare strategies over paired seeds, and verify a recording by replay. See [The research terminal](#the-research-terminal).
 
 **Phase 2B — accounting, market statistics, and paired experiments.** Every execution is posted to an integer double-entry ledger as it happens, each run publishes its books, a time series, and market microstructure statistics next to its trace, and replay verifies all of it. A batch runner compares strategy variants over matched seeds and reports paired differences with confidence intervals. The shipped comparison of a baseline and an inventory-aware market maker runs 400 one-hour markets in about two and a half minutes on one core of an M1 Pro.
@@ -244,6 +250,35 @@ verdict = markettwin.verify_replay("data/baseline")   # {"verified": True, "code
 ```
 
 `markettwin` exposes `run`, `verify_replay`, `canonicalize_config`, `canonicalize_experiment`, `experiment_cell_config`, `run_experiment`, `version`, and `build_info`. A failed run raises `markettwin.NativeRunError` with the engine's `code` and `sequence`.
+
+## Historical observations
+
+The bundled fixture is fabricated and safe for offline tests:
+
+```bash
+./build/debug/core/markettwin historical-import \
+  --input core/tests/fixtures/historical/aapl_records.jsonl \
+  --metadata core/tests/fixtures/historical/aapl_metadata.json \
+  --output data/historical-aapl
+./build/debug/core/markettwin historical-verify --input data/historical-aapl
+```
+
+From the terminal, open **Historical**, submit the local fixture, wait for validation,
+then open the session to step through recorded trades and quotes. **Compare with
+synthetic** shows definition-aware diagnostics against a completed simulation.
+
+For authorized Alpaca access, copy `services/api/.env.example` into your local environment
+setup and set `ALPACA_API_KEY_ID` and `ALPACA_API_SECRET_KEY`. The browser never receives
+credentials. An Alpaca import requires an explicit UTC range, `iex` or `sip`, and the
+entitlement/cost confirmation checkbox. Missing credentials do not affect offline mode.
+
+Historical API routes are under `/api/v1/historical`: providers, datasets, imports,
+sessions, bounded events/quotes/trades/series, quality, verification, and synthetic
+comparison. Artifacts live below the configured workspace's `historical/` directory and
+are untracked. See [ADR 0007](docs/adr/0007-observed-historical-market-data.md) for
+ordering, schemas, licensing, and limitations. The reproducible fabricated-data
+performance smoke is recorded in
+[`docs/benchmarks/phase4a-historical.md`](docs/benchmarks/phase4a-historical.md).
 
 ## Native exchange API
 
@@ -515,7 +550,7 @@ Status follows [`architecture.md`](architecture.md) section 20. Phases 1A throug
 | 2B | Accounting, artifacts, paired experiments | Implemented and locally verified |
 | 3A | pybind11, API, worker, research terminal, replay inspection | Implemented and locally verified |
 | 3B | Supervised AI research workflow and institutional workspace | In progress |
-| 4 | Stretch work after the exit gates | Not started |
+| 4A | Historical equity ingestion and deterministic observed-market replay | Implemented; live provider access unverified |
 
 ## License
 

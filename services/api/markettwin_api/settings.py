@@ -41,6 +41,10 @@ class Settings:
     ai_max_seeds: int = 100
     ai_max_investigations: int = 1000
     ai_max_concurrent_investigations: int = 32
+    historical_sources_dir: Path = Path(__file__).resolve().parent / "fixtures" / "historical"
+    alpaca_key_id: str = field(default="", repr=False)
+    alpaca_secret_key: str = field(default="", repr=False)
+    historical_max_pages: int = 20
     cors_origins: tuple[str, ...] = field(
         default=("http://127.0.0.1:5173", "http://localhost:5173")
     )
@@ -60,6 +64,10 @@ class Settings:
     @property
     def registry_path(self) -> Path:
         return self.workspace / "registry.sqlite3"
+
+    @property
+    def historical_dir(self) -> Path:
+        return self.workspace / "historical"
 
 
 def load_settings() -> Settings:
@@ -88,5 +96,11 @@ def load_settings() -> Settings:
             "MARKETTWIN_AI_OUTPUT_USD_PER_MILLION_TOKENS", ""
         ),
         ai_max_seeds=int(os.environ.get("MARKETTWIN_AI_MAX_SEEDS", defaults.ai_max_seeds)),
+        historical_sources_dir=Path(
+            os.environ.get("MARKETTWIN_HISTORICAL_SOURCES", defaults.historical_sources_dir)
+        ).resolve(),
+        alpaca_key_id=os.environ.get("ALPACA_API_KEY_ID", ""),
+        alpaca_secret_key=os.environ.get("ALPACA_API_SECRET_KEY", ""),
+        historical_max_pages=int(os.environ.get("MARKETTWIN_HISTORICAL_MAX_PAGES", "20")),
         cors_origins=tuple(origins.split(",")) if origins else defaults.cors_origins,
     )

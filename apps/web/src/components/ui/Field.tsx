@@ -239,19 +239,16 @@ export interface CheckboxProps {
 export function Checkbox({ checked, onChange, label, disabled }: CheckboxProps) {
   const id = useId();
   return (
-    <label
-      htmlFor={id}
-      className="inline-flex items-center gap-1.5 text-sm whitespace-nowrap text-fg-2"
-    >
+    <label htmlFor={id} className="flex min-w-0 items-start gap-1.5 text-sm text-fg-2">
       <input
         id={id}
         type="checkbox"
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-        className="size-3 shrink-0 appearance-none rounded-sm border border-line-strong bg-canvas checked:border-accent checked:bg-accent checked:shadow-[inset_0_0_0_2px_var(--canvas)]"
+        className="mt-0.5 size-3 shrink-0 appearance-none rounded-sm border border-line-strong bg-canvas checked:border-accent checked:bg-accent checked:shadow-[inset_0_0_0_2px_var(--canvas)]"
       />
-      {label}
+      <span className="min-w-0 leading-snug">{label}</span>
     </label>
   );
 }

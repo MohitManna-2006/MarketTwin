@@ -19,6 +19,8 @@ from markettwin_api import API_VERSION, models, views
 from markettwin_api.ai_routes import router as ai_router
 from markettwin_api.ai_service import AIResearch
 from markettwin_api.artifacts import RUN_FILES, ArtifactError, RunStore
+from markettwin_api.historical_routes import router as historical_router
+from markettwin_api.historical_service import HistoricalResearch
 from markettwin_api.scenarios import field_catalogue
 from markettwin_api.service import Research, ServiceError
 from markettwin_api.settings import Settings, load_settings
@@ -72,6 +74,8 @@ def health(research: ResearchDep) -> Any:
             "experiment": build["experiment_schema"],
             "accounting": build["accounting_schema"],
             "metrics": build["metrics_schema"],
+            "historical": build["historical_schema"],
+            "historical_normalization": build["historical_normalization_version"],
         },
         "active_jobs": research.outstanding_jobs,
         "max_concurrent_jobs": settings.max_concurrent_jobs,
@@ -380,6 +384,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.research = Research(resolved)
         app.state.ai = AIResearch(app.state.research)
+        app.state.historical = HistoricalResearch(app.state.research)
         try:
             yield
         finally:
@@ -435,4 +440,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(router)
     app.include_router(ai_router)
+    app.include_router(historical_router)
     return app

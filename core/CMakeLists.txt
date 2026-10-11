@@ -2,6 +2,7 @@ add_library(markettwin_core
   src/common/version.cpp
   src/common/hash.cpp
   src/common/rng.cpp
+  src/historical/historical.cpp
   src/accounting/money.cpp
   src/accounting/ledger.cpp
   src/accounting/valuation.cpp
@@ -54,7 +55,7 @@ markettwin_set_warnings(markettwin_core)
 markettwin_enable_sanitizers(markettwin_core)
 
 add_executable(markettwin apps/markettwin_cli.cpp)
-target_link_libraries(markettwin PRIVATE markettwin::core)
+target_link_libraries(markettwin PRIVATE markettwin::core nlohmann_json::nlohmann_json)
 target_compile_features(markettwin PRIVATE cxx_std_20)
 markettwin_set_warnings(markettwin)
 markettwin_enable_sanitizers(markettwin)

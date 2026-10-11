@@ -951,12 +951,30 @@ interval, and when the API does not answer it shows nothing in its place.
 - Run end-to-end regression, load/memory checks, threat tests, and documentation/examples.
 - Exit: a research query launches validated experiments and produces a traceable report; reference demos reproduce from clean build.
 
-### Phase 4: Stretch only after exit gates
+### Phase 4A: Observed historical equity data
+
+- Add provider-independent Python acquisition with an offline fabricated fixture and an
+  authorized Alpaca adapter. Credentials remain backend-only and a real import requires
+  an explicit entitlement/cost gate.
+- Retain immutable raw bytes, then normalize trades and L1 quotes in C++ using exact
+  micro-dollar prices, UTC nanoseconds with source precision, and deterministic
+  source-aware ordering.
+- Publish a separate historical artifact family, native observation playback, data-quality
+  report, observed-market metrics, SHA-256 verification, bounded FastAPI reads, and a
+  Historical terminal workspace.
+- Keep provider quotes out of the synthetic order book and provider prints out of agent
+  accounting. Comparison with synthetic runs is diagnostic and definition-aware only.
+- L2/L3 reconstruction, paper execution, hypothetical fills, strategy P&L on historical
+  records, live feeds, and brokerage access remain out of scope.
+
+[ADR 0007](docs/adr/0007-observed-historical-market-data.md) fixes the schema, ordering,
+artifact, provider, licensing, and compatibility decisions.
+
+### Later stretch work
 
 - Optional C++ optimized order book variants and profiled allocation improvements.
-- Multiple symbols with explicit event-order semantics.
-- More realistic latency/agent calibration and empirical stylized-fact comparisons.
-- Institutional-style stress suite, more policy variants, and larger batched experiments.
+- Multiple synthetic symbols with explicit event-order semantics.
+- More realistic latency/agent calibration after a separately approved methodology.
 - Advanced visualization, hosted deployments, and user access control.
 
 ## 21. Agent collaboration and execution protocol

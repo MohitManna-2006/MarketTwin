@@ -66,12 +66,12 @@ export function InstrumentPanel({
           tabIndex={0}
           role="group"
           aria-labelledby={headingId}
-          className={cx("min-h-0 flex-1", bodyClassName)}
+          className={cx("min-h-0 min-w-0 flex-1", bodyClassName)}
         >
           {children}
         </div>
       ) : (
-        <div className={cx("min-h-0 flex-1", bodyClassName)}>{children}</div>
+        <div className={cx("min-h-0 min-w-0 flex-1", bodyClassName)}>{children}</div>
       )}
       {footer ? (
         <footer className="flex h-6 shrink-0 items-center gap-3 border-t border-line-subtle bg-surface-1 px-3 text-xs text-fg-3">

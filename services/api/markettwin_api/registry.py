@@ -109,6 +109,23 @@ CREATE TABLE IF NOT EXISTS ai_messages (
   content TEXT NOT NULL,
   evidence_json TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS historical_imports (
+  id TEXT PRIMARY KEY,
+  request_key TEXT NOT NULL UNIQUE,
+  provider TEXT NOT NULL,
+  feed TEXT NOT NULL,
+  symbol TEXT NOT NULL,
+  start_time TEXT,
+  end_time TEXT,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  started_at TEXT,
+  finished_at TEXT,
+  manifest_json TEXT,
+  error_code TEXT,
+  error_message TEXT
+);
+CREATE INDEX IF NOT EXISTS historical_imports_created ON historical_imports(created_at DESC);
 """
 
 _JSON_COLUMNS = (
@@ -123,6 +140,7 @@ _JSON_COLUMNS = (
     "report_json",
     "detail_json",
     "evidence_json",
+    "manifest_json",
 )
 
 ACTIVE = ("pending", "running")
@@ -146,6 +164,42 @@ class Registry:
     def close(self) -> None:
         with self._lock:
             self._connection.close()
+
+    def historical_import(self, import_id: str) -> Row | None:
+        return self._one("SELECT * FROM historical_imports WHERE id = ?", (import_id,))
+
+    def historical_by_key(self, request_key: str) -> Row | None:
+        return self._one("SELECT * FROM historical_imports WHERE request_key = ?", (request_key,))
+
+    def historical_imports(self, limit: int, offset: int) -> list[Row]:
+        return self._many(
+            "SELECT * FROM historical_imports ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        )
+
+    def insert_historical(self, values: Row) -> bool:
+        columns = ", ".join(values)
+        marks = ", ".join("?" for _ in values)
+        with self._cursor() as cursor:
+            result = cursor.execute(
+                f"INSERT OR IGNORE INTO historical_imports ({columns}) VALUES ({marks})",
+                [_encode(key, value) for key, value in values.items()],
+            )
+            return result.rowcount == 1
+
+    def update_historical(self, import_id: str, **values: Any) -> None:
+        self._update("historical_imports", import_id, values)
+
+    def retire_failed_historical_key(self, request_key: str) -> bool:
+        """Keep the failed attempt while allowing the same request to be retried."""
+        with self._cursor() as cursor:
+            result = cursor.execute(
+                "UPDATE historical_imports "
+                "SET request_key = request_key || ':failed:' || id "
+                "WHERE request_key = ? AND status = 'failed'",
+                (request_key,),
+            )
+            return result.rowcount == 1
 
     @contextmanager
     def _cursor(self) -> Iterator[sqlite3.Cursor]:
@@ -392,7 +446,14 @@ class Registry:
                 "WHERE status IN ('PLANNING', 'APPROVED', 'ANALYZING')",
                 (stamp,),
             )
-        return int(runs) + int(experiments)
+            historical = cursor.execute(
+                "UPDATE historical_imports SET status = 'failed', finished_at = ?, "
+                "error_code = 'WorkerInterrupted', "
+                "error_message = 'the API process stopped during historical import' "
+                "WHERE status IN ('pending', 'running')",
+                (stamp,),
+            ).rowcount
+        return int(runs) + int(experiments) + int(historical)
 
 
 def _encode(key: str, value: Any) -> Any:

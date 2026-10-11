@@ -57,6 +57,22 @@ def verify_replay(run_directory: str | PathLike[str]) -> JsonObject:
     return json.loads(_native.verify_replay(fspath(run_directory)))
 
 
+def import_historical_jsonl(
+    input_path: str | PathLike[str], output_directory: str | PathLike[str], metadata: JsonObject
+) -> JsonObject:
+    """Normalize one observed-market file without entering the synthetic exchange."""
+    return json.loads(
+        _native.import_historical_jsonl(
+            fspath(input_path), fspath(output_directory), _text(metadata)
+        )
+    )
+
+
+def verify_historical(session_directory: str | PathLike[str]) -> JsonObject:
+    """Check historical artifact digests and regenerate L1 playback observations."""
+    return json.loads(_native.verify_historical(fspath(session_directory)))
+
+
 def canonicalize_experiment(
     config: JsonObject | str, base_directory: str | PathLike[str] | None = None
 ) -> str:

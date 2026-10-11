@@ -1,11 +1,15 @@
 #include "markettwin/common/run_error.hpp"
 #include "markettwin/common/version.hpp"
 #include "markettwin/experiment/experiment.hpp"
+#include "markettwin/historical/historical.hpp"
 #include "markettwin/simulation/simulation.hpp"
 #include "markettwin/telemetry/replay.hpp"
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
+#include <iterator>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>
 
@@ -15,6 +19,9 @@ void print_usage(std::ostream& output) {
          << "       markettwin run --config CONFIG.json --output NEW_DIRECTORY\n"
          << "       markettwin replay --input RUN_DIRECTORY\n"
          << "       markettwin experiment --config EXPERIMENT.json --output NEW_DIRECTORY\n";
+  output << "       markettwin historical-import --input RAW.jsonl --metadata META.json --output "
+            "NEW_DIRECTORY\n"
+         << "       markettwin historical-verify --input SESSION_DIRECTORY\n";
 }
 
 int execute(int argc, char* const* argv) {
@@ -46,6 +53,24 @@ int execute(int argc, char* const* argv) {
     // Results are written either way; a failed run still makes the command fail.
     const bool complete = std::ranges::all_of(result.runs, &markettwin::RunOutcome::completed);
     return complete ? 0 : 1;
+  }
+  if (argc == 8 && std::string_view{argv[1]} == "historical-import" &&
+      std::string_view{argv[2]} == "--input" && std::string_view{argv[4]} == "--metadata" &&
+      std::string_view{argv[6]} == "--output") {
+    std::ifstream metadata{argv[5]};
+    if (!metadata) {
+      throw markettwin::RunError{"IoError", "cannot read historical metadata"};
+    }
+    const std::string text{std::istreambuf_iterator<char>{metadata},
+                           std::istreambuf_iterator<char>{}};
+    std::cout << markettwin::historical::import_jsonl(argv[3], argv[7], text) << '\n';
+    return 0;
+  }
+  if (argc == 4 && std::string_view{argv[1]} == "historical-verify" &&
+      std::string_view{argv[2]} == "--input") {
+    const auto result = markettwin::historical::verify(argv[3]);
+    std::cout << result << '\n';
+    return nlohmann::json::parse(result).value("verified", false) ? 0 : 1;
   }
   print_usage(std::cerr);
   return 2;

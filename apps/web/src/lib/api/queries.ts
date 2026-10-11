@@ -13,6 +13,13 @@ import type {
   ExperimentResultsDocument,
   FieldCatalogue,
   Health,
+  HistoricalComparison,
+  HistoricalEvent,
+  HistoricalImport,
+  HistoricalPage,
+  HistoricalProvider,
+  HistoricalSample,
+  HistoricalSession,
   LedgerPage,
   MarketSeries,
   PairedValuesDocument,
@@ -30,6 +37,67 @@ const FOREVER = Number.POSITIVE_INFINITY;
 export const WINDOW_SIZE = 512;
 
 const active = (status: string | undefined) => status === "pending" || status === "running";
+
+export const historicalProvidersQuery = () =>
+  queryOptions({
+    queryKey: ["historical", "providers"],
+    queryFn: ({ signal }) =>
+      get<{ providers: HistoricalProvider[] }>("/historical/providers", undefined, signal),
+    staleTime: 30_000,
+  });
+
+export const historicalImportsQuery = (limit = 100) =>
+  queryOptions({
+    queryKey: ["historical", "imports", limit],
+    queryFn: ({ signal }) =>
+      get<{ imports: HistoricalImport[]; count: number }>("/historical/imports", { limit }, signal),
+    refetchInterval: (query) =>
+      query.state.data?.imports.some((item) => active(item.status)) ? 500 : 10_000,
+  });
+
+export const historicalSessionQuery = (sessionId: string) =>
+  queryOptions({
+    queryKey: ["historical", "sessions", sessionId],
+    queryFn: ({ signal }) =>
+      get<HistoricalSession>(`/historical/sessions/${sessionId}`, undefined, signal),
+    staleTime: FOREVER,
+  });
+
+export const historicalSeriesQuery = (sessionId: string, limit = 500) =>
+  queryOptions({
+    queryKey: ["historical", "sessions", sessionId, "series", limit],
+    queryFn: ({ signal }) =>
+      get<HistoricalPage<HistoricalSample>>(
+        `/historical/sessions/${sessionId}/series`,
+        { limit },
+        signal,
+      ),
+    staleTime: FOREVER,
+  });
+
+export const historicalEventsQuery = (sessionId: string, limit = 500) =>
+  queryOptions({
+    queryKey: ["historical", "sessions", sessionId, "events", limit],
+    queryFn: ({ signal }) =>
+      get<HistoricalPage<HistoricalEvent>>(
+        `/historical/sessions/${sessionId}/events`,
+        { limit },
+        signal,
+      ),
+    staleTime: FOREVER,
+  });
+
+export const historicalComparisonQuery = (runId: string, sessionId: string, enabled: boolean) =>
+  queryOptions({
+    queryKey: ["historical", "comparisons", runId, sessionId],
+    queryFn: ({ signal }) =>
+      get<HistoricalComparison>(
+        "/historical/comparisons",
+        { run_id: runId, session_id: sessionId },
+        signal,
+      ),
+    enabled,
+  });
 
 export const healthQuery = () =>
   queryOptions({

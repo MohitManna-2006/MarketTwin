@@ -30,6 +30,11 @@ export function useRun(): RunDetail {
 }
 
 const CELL_MATCH: StatusSpec = { label: "Cell digests match", tone: "positive", glyph: "dot" };
+const SYNTHETIC: StatusSpec = {
+  label: "Synthetic simulation",
+  tone: "neutral",
+  glyph: "square",
+};
 const CELL_DIFFER: StatusSpec = {
   label: "Cell digests differ",
   tone: "negative",
@@ -67,6 +72,7 @@ export function RunLayout() {
       status={
         run ? (
           <>
+            <StatusIndicator spec={SYNTHETIC} />
             <StatusIndicator spec={RUN_STATUS[run.status]} />
             {run.status === "completed" ? (
               <StatusIndicator spec={REPLAY_STATUS[run.replay.status]} />

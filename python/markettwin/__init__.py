@@ -13,8 +13,10 @@ from markettwin.native import (
     canonicalize_config,
     canonicalize_experiment,
     experiment_cell_config,
+    import_historical_jsonl,
     run,
     run_experiment,
+    verify_historical,
     verify_replay,
     version,
 )
@@ -27,8 +29,10 @@ __all__ = [
     "canonicalize_config",
     "canonicalize_experiment",
     "experiment_cell_config",
+    "import_historical_jsonl",
     "run",
     "run_experiment",
+    "verify_historical",
     "verify_replay",
     "version",
 ]

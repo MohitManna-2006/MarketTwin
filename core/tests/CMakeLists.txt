@@ -16,6 +16,7 @@ add_executable(
   unit/version_test.cpp
   unit/common/hash_test.cpp
   unit/common/rng_test.cpp
+  unit/historical/historical_test.cpp
   unit/agents/policy_test.cpp
   unit/accounting/money_test.cpp
   unit/accounting/ledger_test.cpp
@@ -70,6 +71,14 @@ add_test(NAME markettwin_cli.run_and_replay
     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/cli-smoke
     -P ${CMAKE_CURRENT_SOURCE_DIR}/integration/cli_smoke.cmake)
 set_tests_properties(markettwin_cli.run_and_replay PROPERTIES TIMEOUT 120)
+
+add_test(NAME markettwin_cli.historical_import_and_verify
+  COMMAND ${CMAKE_COMMAND}
+    -DCLI=$<TARGET_FILE:markettwin>
+    -DSOURCE=${PROJECT_SOURCE_DIR}
+    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/historical-smoke
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/integration/historical_cli_smoke.cmake)
+set_tests_properties(markettwin_cli.historical_import_and_verify PROPERTIES TIMEOUT 120)
 
 add_test(NAME markettwin_cli.baseline_hour_run_and_replay
   COMMAND ${CMAKE_COMMAND}

@@ -18,7 +18,7 @@ function NotFound() {
             </Button>
           }
         >
-          The terminal has Overview, Simulations, Experiments, AI Research, and Replay.
+          The terminal has Overview, Simulations, Experiments, Historical, AI Research, and Replay.
         </EmptyState>
       </div>
     </Page>
@@ -100,6 +100,27 @@ export function createRouter() {
           path: "experiments/:experimentId/seeds/:seed",
           lazy: async () => ({
             Component: (await import("@/features/experiments/SeedPairPage")).SeedPairPage,
+          }),
+        },
+        {
+          path: "historical",
+          lazy: async () => ({
+            Component: (await import("@/features/historical/HistoricalLibraryPage"))
+              .HistoricalLibraryPage,
+          }),
+        },
+        {
+          path: "historical/compare",
+          lazy: async () => ({
+            Component: (await import("@/features/historical/HistoricalComparisonPage"))
+              .HistoricalComparisonPage,
+          }),
+        },
+        {
+          path: "historical/:sessionId",
+          lazy: async () => ({
+            Component: (await import("@/features/historical/HistoricalSessionPage"))
+              .HistoricalSessionPage,
           }),
         },
         {

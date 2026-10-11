@@ -10,6 +10,7 @@
 #include "markettwin/common/run_error.hpp"
 #include "markettwin/common/version.hpp"
 #include "markettwin/experiment/experiment.hpp"
+#include "markettwin/historical/historical.hpp"
 #include "markettwin/simulation/simulation.hpp"
 #include "markettwin/telemetry/replay.hpp"
 
@@ -168,6 +169,9 @@ py::dict build_info() {
   info["experiment_schema"] = markettwin::kExperimentSchema;
   info["accounting_schema"] = markettwin::kAccountingSchema;
   info["metrics_schema"] = markettwin::kMetricsSchema;
+  info["historical_schema"] = markettwin::historical::kHistoricalSchema;
+  info["historical_normalization_version"] =
+      markettwin::historical::kHistoricalNormalizationVersion;
   info["max_experiment_runs"] = markettwin::kMaxExperimentRuns;
   return info;
 }
@@ -192,6 +196,22 @@ PYBIND11_MODULE(_native, module) {
              "artifacts there. Returns the terminal summary as JSON.");
   module.def("verify_replay", &verify_replay, py::arg("run_directory"),
              "Regenerate a recorded run and compare every record. Returns the verdict as JSON.");
+  module.def(
+      "import_historical_jsonl",
+      [](const std::string& input, const std::string& output, const std::string& metadata) {
+        const py::gil_scoped_release release;
+        return markettwin::historical::import_jsonl(input, output, metadata);
+      },
+      py::arg("input"), py::arg("output"), py::arg("metadata_json"),
+      "Normalize one bounded historical input into a separate observed-market session.");
+  module.def(
+      "verify_historical",
+      [](const std::string& directory) {
+        const py::gil_scoped_release release;
+        return markettwin::historical::verify(directory);
+      },
+      py::arg("session_directory"),
+      "Verify historical artifact hashes and deterministic L1 playback.");
   module.def("canonicalize_experiment", &canonicalize_experiment, py::arg("config_text"),
              py::arg("base_directory") = std::string{},
              "Parse and validate an experiment config. Returns its canonical JSON.");
