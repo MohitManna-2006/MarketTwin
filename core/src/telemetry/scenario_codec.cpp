@@ -68,97 +68,6 @@ struct PolicyWriter {
   }
 };
 
-Json policy(const PolicyConfig& value) {
-  auto output = std::visit(PolicyWriter{}, value);
-  output.update({{"kind", policy_name(value)}});
-  return output;
-}
-
-PolicyConfig read_policy(const Json& value) {
-  if (!value.is_object() || !value.contains("kind")) {
-    invalid("agent policy requires kind");
-  }
-  const auto kind = text(value.at("kind"));
-  if (kind == "MarketMaker") {
-    fields(value, {"kind", "half_spread_ticks", "quote_size", "levels", "level_spacing_ticks"});
-    return read_maker(value);
-  }
-  if (kind == "InventoryMarketMaker") {
-    fields(value, {
-                      "kind",
-                      "half_spread_ticks",
-                      "quote_size",
-                      "levels",
-                      "level_spacing_ticks",
-                      "risk_aversion_ppm",
-                      "volatility_alpha_ppm",
-                      "volatility_floor_milliticks",
-                      "max_skew_ticks",
-                  });
-    return InventoryMarketMakerParams{
-        .quoting = read_maker(value),
-        .risk_aversion_ppm = unsigned_integer(value.at("risk_aversion_ppm")),
-        .volatility_alpha_ppm = unsigned_integer(value.at("volatility_alpha_ppm")),
-        .volatility_floor_milliticks = unsigned_integer(value.at("volatility_floor_milliticks")),
-        .max_skew_ticks = unsigned_integer(value.at("max_skew_ticks")),
-    };
-  }
-  if (kind == "Momentum") {
-    fields(value, {
-                      "kind",
-                      "short_window",
-                      "long_window",
-                      "threshold_milliticks",
-                      "order_size",
-                      "slippage_ticks",
-                      "cooldown_ns",
-                  });
-    return MomentumParams{
-        .short_window = size_integer(value.at("short_window")),
-        .long_window = size_integer(value.at("long_window")),
-        .threshold_milliticks = unsigned_integer(value.at("threshold_milliticks")),
-        .order_size = Quantity{unsigned_integer(value.at("order_size"))},
-        .slippage_ticks = unsigned_integer(value.at("slippage_ticks")),
-        .cooldown = SimTime{unsigned_integer(value.at("cooldown_ns"))},
-    };
-  }
-  if (kind == "Value") {
-    fields(value, {
-                      "kind",
-                      "estimate_noise_milliticks",
-                      "threshold_milliticks",
-                      "order_size",
-                      "slippage_ticks",
-                  });
-    return ValueParams{
-        .estimate_noise_milliticks = unsigned_integer(value.at("estimate_noise_milliticks")),
-        .threshold_milliticks = unsigned_integer(value.at("threshold_milliticks")),
-        .order_size = Quantity{unsigned_integer(value.at("order_size"))},
-        .slippage_ticks = unsigned_integer(value.at("slippage_ticks")),
-    };
-  }
-  if (kind == "Noise") {
-    fields(value, {
-                      "kind",
-                      "buy_probability_ppm",
-                      "market_order_ppm",
-                      "min_quantity",
-                      "max_quantity",
-                      "limit_offset_ticks",
-                      "max_resting_orders",
-                  });
-    return NoiseParams{
-        .buy_probability_ppm = unsigned_integer(value.at("buy_probability_ppm")),
-        .market_order_ppm = unsigned_integer(value.at("market_order_ppm")),
-        .min_quantity = Quantity{unsigned_integer(value.at("min_quantity"))},
-        .max_quantity = Quantity{unsigned_integer(value.at("max_quantity"))},
-        .limit_offset_ticks = unsigned_integer(value.at("limit_offset_ticks")),
-        .max_resting_orders = size_integer(value.at("max_resting_orders")),
-    };
-  }
-  invalid("unknown agent policy kind: " + kind);
-}
-
 Json agent(const AgentConfig& value) {
   return {
       {"id", value.id.value()},
@@ -304,6 +213,97 @@ Json words(const Rng::State& state) {
 }
 
 } // namespace
+
+Json policy(const PolicyConfig& value) {
+  auto output = std::visit(PolicyWriter{}, value);
+  output.update({{"kind", policy_name(value)}});
+  return output;
+}
+
+PolicyConfig read_policy(const Json& value) {
+  if (!value.is_object() || !value.contains("kind")) {
+    invalid("agent policy requires kind");
+  }
+  const auto kind = text(value.at("kind"));
+  if (kind == "MarketMaker") {
+    fields(value, {"kind", "half_spread_ticks", "quote_size", "levels", "level_spacing_ticks"});
+    return read_maker(value);
+  }
+  if (kind == "InventoryMarketMaker") {
+    fields(value, {
+                      "kind",
+                      "half_spread_ticks",
+                      "quote_size",
+                      "levels",
+                      "level_spacing_ticks",
+                      "risk_aversion_ppm",
+                      "volatility_alpha_ppm",
+                      "volatility_floor_milliticks",
+                      "max_skew_ticks",
+                  });
+    return InventoryMarketMakerParams{
+        .quoting = read_maker(value),
+        .risk_aversion_ppm = unsigned_integer(value.at("risk_aversion_ppm")),
+        .volatility_alpha_ppm = unsigned_integer(value.at("volatility_alpha_ppm")),
+        .volatility_floor_milliticks = unsigned_integer(value.at("volatility_floor_milliticks")),
+        .max_skew_ticks = unsigned_integer(value.at("max_skew_ticks")),
+    };
+  }
+  if (kind == "Momentum") {
+    fields(value, {
+                      "kind",
+                      "short_window",
+                      "long_window",
+                      "threshold_milliticks",
+                      "order_size",
+                      "slippage_ticks",
+                      "cooldown_ns",
+                  });
+    return MomentumParams{
+        .short_window = size_integer(value.at("short_window")),
+        .long_window = size_integer(value.at("long_window")),
+        .threshold_milliticks = unsigned_integer(value.at("threshold_milliticks")),
+        .order_size = Quantity{unsigned_integer(value.at("order_size"))},
+        .slippage_ticks = unsigned_integer(value.at("slippage_ticks")),
+        .cooldown = SimTime{unsigned_integer(value.at("cooldown_ns"))},
+    };
+  }
+  if (kind == "Value") {
+    fields(value, {
+                      "kind",
+                      "estimate_noise_milliticks",
+                      "threshold_milliticks",
+                      "order_size",
+                      "slippage_ticks",
+                  });
+    return ValueParams{
+        .estimate_noise_milliticks = unsigned_integer(value.at("estimate_noise_milliticks")),
+        .threshold_milliticks = unsigned_integer(value.at("threshold_milliticks")),
+        .order_size = Quantity{unsigned_integer(value.at("order_size"))},
+        .slippage_ticks = unsigned_integer(value.at("slippage_ticks")),
+    };
+  }
+  if (kind == "Noise") {
+    fields(value, {
+                      "kind",
+                      "buy_probability_ppm",
+                      "market_order_ppm",
+                      "min_quantity",
+                      "max_quantity",
+                      "limit_offset_ticks",
+                      "max_resting_orders",
+                  });
+    return NoiseParams{
+        .buy_probability_ppm = unsigned_integer(value.at("buy_probability_ppm")),
+        .market_order_ppm = unsigned_integer(value.at("market_order_ppm")),
+        .min_quantity = Quantity{unsigned_integer(value.at("min_quantity"))},
+        .max_quantity = Quantity{unsigned_integer(value.at("max_quantity"))},
+        .limit_offset_ticks = unsigned_integer(value.at("limit_offset_ticks")),
+        .max_resting_orders = size_integer(value.at("max_resting_orders")),
+    };
+  }
+  invalid("unknown agent policy kind: " + kind);
+}
 
 Json scenario(const ScenarioConfig& value) {
   auto agents = Json::array();

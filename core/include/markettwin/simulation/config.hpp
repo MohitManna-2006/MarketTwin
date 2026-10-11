@@ -1,6 +1,7 @@
 #ifndef MARKETTWIN_SIMULATION_CONFIG_HPP
 #define MARKETTWIN_SIMULATION_CONFIG_HPP
 
+#include "markettwin/accounting/accounting_config.hpp"
 #include "markettwin/exchange/matching_engine.hpp"
 #include "markettwin/simulation/scenario.hpp"
 #include "markettwin/simulation/scheduler.hpp"
@@ -22,6 +23,9 @@ struct RunConfig {
   // Absent for a purely scripted run. Present, it adds agents, a fundamental process,
   // and shocks, and the config serializes as schema version 2.
   std::optional<ScenarioConfig> scenario;
+  // Fees, opening cash, and cash constraints. Anything but the default makes the config
+  // serialize as schema version 3.
+  AccountingConfig accounting;
 };
 
 void validate_config(const RunConfig& config);

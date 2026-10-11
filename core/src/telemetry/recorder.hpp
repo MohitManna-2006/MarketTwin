@@ -19,6 +19,7 @@ public:
   // A trade outcome that also extends the trade digest.
   void trade(const Event& cause, Sequence causation, const Trade& trade);
   void finish(RunSummary& summary);
+  [[nodiscard]] const std::string& config_digest() const noexcept { return config_digest_; }
 
 private:
   void append(TraceChannel channel, const std::string& line, Sequence sequence);

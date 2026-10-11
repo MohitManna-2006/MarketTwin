@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 project(
   MarketTwin
-  VERSION 0.3.0
+  VERSION 0.4.0
   DESCRIPTION "Deterministic C++20 agent-based synthetic equity exchange"
   LANGUAGES CXX
 )

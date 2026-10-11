@@ -446,6 +446,14 @@ TEST(ScenarioRunTest, BaselineHourIsATwoSidedActiveMarketAndMatchesItsGoldenSumm
   const auto expected =
       Json::parse(test::read(source / "core/tests/replay/golden/phase2a_baseline_summary.json"));
   EXPECT_EQ(Json::parse(summary_json(run.summary)), expected);
+
+  // Phase 2B: the same hour's books and market statistics, pinned alongside it.
+  const auto metrics =
+      Json::parse(test::read(source / "core/tests/replay/golden/phase2b_baseline_metrics.json"));
+  EXPECT_EQ(Json::parse(metrics_json(config, run.summary)), metrics);
+  EXPECT_EQ(run.summary.report.market.two_sided_samples, 3'600U);
+  EXPECT_EQ(run.summary.report.samples_by_mark.at(static_cast<std::size_t>(MarkSource::Midpoint)),
+            3'600U);
 }
 
 TEST(ScenarioRunTest, ShippedShockScenariosLoadRunAndApplyTheirShocks) {

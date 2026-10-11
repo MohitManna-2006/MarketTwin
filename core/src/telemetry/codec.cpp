@@ -94,7 +94,37 @@ ExchangeConfig read_exchange(const Json& value) {
   return result;
 }
 
+constexpr std::array<std::string_view, 10> kScriptedFields{
+    "schema_version", "run_id",     "seed",      "tick_size_minor", "exchange",
+    "horizon_ns",     "max_events", "max_queue", "max_trace_bytes", "commands",
+};
+constexpr std::array<std::string_view, 11> kScenarioFields{
+    "schema_version",  "run_id",     "seed",       "tick_size_minor",
+    "exchange",        "horizon_ns", "max_events", "max_queue",
+    "max_trace_bytes", "commands",   "scenario",
+};
+constexpr std::array<std::string_view, 12> kAccountingFields{
+    "schema_version",  "run_id",     "seed",       "tick_size_minor",
+    "exchange",        "horizon_ns", "max_events", "max_queue",
+    "max_trace_bytes", "commands",   "scenario",   "accounting",
+};
+
+void require_fields(const Json& value, std::span<const std::string_view> required) {
+  if (!value.is_object() || value.size() != required.size()) {
+    invalid("object has missing or unknown fields");
+  }
+  for (const auto name : required) {
+    if (!value.contains(name)) {
+      invalid("missing field: " + std::string{name});
+    }
+  }
+}
+
 } // namespace
+
+std::string_view reject_reason_name(RejectReason value) {
+  return enum_name(value, kReasons);
+}
 
 void invalid(std::string_view message) {
   throw RunError{"InvalidConfig", std::string{message}};
@@ -125,14 +155,7 @@ Json parse(std::string_view input) {
 }
 
 void fields(const Json& value, std::initializer_list<std::string_view> required) {
-  if (!value.is_object() || value.size() != required.size()) {
-    invalid("object has missing or unknown fields");
-  }
-  for (const auto name : required) {
-    if (!value.contains(name)) {
-      invalid("missing field: " + std::string{name});
-    }
-  }
+  require_fields(value, required);
 }
 
 std::uint64_t unsigned_integer(const Json& value) {
@@ -237,8 +260,17 @@ Json config(const RunConfig& value) {
     commands.push_back(
         {{"timestamp_ns", item.timestamp.value()}, {"command", command(item.command)}});
   }
+  // The lowest schema that can express the config. A scripted or scenario config with
+  // default accounting keeps its version 1 or 2 bytes, and so its earlier digests.
+  const bool accounted = value.accounting != AccountingConfig{};
+  auto schema = kScriptedConfigSchema;
+  if (accounted) {
+    schema = kAccountingConfigSchema;
+  } else if (value.scenario) {
+    schema = kScenarioConfigSchema;
+  }
   Json output{
-      {"schema_version", value.scenario ? kScenarioConfigSchema : kScriptedConfigSchema},
+      {"schema_version", schema},
       {"run_id", value.run_id},
       {"seed", value.seed},
       {"tick_size_minor", value.tick_size_minor},
@@ -249,8 +281,12 @@ Json config(const RunConfig& value) {
       {"max_trace_bytes", value.max_trace_bytes},
       {"commands", commands},
   };
-  // A scripted config keeps its version 1 bytes, and so its Phase 1B digest.
-  if (value.scenario) {
+  if (accounted) {
+    output.update({
+        {"scenario", value.scenario ? scenario(*value.scenario) : Json(nullptr)},
+        {"accounting", accounting(value.accounting)},
+    });
+  } else if (value.scenario) {
     output.update({{"scenario", scenario(*value.scenario)}});
   }
   return output;
@@ -261,34 +297,13 @@ RunConfig read_config(const Json& value) {
                            ? unsigned_integer(value.at("schema_version"))
                            : 0;
   if (version == kScriptedConfigSchema) {
-    fields(value, {
-                      "schema_version",
-                      "run_id",
-                      "seed",
-                      "tick_size_minor",
-                      "exchange",
-                      "horizon_ns",
-                      "max_events",
-                      "max_queue",
-                      "max_trace_bytes",
-                      "commands",
-                  });
+    require_fields(value, kScriptedFields);
   } else if (version == kScenarioConfigSchema) {
-    fields(value, {
-                      "schema_version",
-                      "run_id",
-                      "seed",
-                      "tick_size_minor",
-                      "exchange",
-                      "horizon_ns",
-                      "max_events",
-                      "max_queue",
-                      "max_trace_bytes",
-                      "commands",
-                      "scenario",
-                  });
+    require_fields(value, kScenarioFields);
+  } else if (version == kAccountingConfigSchema) {
+    require_fields(value, kAccountingFields);
   } else {
-    throw RunError{"UnsupportedSchema", "expected run config schema version 1 or 2"};
+    throw RunError{"UnsupportedSchema", "expected run config schema version 1, 2, or 3"};
   }
   RunConfig result;
   result.run_id = text(value.at("run_id"));
@@ -310,8 +325,13 @@ RunConfig read_config(const Json& value) {
         .command = read_command(item.at("command")),
     });
   }
-  if (version == kScenarioConfigSchema) {
+  // Schema 2 requires a scenario; schema 3 may carry null for a purely scripted run.
+  if (version == kScenarioConfigSchema ||
+      (version == kAccountingConfigSchema && !value.at("scenario").is_null())) {
     result.scenario = read_scenario(value.at("scenario"));
+  }
+  if (version == kAccountingConfigSchema) {
+    result.accounting = read_accounting(value.at("accounting"));
   }
   validate_config(result);
   return result;

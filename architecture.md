@@ -421,7 +421,7 @@ come from xoshiro256\*\* streams keyed by seed, stream kind, and agent, sampled 
 integer-only algorithms, so a seed gives identical runs across toolchains. Every policy
 references the delivered midpoint, else the last delivered trade, else the scenario
 reference. Agents track shares only; cash, cost basis, and the cash constraint in 8.2
-arrive with the Phase 2B ledger.
+arrive with the Phase 2B ledger (section 10.1).
 
 ## 9. Market scenarios and digital-twin fidelity
 
@@ -464,6 +464,7 @@ written into a trade price. Implemented shocks are `FundamentalJump`,
 half-open `[start, end)` intervals; overlapping regimes or withdrawals for one agent are
 rejected. Order-flow imbalance, latency degradation, and quote-withdrawal stress are not
 implemented. Scenario runs use run config schema 2; scripted configs remain schema 1.
+Phase 2B adds schema 3 for configs that set fees, opening cash, or credit limits.
 `configs/baseline.json` is the reference one-hour market, with `fundamental_shock.json`,
 `liquidity_shock.json`, and `volatility_shock.json` as single-shock variants of it.
 
@@ -480,6 +481,23 @@ implemented. Scenario runs use run config schema 2; scripted configs remain sche
 - Track net P&L, realized/unrealized components, traded volume, gross exposure, max position, and drawdown.
 - Cash/position conservation must hold across agents for every trade before external fees, funding, and exogenous transfers.
 - Display negative cash or negative inventories only when policy allows leverage/short positions.
+
+### 10.1 Phase 2B resolved policies
+
+[ADR 0004](docs/adr/0004-ledger-marks-metrics-and-experiments.md) fixes the implemented
+ledger. Money is a signed 64-bit count of minor units with `tick_size_minor` minor units
+per tick, every operation is checked, and overflow fails the run. The ledger is posted
+from authoritative exchange executions at the moment they occur; agents still learn of
+their fills through report latency. The basis is average cost, carried as a total signed
+cost so nothing is rounded until shares are released; realized P&L is gross of fees, and
+fees and rebates go to a fee sink so cash and shares are conserved exactly. Marks follow
+the order above (midpoint, last trade, scenario reference) with the source recorded, and
+a one-sided quote is never a mark. Equity, peak, and drawdown are observed on the
+sampling schedule. Short positions and negative cash are allowed by default. An optional
+per-agent credit limit is enforced by the environment before a buy intent becomes an
+order; a fill is never rejected for lack of cash. The headers are
+`accounting/{money,fees,ledger,valuation,accounting_config,report}.hpp` in place of the
+split sketched in section 4.
 
 ## 11. Deterministic event log, replay, and integrity
 
@@ -534,6 +552,16 @@ agent decisions are regenerated from the config and seed, and each resulting com
 match the command log before it reaches the exchange. The engine's stochastic
 calculations are integer-only, so scenario golden digests are checked across toolchains
 as well.
+
+### 11.7 Phase 2B accounting replay
+
+[ADR 0004](docs/adr/0004-ledger-marks-metrics-and-experiments.md) keeps trace format 1
+byte-identical and adds a separate accounting stream with its own sequence and schema
+version. Replay regenerates that stream alongside the commands and executions and
+byte-compares every ledger posting and sample, reporting `AccountingMismatch` with the
+first differing record, and compares `metrics.json` whole. The run manifest is schema 2
+and lists the version of each stream. Engine version 0.4.0 changes only the header line
+of `commands.jsonl` and `trace.jsonl`.
 
 ## 12. C++ API contracts and concurrency model
 
@@ -602,6 +630,17 @@ class Simulation {
 - Data path never accepts unvalidated arbitrary user-provided filesystem locations.
 - Large artifact downloads use bounded endpoints and, eventually, signed locations when remote object storage is introduced.
 
+### 13.4 Phase 2B resolved artifacts
+
+[ADR 0004](docs/adr/0004-ledger-marks-metrics-and-experiments.md) adds `accounting.jsonl`
+(a ledger entry per trade and a time-series sample per depth snapshot) and `metrics.json`
+(final per-agent books, order flow, and market statistics, with units and conventions)
+to every run directory, both canonical integer-only JSON and both checksummed in the
+manifest. Experiments write `experiment.json`, `runs.jsonl`, and optionally one run
+directory per cell. Parquet tables are not implemented: the JSONL streams carry the same
+rows without a new dependency. A failed single run still publishes no manifest; an
+experiment records each failed cell with its error code.
+
 ## 14. Python research, experiments, and statistics
 
 ### 14.1 Experiment specification
@@ -633,6 +672,19 @@ class Simulation {
 - Show distributions and downside tails, not only averages.
 - Check scenario validity (e.g. minimum transactions, at least intermittent two-sided liquidity).
 - If outcomes are unstable, report instability and adjust environment validity rather than optimizing away bad seeds.
+
+### 14.4 Phase 2B resolved experiments
+
+[ADR 0004](docs/adr/0004-ledger-marks-metrics-and-experiments.md) implements 14.1 to 14.3
+natively, in the CLI, ahead of the Python layer. An experiment runs every variant on
+every seed; a variant replaces named agents' policies and nothing else, so paired runs
+share the fundamental path and every agent's own random streams while the market that
+follows is free to diverge. Paired differences are reported with mean, median, standard
+deviation, a 95 % Student t interval, and a 95 % percentile bootstrap interval, all in
+integer arithmetic, with failed runs and undefined metrics counted and never filled in.
+The metric list is fixed in code before any run. Effective spread, adverse-selection
+proxies, and implementation shortfall from 14.2 are not implemented; maker spread capture
+against the pre-trade midpoint is.
 
 ## 15. API and job orchestration
 

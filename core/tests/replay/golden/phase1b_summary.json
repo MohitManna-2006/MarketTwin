@@ -1,6 +1,6 @@
 {
   "book_digest": "f5b3180c18b933f9ad7b0f7ce655fdbefe0bf35a7b1e18413488e10d1a1dd71c",
-  "commands_digest": "73f4393b986308ffe9e1824918a43200dd40c3d88215cb173948c2f3cd88191a",
+  "commands_digest": "02bcf92cecb1b51880f0de074b95bf9a8789565fdea5a13e9f9069ec6b8001e6",
   "config_digest": "0efaa560162b3da1dc1d082df3f6ca76f77e39d8e0d14064a0ca212570520de7",
   "event_count": 14,
   "final_time_ns": 100,
@@ -8,7 +8,7 @@
   "seed": 42,
   "status": "Completed",
   "stop_reason": "Requested",
-  "trace_digest": "b6810bd086e281d7ab3f295842d7cbe3e11f6c3e28b7b54c2a1fc3ff1638bf26",
+  "trace_digest": "b466018c5423369a2a75b9536b9d0206084a9fd30b61b6cc4880c352620fb105",
   "trade_count": 3,
   "trade_digest": "1943efd08b1a3d6f8ff2348dcbeaf570d2161146201bdc326a6402afc98aa9da"
 }

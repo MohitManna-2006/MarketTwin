@@ -68,6 +68,28 @@ inline Order order(std::uint64_t id, Side side, std::uint64_t owner = 1,
           .arrival_time = {},
           .arrival_sequence = {}};
 }
+// A trade in which `buyer` bought from `seller`; the seller rested unless stated otherwise.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters): ID, buyer, seller, price, quantity.
+inline Trade trade(std::uint64_t id, std::uint64_t buyer, std::uint64_t seller, std::int64_t price,
+                   std::uint64_t quantity, bool buyer_is_maker = false) {
+  const OrderId buy{(2 * id) - 1};
+  const OrderId sell{2 * id};
+  return {
+      .id = TradeId{id},
+      .symbol = SymbolId{1},
+      .buy_order_id = buy,
+      .sell_order_id = sell,
+      .aggressor_order_id = buyer_is_maker ? sell : buy,
+      .resting_order_id = buyer_is_maker ? buy : sell,
+      .maker_agent_id = AgentId{buyer_is_maker ? buyer : seller},
+      .taker_agent_id = AgentId{buyer_is_maker ? seller : buyer},
+      .price_ticks = PriceTicks{price},
+      .quantity = Quantity{quantity},
+      .timestamp = {},
+      .sequence = Sequence{id},
+      .arrival_sequence = Sequence{id},
+  };
+}
 inline ScheduledCommand at(std::uint64_t timestamp, const Command& command) {
   return {.timestamp = SimTime{timestamp}, .command = command};
 }
@@ -87,7 +109,13 @@ inline RunConfig fixture() {
 class CaptureSink final : public RecordSink {
 public:
   void append(TraceChannel channel, std::string_view record, Sequence /*sequence*/) override {
-    (channel == TraceChannel::Commands ? commands : trace).emplace_back(record);
+    if (channel == TraceChannel::Commands) {
+      commands.emplace_back(record);
+    } else if (channel == TraceChannel::Execution) {
+      trace.emplace_back(record);
+    } else {
+      accounting.emplace_back(record);
+    }
   }
   // Parsed records of one kind, in trace order.
   [[nodiscard]] static std::vector<nlohmann::json> of_kind(const std::vector<std::string>& lines,
@@ -104,6 +132,7 @@ public:
   }
   std::vector<std::string> commands;
   std::vector<std::string> trace;
+  std::vector<std::string> accounting;
 };
 
 inline constexpr std::uint64_t kMillisecond = 1'000'000;
@@ -160,6 +189,12 @@ inline RunConfig scenario_fixture() {
 // Checked access to the optional scenario parts, so a test fails loudly instead of
 // dereferencing an empty optional.
 inline ScenarioConfig& scenario(RunConfig& config) {
+  if (!config.scenario) {
+    throw std::logic_error("config has no scenario");
+  }
+  return *config.scenario;
+}
+inline const ScenarioConfig& scenario(const RunConfig& config) {
   if (!config.scenario) {
     throw std::logic_error("config has no scenario");
   }

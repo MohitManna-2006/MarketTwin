@@ -1,6 +1,6 @@
 {
     "book_digest": "50f78abbc41eb924202f57e3bc79f2fe954a5143184b58cff9d45e8b5abe3769",
-    "commands_digest": "93f8b2308b3ff72ef5546b993f1d1a3753eb570ad186d9a49291b9812541e570",
+    "commands_digest": "7b97e1d95f58fc49967d1e3145c5246fb8f76306c8c99a970fe325fb58c394a9",
     "config_digest": "dd21c57970f4aa72f2e66bbc90f7095dacc69239b0f113e6f55d823caf02c9b4",
     "event_count": 298798,
     "final_time_ns": 3600000000000,
@@ -139,7 +139,7 @@
     "seed": 42,
     "status": "Completed",
     "stop_reason": "Horizon",
-    "trace_digest": "bd6b6186ddb2153cfd76633f75b1a85e45097d33c45c5c2e7f309f1eb8f547e6",
+    "trace_digest": "ecab90c870032677265e6a12dcea6ed36d0169d87c0d76582f78b9f919b2c02d",
     "trade_count": 8205,
     "trade_digest": "1befe3ff48bd0c8311af0cf580b5928414850ba0f15659ebdf313fc62ff5781e"
 }
