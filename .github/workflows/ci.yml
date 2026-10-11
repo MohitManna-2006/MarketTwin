@@ -62,7 +62,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
           -DMARKETTWIN_BUILD_TESTS=ON
-          -DMARKETTWIN_BUILD_BENCHMARKS=OFF
+          -DMARKETTWIN_BUILD_BENCHMARKS=${{ matrix.build_type == 'Release' && 'ON' || 'OFF' }}
           -DMARKETTWIN_ENABLE_SANITIZERS=${{ matrix.sanitizers }}
           -DMARKETTWIN_WARNINGS_AS_ERRORS=ON
 
@@ -71,3 +71,7 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+      - name: Exchange benchmark smoke (Release)
+        if: matrix.build_type == 'Release'
+        run: ./build/core/benchmarks/markettwin_bench --benchmark_min_time=0.01s --benchmark_repetitions=1

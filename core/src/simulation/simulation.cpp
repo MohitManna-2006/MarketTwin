@@ -1,21 +1,31 @@
 #include "markettwin/simulation/simulation.hpp"
 
+#include "markettwin/simulation/kernel.hpp"
+
+#include "../telemetry/artifacts.hpp"
+
+#include <utility>
+
 namespace markettwin {
 
-Simulation::Simulation(RunConfig config) : config_(config) {}
+Simulation::Simulation(RunConfig config, std::filesystem::path output_directory)
+    : config_(std::move(config)), output_directory_(std::move(output_directory)) {
+  validate_config(config_);
+}
 
-// NOLINTNEXTLINE(readability-make-member-function-const)
 RunSummary Simulation::run() {
-  RunSummary summary;
-  summary.status = RunStatus::Completed;
-  summary.event_count = 0;
-  summary.seed = config_.seed;
+  artifacts_ = {};
+  if (output_directory_.empty()) {
+    NullSink sink;
+    return run_kernel(config_, sink);
+  }
+  auto summary = write_run(config_, output_directory_);
+  artifacts_ = artifact_paths(output_directory_);
   return summary;
 }
 
-// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-RunArtifacts Simulation::artifacts() const noexcept {
-  return {};
+RunArtifacts Simulation::artifacts() const {
+  return artifacts_;
 }
 
 } // namespace markettwin

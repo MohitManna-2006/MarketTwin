@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "run_id": "phase1b-demo",
+  "seed": 42,
+  "tick_size_minor": 1,
+  "exchange": {
+    "symbol": 1,
+    "agents": [
+      1,
+      2,
+      3
+    ],
+    "max_order_quantity": 1000000,
+    "max_active_orders": 100000,
+    "max_accepted_orders": 1000000,
+    "max_trades": 1000000,
+    "max_snapshot_depth": 1000
+  },
+  "horizon_ns": 100,
+  "max_events": 1000,
+  "max_queue": 1000,
+  "max_trace_bytes": 10485760,
+  "commands": [
+    {
+      "timestamp_ns": 90,
+      "command": {
+        "kind": "Snapshot",
+        "depth": 5
+      }
+    },
+    {
+      "timestamp_ns": 0,
+      "command": {
+        "kind": "Submit",
+        "id": 1,
+        "owner": 1,
+        "symbol": 1,
+        "side": "Sell",
+        "type": "Limit",
+        "limit_price_ticks": 101,
+        "quantity": 5,
+        "tif": "Gtc"
+      }
+    },
+    {
+      "timestamp_ns": 0,
+      "command": {
+        "kind": "Submit",
+        "id": 2,
+        "owner": 1,
+        "symbol": 1,
+        "side": "Sell",
+        "type": "Limit",
+        "limit_price_ticks": 102,
+        "quantity": 7,
+        "tif": "Gtc"
+      }
+    },
+    {
+      "timestamp_ns": 0,
+      "command": {
+        "kind": "Submit",
+        "id": 3,
+        "owner": 3,
+        "symbol": 1,
+        "side": "Buy",
+        "type": "Limit",
+        "limit_price_ticks": 99,
+        "quantity": 4,
+        "tif": "Gtc"
+      }
+    },
+    {
+      "timestamp_ns": 1,
+      "command": {
+        "kind": "Snapshot",
+        "depth": 5
+      }
+    },
+    {
+      "timestamp_ns": 2,
+      "command": {
+        "kind": "Submit",
+        "id": 4,
+        "owner": 2,
+        "symbol": 1,
+        "side": "Buy",
+        "type": "Limit",
+        "limit_price_ticks": 102,
+        "quantity": 8,
+        "tif": "Gtc"
+      }
+    },
+    {
+      "timestamp_ns": 2,
+      "command": {
+        "kind": "Cancel",
+        "order_id": 2,
+        "owner": 2
+      }
+    },
+    {
+      "timestamp_ns": 3,
+      "command": {
+        "kind": "Cancel",
+        "order_id": 2,
+        "owner": 1
+      }
+    },
+    {
+      "timestamp_ns": 4,
+      "command": {
+        "kind": "Submit",
+        "id": 5,
+        "owner": 2,
+        "symbol": 1,
+        "side": "Sell",
+        "type": "Market",
+        "limit_price_ticks": 0,
+        "quantity": 8,
+        "tif": "Ioc"
+      }
+    },
+    {
+      "timestamp_ns": 5,
+      "command": {
+        "kind": "Submit",
+        "id": 6,
+        "owner": 2,
+        "symbol": 1,
+        "side": "Buy",
+        "type": "Limit",
+        "limit_price_ticks": 100,
+        "quantity": 3,
+        "tif": "Ioc"
+      }
+    },
+    {
+      "timestamp_ns": 6,
+      "command": {
+        "kind": "Submit",
+        "id": 7,
+        "owner": 1,
+        "symbol": 1,
+        "side": "Buy",
+        "type": "Limit",
+        "limit_price_ticks": 98,
+        "quantity": 5,
+        "tif": "Gtc"
+      }
+    },
+    {
+      "timestamp_ns": 7,
+      "command": {
+        "kind": "Submit",
+        "id": 8,
+        "owner": 1,
+        "symbol": 1,
+        "side": "Sell",
+        "type": "Market",
+        "limit_price_ticks": 0,
+        "quantity": 1,
+        "tif": "Ioc"
+      }
+    },
+    {
+      "timestamp_ns": 8,
+      "command": {
+        "kind": "Submit",
+        "id": 9,
+        "owner": 3,
+        "symbol": 1,
+        "side": "Sell",
+        "type": "Limit",
+        "limit_price_ticks": 105,
+        "quantity": 0,
+        "tif": "Gtc"
+      }
+    },
+    {
+      "timestamp_ns": 100,
+      "command": {
+        "kind": "Stop"
+      }
+    },
+    {
+      "timestamp_ns": 100,
+      "command": {
+        "kind": "Submit",
+        "id": 10,
+        "owner": 3,
+        "symbol": 1,
+        "side": "Sell",
+        "type": "Limit",
+        "limit_price_ticks": 120,
+        "quantity": 1,
+        "tif": "Gtc"
+      }
+    }
+  ]
+}

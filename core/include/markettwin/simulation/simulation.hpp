@@ -1,37 +1,46 @@
 #pragma once
 
-#include <cstdint>
+#include "markettwin/simulation/config.hpp"
 
 namespace markettwin {
 
-// Phase 0 run boundary. Later phases add scenario fields without moving this type.
-struct RunConfig {
-  std::uint64_t seed = 0;
-};
-
-// Underlying type stays the language default until event serialization chooses a width.
 enum class RunStatus { Completed };
 
 struct RunSummary {
   RunStatus status = RunStatus::Completed;
+  StopReason stop_reason = StopReason::QueueEmpty;
   std::uint64_t event_count = 0;
+  std::uint64_t trade_count = 0;
   std::uint64_t seed = 0;
+  SimTime final_time;
+  std::size_t resting_order_count = 0;
+  std::string config_digest;
+  std::string book_digest;
+  std::string trade_digest;
+  std::string commands_digest;
+  std::string trace_digest;
+  bool operator==(const RunSummary&) const = default;
 };
 
-// Reserved for artifact paths once telemetry export exists.
-struct RunArtifacts {};
+struct RunArtifacts {
+  std::filesystem::path directory;
+  std::filesystem::path config;
+  std::filesystem::path commands;
+  std::filesystem::path trace;
+  std::filesystem::path manifest;
+  bool operator==(const RunArtifacts&) const = default;
+};
 
-// Deterministic no-op. This type does not match orders, schedule events, or trade.
 class Simulation {
 public:
-  explicit Simulation(RunConfig config);
-
-  // Non-const because later phases mutate kernel state here.
+  explicit Simulation(RunConfig config, std::filesystem::path output_directory = {});
   [[nodiscard]] RunSummary run();
-  [[nodiscard]] RunArtifacts artifacts() const noexcept;
+  [[nodiscard]] RunArtifacts artifacts() const;
 
 private:
   RunConfig config_;
+  std::filesystem::path output_directory_;
+  RunArtifacts artifacts_;
 };
 
 } // namespace markettwin

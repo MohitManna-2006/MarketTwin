@@ -1,10 +1,17 @@
 #include "markettwin/simulation/simulation.hpp"
 
 #include <gtest/gtest.h>
-#include <type_traits>
+
+namespace {
+markettwin::RunConfig seeded(std::uint64_t seed) {
+  markettwin::RunConfig config;
+  config.seed = seed;
+  return config;
+}
+} // namespace
 
 TEST(SimulationTest, NoOpRunCarriesTheConfiguredSeed) {
-  markettwin::Simulation simulation{markettwin::RunConfig{.seed = 7}};
+  markettwin::Simulation simulation{seeded(7)};
 
   const markettwin::RunSummary summary = simulation.run();
 
@@ -14,8 +21,8 @@ TEST(SimulationTest, NoOpRunCarriesTheConfiguredSeed) {
 }
 
 TEST(SimulationTest, RepeatedRunsStayIdentical) {
-  markettwin::Simulation first{markettwin::RunConfig{.seed = 11}};
-  markettwin::Simulation second{markettwin::RunConfig{.seed = 11}};
+  markettwin::Simulation first{seeded(11)};
+  markettwin::Simulation second{seeded(11)};
 
   const markettwin::RunSummary first_summary = first.run();
   const markettwin::RunSummary second_summary = second.run();
@@ -29,16 +36,14 @@ TEST(SimulationTest, RepeatedRunsStayIdentical) {
 }
 
 TEST(SimulationTest, DistinctSeedsStayDistinct) {
-  markettwin::Simulation low{markettwin::RunConfig{.seed = 1}};
-  markettwin::Simulation high{markettwin::RunConfig{.seed = 2}};
+  markettwin::Simulation low{seeded(1)};
+  markettwin::Simulation high{seeded(2)};
 
   EXPECT_NE(low.run().seed, high.run().seed);
 }
 
-TEST(SimulationTest, ArtifactsStayEmptyBeforeTelemetryExists) {
-  static_assert(std::is_empty_v<markettwin::RunArtifacts>);
-
+TEST(SimulationTest, MemoryRunsDoNotPublishArtifacts) {
   markettwin::Simulation simulation{markettwin::RunConfig{}};
-  static_cast<void>(simulation.artifacts());
+  EXPECT_TRUE(simulation.artifacts().directory.empty());
   EXPECT_EQ(simulation.run().event_count, 0U);
 }
