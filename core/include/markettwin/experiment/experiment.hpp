@@ -123,6 +123,13 @@ using RunFunction =
 // comparisons. Identical on every toolchain; build provenance is kept outside it.
 [[nodiscard]] std::string experiment_results_json(const ExperimentConfig& config,
                                                   const ExperimentResult& result);
+// The values behind each comparison, seed by seed: for every compared metric, the
+// baseline's and the candidate's value on each paired seed and their difference, in the
+// metric's own unit. A value a run does not define is null, and so is its difference. The
+// summaries in experiment_results_json are computed from exactly these numbers. This is
+// not written to experiment.json; it is for callers that plot the paired distribution.
+[[nodiscard]] std::string experiment_paired_values_json(const ExperimentConfig& config,
+                                                        const ExperimentResult& result);
 // Fixed-width text for a terminal.
 [[nodiscard]] std::string experiment_report(const ExperimentConfig& config,
                                             const ExperimentResult& result);

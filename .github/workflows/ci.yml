@@ -75,3 +75,122 @@ jobs:
       - name: Benchmark smoke (Release)
         if: matrix.build_type == 'Release'
         run: ./build/core/benchmarks/markettwin_bench --benchmark_min_time=0.01s --benchmark_repetitions=1
+
+  python:
+    name: Binding and research API
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build g++
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build the extension and install the service
+        run: uv sync
+
+      - name: Lint and format
+        run: |
+          uv run ruff check . ../../python/markettwin
+          uv run ruff format --check . ../../python/markettwin
+
+      - name: Type-check
+        run: uv run mypy
+
+      - name: Test against the real engine
+        run: uv run pytest
+
+  web:
+    name: Research terminal
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: apps/web/package.json
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: Install packages
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check, lint, and format
+        run: |
+          pnpm typecheck
+          pnpm lint
+          pnpm format
+
+      - name: Contrast audit
+        run: pnpm contrast
+
+      - name: Unit and component tests
+        run: pnpm test
+
+      - name: Production build
+        run: pnpm build
+
+  end-to-end:
+    name: Terminal, API, and engine end to end
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build g++
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: apps/web/package.json
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: Build the extension and install the service
+        working-directory: services/api
+        run: uv sync
+
+      - name: Install packages and a browser
+        working-directory: apps/web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+
+      - name: Generated API types are current
+        run: |
+          (cd services/api && uv run python -m markettwin_api.openapi > ../../apps/web/openapi.json)
+          (cd apps/web && pnpm api:types)
+          git diff --exit-code -- apps/web/openapi.json apps/web/src/types/api.ts
+
+      - name: Drive a browser through a real run, an experiment, and a replay
+        working-directory: apps/web
+        run: pnpm e2e

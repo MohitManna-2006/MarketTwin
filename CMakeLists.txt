@@ -24,6 +24,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(MARKETTWIN_BUILD_TESTS "Build the GoogleTest suite" ON)
 option(MARKETTWIN_BUILD_BENCHMARKS "Build Google Benchmark smoke targets" OFF)
+option(MARKETTWIN_BUILD_PYTHON "Build the pybind11 extension module markettwin._native" OFF)
 option(MARKETTWIN_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 option(MARKETTWIN_WARNINGS_AS_ERRORS "Treat compiler warnings as errors on MarketTwin targets" ON)
 
@@ -36,4 +37,13 @@ if(MARKETTWIN_BUILD_TESTS)
   enable_testing()
 endif()
 
+if(MARKETTWIN_BUILD_PYTHON)
+  # The extension is a shared object, so the static core it links must be relocatable.
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 add_subdirectory(core)
+
+if(MARKETTWIN_BUILD_PYTHON)
+  add_subdirectory(bindings/python)
+endif()

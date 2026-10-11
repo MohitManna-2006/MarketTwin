@@ -1,0 +1,266 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./typography.css";
+
+@theme inline {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-canvas: var(--canvas);
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-selected: var(--surface-selected);
+  --color-line-subtle: var(--border-subtle);
+  --color-line: var(--border-default);
+  --color-line-strong: var(--border-strong);
+  --color-fg: var(--text-primary);
+  --color-fg-2: var(--text-secondary);
+  --color-fg-3: var(--text-tertiary);
+  --color-fg-off: var(--text-disabled);
+  --color-accent: var(--accent-primary);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-muted: var(--accent-muted);
+  --color-accent-label: var(--accent-label);
+  --color-accent-wash: var(--accent-wash);
+  --color-pos: var(--data-positive-text);
+  --color-neg: var(--data-negative-text);
+  --color-pos-mark: var(--data-positive);
+  --color-neg-mark: var(--data-negative);
+  --color-info: var(--data-neutral);
+  --color-warn: var(--data-warning);
+  --color-pos-wash: var(--data-positive-wash);
+  --color-neg-wash: var(--data-negative-wash);
+  --color-info-wash: var(--data-neutral-wash);
+  --color-focus: var(--focus-ring);
+
+  --font-sans: var(--family-sans);
+  --font-mono: var(--family-mono);
+
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+
+  --radius-*: initial;
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+
+  --shadow-*: initial;
+  --shadow-dialog: 0 0 0 1px var(--border-strong), 0 16px 40px rgb(0 0 0 / 0.5);
+
+  --breakpoint-*: initial;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 900px;
+  --breakpoint-lg: 1180px;
+  --breakpoint-xl: 1400px;
+  --breakpoint-2xl: 1800px;
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border-subtle);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background: var(--canvas);
+    color: var(--text-primary);
+    overflow: hidden;
+  }
+
+  ::selection {
+    background: rgb(198 167 116 / 0.32);
+    color: var(--text-primary);
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+
+  button,
+  [role="button"],
+  a {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Thin, flat scrollbars that read as part of the panel. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-default);
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-strong);
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    appearance: textfield;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* A hairline grid: panels sit one pixel apart on the border colour. */
+  .hairline-grid {
+    background: var(--border-subtle);
+    gap: 1px;
+  }
+
+  .transition-hover {
+    transition:
+      background-color var(--motion-hover) linear,
+      border-color var(--motion-hover) linear,
+      color var(--motion-hover) linear;
+  }
+
+  @keyframes pulse-dot {
+    50% {
+      opacity: 0.35;
+    }
+  }
+  .status-running-dot {
+    animation: pulse-dot 1.4s steps(2, jump-none) infinite;
+  }
+
+  @keyframes skeleton-scan {
+    0% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.55;
+    }
+  }
+  .skeleton {
+    background: var(--surface-2);
+    animation: skeleton-scan 1.6s linear infinite;
+  }
+}
+
+/* uPlot: the library's stylesheet is replaced by these few rules. */
+.uplot,
+.uplot *,
+.uplot *::before,
+.uplot *::after {
+  box-sizing: border-box;
+}
+.uplot {
+  font-family: var(--family-mono);
+  line-height: 1.5;
+  width: min-content;
+}
+.u-wrap {
+  position: relative;
+  user-select: none;
+}
+.u-over,
+.u-under {
+  position: absolute;
+}
+.u-under {
+  overflow: hidden;
+}
+.uplot canvas {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.u-axis {
+  position: absolute;
+}
+.u-legend {
+  display: none;
+}
+.u-select {
+  background: rgb(198 167 116 / 0.1);
+  border-left: 1px solid var(--accent-muted);
+  border-right: 1px solid var(--accent-muted);
+  position: absolute;
+  pointer-events: none;
+}
+.u-cursor-x,
+.u-cursor-y {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+.u-hz .u-cursor-x,
+.u-vt .u-cursor-y {
+  height: 100%;
+  border-right: 1px dashed var(--border-strong);
+}
+.u-hz .u-cursor-y,
+.u-vt .u-cursor-x {
+  width: 100%;
+  border-bottom: 1px dashed var(--border-strong);
+}
+.u-cursor-pt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  border: 0 solid;
+  pointer-events: none;
+  will-change: transform;
+  background-clip: padding-box !important;
+}
+.u-axis.u-off,
+.u-select.u-off,
+.u-cursor-x.u-off,
+.u-cursor-y.u-off,
+.u-cursor-pt.u-off {
+  display: none;
+}

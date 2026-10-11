@@ -2,7 +2,7 @@
 
 Digital twin for market simulation.
 
-MarketTwin is a research platform for studying how independent trading strategies interact inside a synthetic continuous double-auction equity exchange. The market-critical path is **C++20**: order matching, logical time, trading agents, accounting, experiment statistics, and deterministic event replay live in the native core. Python will orchestrate research and AI workflows. A React and TypeScript dashboard will display results. None of those later surfaces are allowed to compute authoritative prices, fills, or P&L.
+MarketTwin is a research platform for studying how independent trading strategies interact inside a synthetic continuous double-auction equity exchange. The market-critical path is **C++20**: order matching, logical time, trading agents, accounting, experiment statistics, and deterministic event replay live in the native core. A Python service starts runs and serves what they recorded, and a browser terminal displays it. Neither computes a price, a fill, a P&L figure, or a statistic: they read the engine's artifacts.
 
 There is no brokerage integration and no live order routing.
 
@@ -11,16 +11,18 @@ The complete technical contract is [`architecture.md`](architecture.md).
 ## Architecture
 
 ```text
-React / TypeScript dashboard          (planned)
-        |  REST and WebSocket
-FastAPI research API                  (planned)
-        |  coarse-grained jobs
-Python research and AI tools          (planned)
-        |  pybind11 or the native CLI, once per run
-C++20 simulation                      (implemented: exchange, kernel, agents, scenarios, ledger,
-        |                              market statistics, experiments, trace, replay)
+Research terminal (React, TypeScript)   apps/web
+        |  REST, same origin
+Research API (FastAPI)                  services/api   registry in SQLite, jobs on a bounded pool
+        |  one native call per run, experiment, or replay
+markettwin (pybind11)                   bindings/python, python/markettwin
+        |
+C++20 simulation                        core   exchange, kernel, agents, scenarios, ledger,
+        |                                      market statistics, experiments, trace, replay
         one logical thread per run
         event scheduler, matching engine, agents, accounting, telemetry
+
+AI research tools                       (planned, Phase 3B)
 ```
 
 Subsystem boundaries (exchange, simulation kernel, agents, accounting, and telemetry implemented, with paired experiments in the native CLI; later subsystems planned):
@@ -32,14 +34,16 @@ Subsystem boundaries (exchange, simulation kernel, agents, accounting, and telem
 | Agents | Strategy policies that emit intents, not book mutations |
 | Accounting | Cash, inventory, P&L, fees |
 | Telemetry | Event log, snapshots, replay digests |
-| Bindings | Coarse-grained run configuration and summaries for Python |
-| Research | Paired experiments, statistics, reports |
-| API | Job control and queries |
-| Web | Read-oriented operator console |
+| Bindings | One native call per run, experiment, or replay; JSON text in and out |
+| Research | Paired experiments and statistics (in the core) |
+| API | Validation, job control, and bounded queries over recorded artifacts |
+| Web | Research terminal: configure, inspect, compare, verify |
 
 A single run stays deterministic and logically single-threaded. Independent runs may later execute in separate processes. Kafka, Kubernetes, and other distributed infrastructure are out of scope for the MVP.
 
 ## Current status
+
+**Phase 3A — bindings, research API, and the research terminal.** The engine can now be driven from a browser: configure a scenario, run it, scrub through its recorded market with price, depth, agents, and events moving together, compare strategies over paired seeds, and verify a recording by replay. See [The research terminal](#the-research-terminal).
 
 **Phase 2B — accounting, market statistics, and paired experiments.** Every execution is posted to an integer double-entry ledger as it happens, each run publishes its books, a time series, and market microstructure statistics next to its trace, and replay verifies all of it. A batch runner compares strategy variants over matched seeds and reports paired differences with confidence intervals. The shipped comparison of a baseline and an inventory-aware market maker runs 400 one-hour markets in about two and a half minutes on one core of an M1 Pro.
 
@@ -64,6 +68,9 @@ Implemented now:
 - Market statistics: spread, relative spread, top-of-book and N-level depth, volume, VWAP, fill rates, return volatility, exact time in each book state, rejections and cancels, and maker spread capture
 - An optional per-agent credit limit enforced before a buy intent becomes an order
 - A deterministic experiment runner: seeds times strategy variants, per-run failure reporting, output budgets, paired differences with Student t and bootstrap intervals in integer arithmetic
+- A pybind11 extension, `markettwin._native`, with one call per run, experiment, or replay, the GIL released throughout, and `RunError` translated with its code and sequence
+- A local research API: three-layer config validation, background runs and experiments with observed counts and cancellation, replay verification with the first divergence, and bounded, paginated queries over every recorded stream
+- A research terminal with six screens: Overview, Simulation Lab, Market Microscope, Agent Inspector, Experiment Lab, and Replay Inspector
 - Unit tests, 32 seeded randomized exchange traces checked against an independent reference matcher, policy and scenario tests, accounting and statistics tests, replay corruption tests, and golden fixtures held across Apple Clang and GCC
 - Optional AddressSanitizer and UndefinedBehaviorSanitizer build
 - Optional Google Benchmark target for exchange operations, ledger postings, statistics, and complete scenario runs
@@ -72,8 +79,9 @@ Not implemented:
 
 - A cash check at the exchange: the credit limit is applied to an agent's intents, and a fill is never rejected for lack of cash
 - Order-flow imbalance, latency degradation, and quote-withdrawal shocks
-- Parquet artifacts, effective-spread and adverse-selection metrics, Sharpe ratios, and parallel execution of runs
-- Python bindings, FastAPI, PostgreSQL, Redis, or the React app
+- Parquet artifacts, effective-spread and adverse-selection metrics, Sharpe ratios, and parallel execution of the cells of one experiment
+- PostgreSQL, Redis, WebSocket progress, authentication, or any hosted deployment: the service is local and single-user
+- Progress or cancellation inside a single run, and as-of series for VWAP, volatility, and time in each book state: the engine reports those only for a whole run
 - AI research tools
 
 The scenarios are stylized. Prices come from the interaction of the configured agents, not from market data, and nothing here is calibrated to a real stock or says anything about real-world profitability.
@@ -188,6 +196,55 @@ What this does and does not show:
 
 The full table, including the thirteen metrics not shown here, is what the command prints.
 
+## The research terminal
+
+```bash
+# 1. The API: builds the extension on first use, then serves on 127.0.0.1:8000.
+cd services/api
+uv sync
+uv run python -m markettwin_api
+
+# 2. The terminal, in a second shell: http://127.0.0.1:5173
+cd apps/web
+pnpm install
+pnpm dev
+```
+
+Runs and experiments are written under `data/research/` (set `MARKETTWIN_WORKSPACE` to use another directory). The workspace starts empty and the terminal says so: nothing is shown until the engine has produced it.
+
+| Screen | What it is for |
+| --- | --- |
+| Overview | What is in the workspace: scenarios, stored runs and experiments, active jobs, engine version |
+| Simulation Lab | Choose a shipped scenario, edit exactly the fields the native config schema accepts, validate, and run |
+| Market Microscope | One completed run. A timeline moves the price chart, the depth ladder, market telemetry, every agent's account, and the execution stream to the same recorded sample |
+| Agent Inspector | One agent: inventory, equity, realized and unrealized P&L, drawdown, executed volume, and its ledger; optionally against another agent of the same run |
+| Experiment Lab | A paired comparison: every metric's means, paired difference, and 95 % intervals, the per-seed distributions and scatter, the methodology, and any seed's two runs side by side |
+| Replay Inspector | Verify a recording, read its digests, search its records, and, when it does not reproduce, see the first differing record field by field |
+
+How the terminal treats data:
+
+- **Time is elapsed simulation time.** No scenario defines a session clock, so no time of day appears. Wall-clock submission and processing times are shown separately and labelled.
+- **A time resolves to the latest record at or before it.** Depth is never interpolated; the ladder names the snapshot it shows. Sampled series are drawn as steps.
+- **Units are the engine's.** Prices in ticks, money in minor units, quantities in shares. No currency symbol is shown, because artifacts define only `tick_size_minor`.
+- **Missing is not zero.** A value the run does not define is shown as unavailable.
+- **Statistics are the engine's.** Means, intervals, and drawdown come from `metrics.json` and `experiment.json`. Three plotted series are derived from recorded ones and labelled so: the midpoint line, the drawdown curve, and cumulative executed volume. Tests hold each to the engine's own total.
+- **No fallback data.** If the API is unreachable the terminal says so and shows nothing in its place.
+
+Playback speed is a viewing pace (1× steps five recorded samples per second); the run itself finished before the page opened. An experiment that kept no run directories can still be inspected seed by seed: the terminal regenerates a cell and checks its digests against the experiment's record.
+
+[ADR 0005](docs/adr/0005-bindings-api-and-terminal.md) specifies the binding, the API, what is derived, and the limits.
+
+### Python
+
+```python
+import markettwin
+
+summary = markettwin.run(open("configs/baseline.json").read(), "data/baseline")
+verdict = markettwin.verify_replay("data/baseline")   # {"verified": True, "code": "Verified", ...}
+```
+
+`markettwin` exposes `run`, `verify_replay`, `canonicalize_config`, `canonicalize_experiment`, `experiment_cell_config`, `run_experiment`, `version`, and `build_info`. A failed run raises `markettwin.NativeRunError` with the engine's `code` and `sequence`.
+
 ## Native exchange API
 
 Include `markettwin/exchange/matching_engine.hpp` and link `markettwin::core`.
@@ -250,6 +307,11 @@ Optional, for formatting and static analysis:
 
 - `clang-format` and `clang-tidy` (LLVM 18 or newer)
 
+For the research API and terminal:
+
+- [uv](https://docs.astral.sh/uv/) and Python 3.11 or newer (the service pins 3.13)
+- Node.js 22 or newer and [pnpm](https://pnpm.io/)
+
 macOS:
 
 ```bash
@@ -307,7 +369,7 @@ The version command:
 Expected output:
 
 ```text
-MarketTwin 0.3.0
+MarketTwin 0.4.0
 ```
 
 `--help` prints usage. `run` and `replay` are described under [Running a simulation](#running-a-simulation) and `experiment` under [Experiments](#experiments). Any other argument exits with status 2.
@@ -341,6 +403,30 @@ Test layout:
 
 The randomized tests print the seed and action number on failure. ASan/UBSan run
 these same tests through the existing CI configuration.
+
+The service and the terminal have their own suites. Neither mocks the engine.
+
+```bash
+cd services/api
+uv run pytest            # binding and API tests against the real core, about 15 seconds
+uv run ruff check . ../../python/markettwin && uv run ruff format --check . ../../python/markettwin
+uv run mypy
+
+cd apps/web
+pnpm typecheck && pnpm lint && pnpm format
+pnpm test                # unit and component tests
+pnpm contrast            # WCAG contrast of every text token on every surface
+pnpm e2e                 # starts the API and the terminal on spare ports and drives a browser
+```
+
+`pnpm e2e` needs a browser once: `pnpm exec playwright install chromium`. It runs a real one-hour simulation and a small experiment in a temporary workspace, compares what each panel shows at a time with what the API recorded there, verifies replay, audits every screen with axe, and cuts the API off to check the failure state.
+
+- `services/api/tests/test_native.py` — the binding: golden parity with the CLI, error translation, concurrent runs, GIL release, experiment progress and cancellation, cell reproducibility
+- `services/api/tests/test_runs.py` — validation layers, run provenance, every series against the recorded stream, as-of lookups, decimation, trades and ledger against the metrics, record paging and filters, shocks, scripted and failed runs, requests that try to leave the registry, the bounded queue, and recovery after an interrupted job
+- `services/api/tests/test_replay.py` — verification, and what a changed trade, a changed ledger entry, another engine version, and a missing manifest each report
+- `services/api/tests/test_experiments.py` — results equal to a direct native run, per-seed values, cell materialization with digest checks, live counts and cancellation
+- `apps/web/src/**/*.test.ts(x)` — exact integer formatting, as-of lookup, the playback cursor, config editing, the table, the ladder, the interval plot against the engine's golden numbers, and failure states
+- `apps/web/e2e/terminal.spec.ts` — one researcher's session end to end
 
 ## Benchmarks
 
@@ -378,21 +464,21 @@ Naming used by the tidy config:
 ```text
 architecture.md                 implementation contract
 core/                           C++20 library, CLI, tests, benchmarks
-bindings/python/                reserved for pybind11
-python/markettwin/              reserved for the Python package
+bindings/python/                pybind11 extension source (markettwin._native)
+python/                         the markettwin package and its build (scikit-build-core)
 research/                       reserved for experiment notes and analysis
-services/api/                   reserved for the research API
-apps/web/                       reserved for the dashboard
+services/api/                   research API (markettwin_api) and its tests
+apps/web/                       research terminal (React, TypeScript) and its tests
 infra/                          reserved for local deployment files
 configs/                       run configurations (scenarios and the scripted demo)
 configs/experiments/           experiment configurations
 schemas/                       reserved for published schemas
 docs/adr/                      accepted implementation decisions
 docs/benchmarks/               stored benchmark baselines
-data/                          generated run output, untracked
+data/                          generated run output, untracked (data/research is the terminal's workspace)
 ```
 
-`research/` is the placeholder from the Phase 0 brief. The architecture places importable Python modules under `python/markettwin/`. Both directories are empty until that work starts.
+`research/` is the placeholder from the Phase 0 brief and is still empty.
 
 ## Dependencies
 
@@ -402,8 +488,9 @@ data/                          generated run output, untracked
 | nlohmann/json | 3.11.3, SHA256 pinned in `cmake/Dependencies.cmake` | Always (private to the core library) |
 | GoogleTest | 1.15.2, SHA256 pinned in `cmake/Dependencies.cmake` | Tests, the default |
 | Google Benchmark | 1.9.4, SHA256 pinned in `cmake/Dependencies.cmake` | `MARKETTWIN_BUILD_BENCHMARKS=ON` |
+| pybind11 | 3.0.1, SHA256 pinned in `cmake/Dependencies.cmake` | `MARKETTWIN_BUILD_PYTHON=ON` |
 
-No package manager manifest beyond CMake FetchContent is required. pybind11, FastAPI, PostgreSQL, Redis, and frontend packages are intentionally absent.
+The core needs nothing beyond CMake FetchContent. The service's Python dependencies (FastAPI, Pydantic, Uvicorn) are locked in `services/api/uv.lock`, and the terminal's packages in `apps/web/pnpm-lock.yaml`. PostgreSQL and Redis are intentionally absent.
 
 Useful CMake options:
 
@@ -411,12 +498,13 @@ Useful CMake options:
 | --- | --- | --- |
 | `MARKETTWIN_BUILD_TESTS` | `ON` | GoogleTest and CTest |
 | `MARKETTWIN_BUILD_BENCHMARKS` | `OFF` | Google Benchmark exchange target |
+| `MARKETTWIN_BUILD_PYTHON` | `OFF` | The `markettwin._native` extension; set by `python/pyproject.toml` |
 | `MARKETTWIN_ENABLE_SANITIZERS` | `OFF` | ASan and UBSan on MarketTwin targets |
 | `MARKETTWIN_WARNINGS_AS_ERRORS` | `ON` | `-Werror` / `/WX` for MarketTwin targets |
 
 ## Phases
 
-Status follows [`architecture.md`](architecture.md) section 20. Phases 1A, 1B, 2A, and 2B are implemented; Phase 3A is next.
+Status follows [`architecture.md`](architecture.md) section 20. Phases 1A through 3A are implemented; Phase 3B is next.
 
 | Phase | Scope | State |
 | --- | --- | --- |
@@ -425,8 +513,8 @@ Status follows [`architecture.md`](architecture.md) section 20. Phases 1A, 1B, 2
 | 1B | Event kernel, canonical trace, exchange replay | Implemented and locally verified |
 | 2A | Trading agents, latency, shocks | Implemented and locally verified |
 | 2B | Accounting, artifacts, paired experiments | Implemented and locally verified |
-| 3A | pybind11, API, worker, dashboard baseline | Not started |
-| 3B | AI research tools, replay UI, end-to-end polish | Not started |
+| 3A | pybind11, API, worker, research terminal, replay inspection | Implemented and locally verified |
+| 3B | AI research tools, end-to-end polish | Not started |
 | 4 | Stretch work after the exit gates | Not started |
 
 ## License
