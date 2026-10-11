@@ -2,6 +2,11 @@ add_library(markettwin_core
   src/common/version.cpp
   src/common/hash.cpp
   src/common/rng.cpp
+  src/accounting/money.cpp
+  src/accounting/ledger.cpp
+  src/accounting/valuation.cpp
+  src/accounting/accounting_config.cpp
+  src/accounting/accountant.cpp
   src/agents/agent.cpp
   src/agents/market_maker.cpp
   src/agents/momentum.cpp
@@ -15,10 +20,14 @@ add_library(markettwin_core
   src/simulation/kernel.cpp
   src/telemetry/codec.cpp
   src/telemetry/scenario_codec.cpp
+  src/telemetry/accounting_codec.cpp
+  src/telemetry/metrics.cpp
   src/telemetry/recorder.cpp
   src/telemetry/artifacts.cpp
   src/telemetry/replay.cpp
   src/simulation/simulation.cpp
+  src/experiment/statistics.cpp
+  src/experiment/experiment.cpp
   src/exchange/order_book.cpp
   src/exchange/matching_engine.cpp
 )

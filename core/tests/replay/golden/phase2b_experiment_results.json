@@ -1,0 +1,1369 @@
+{
+    "comparison": {
+        "baseline": "plain",
+        "candidate": "inventory",
+        "difference": "candidate_minus_baseline",
+        "metrics": [
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 735,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 50333,
+                    "mean_t_interval_milli": [
+                        -1792777,
+                        1893443
+                    ],
+                    "median_milli": 154000,
+                    "minimum": -738,
+                    "standard_deviation_milli": 741952
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 735,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 65667,
+                    "mean_t_interval_milli": [
+                        -1786584,
+                        1917918
+                    ],
+                    "median_milli": 200000,
+                    "minimum": -738,
+                    "standard_deviation_milli": 745631
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 46,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        46000
+                    ],
+                    "mean_milli": 15333,
+                    "mean_t_interval_milli": [
+                        -50641,
+                        81307
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 26558
+                },
+                "name": "total_pnl",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "subject",
+                "unit": "minor"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 448,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 149333,
+                    "mean_t_interval_milli": [
+                        -493197,
+                        791863
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 258653
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 448,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 216000,
+                    "mean_t_interval_milli": [
+                        -341510,
+                        773510
+                    ],
+                    "median_milli": 200000,
+                    "minimum": 0,
+                    "standard_deviation_milli": 224428
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 200,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        133333
+                    ],
+                    "mean_milli": 66667,
+                    "mean_t_interval_milli": [
+                        -220177,
+                        353511
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 115470
+                },
+                "name": "realized_pnl",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "subject",
+                "unit": "minor"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 287,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": -99000,
+                    "mean_t_interval_milli": [
+                        -1483588,
+                        1285588
+                    ],
+                    "median_milli": 154000,
+                    "minimum": -738,
+                    "standard_deviation_milli": 557372
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 287,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": -150333,
+                    "mean_t_interval_milli": [
+                        -1463891,
+                        1163225
+                    ],
+                    "median_milli": 0,
+                    "minimum": -738,
+                    "standard_deviation_milli": 528778
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": [
+                        -102667,
+                        0
+                    ],
+                    "mean_milli": -51333,
+                    "mean_t_interval_milli": [
+                        -272203,
+                        169537
+                    ],
+                    "median_milli": 0,
+                    "minimum": -154,
+                    "standard_deviation_milli": 88912
+                },
+                "name": "unrealized_pnl",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "subject",
+                "unit": "minor"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 0,
+                    "mean_t_interval_milli": [
+                        0,
+                        0
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 0
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 0,
+                    "mean_t_interval_milli": [
+                        0,
+                        0
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 0
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        0
+                    ],
+                    "mean_milli": 0,
+                    "mean_t_interval_milli": [
+                        0,
+                        0
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 0
+                },
+                "name": "fees_paid",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "subject",
+                "unit": "minor"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 1522,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 605333,
+                    "mean_t_interval_milli": [
+                        -1377725,
+                        2588391
+                    ],
+                    "median_milli": 231000,
+                    "minimum": 63,
+                    "standard_deviation_milli": 798288
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 1522,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 597667,
+                    "mean_t_interval_milli": [
+                        -1399015,
+                        2594349
+                    ],
+                    "median_milli": 208000,
+                    "minimum": 63,
+                    "standard_deviation_milli": 803773
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": [
+                        -23000,
+                        0
+                    ],
+                    "mean_milli": -7667,
+                    "mean_t_interval_milli": [
+                        -40654,
+                        25320
+                    ],
+                    "median_milli": 0,
+                    "minimum": -23,
+                    "standard_deviation_milli": 13279
+                },
+                "name": "max_drawdown",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "subject",
+                "unit": "minor"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 997,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 659667,
+                    "mean_t_interval_milli": [
+                        -163034,
+                        1482368
+                    ],
+                    "median_milli": 647000,
+                    "minimum": 335,
+                    "standard_deviation_milli": 331182
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 997,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 684000,
+                    "mean_t_interval_milli": [
+                        -51896,
+                        1419896
+                    ],
+                    "median_milli": 647000,
+                    "minimum": 408,
+                    "standard_deviation_milli": 296238
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 73,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        73000
+                    ],
+                    "mean_milli": 24333,
+                    "mean_t_interval_milli": [
+                        -80365,
+                        129031
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 42147
+                },
+                "name": "maker_spread_capture",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "subject",
+                "unit": "minor"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 492,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 253667,
+                    "mean_t_interval_milli": [
+                        -261349,
+                        768683
+                    ],
+                    "median_milli": 154000,
+                    "minimum": 115,
+                    "standard_deviation_milli": 207322
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 492,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 237000,
+                    "mean_t_interval_milli": [
+                        -311758,
+                        785758
+                    ],
+                    "median_milli": 115000,
+                    "minimum": 104,
+                    "standard_deviation_milli": 220905
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": [
+                        -50000,
+                        0
+                    ],
+                    "mean_milli": -16667,
+                    "mean_t_interval_milli": [
+                        -88378,
+                        55044
+                    ],
+                    "median_milli": 0,
+                    "minimum": -50,
+                    "standard_deviation_milli": 28868
+                },
+                "name": "final_abs_position",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "subject",
+                "unit": "shares"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 492,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 255333,
+                    "mean_t_interval_milli": [
+                        -255563,
+                        766229
+                    ],
+                    "median_milli": 154000,
+                    "minimum": 120,
+                    "standard_deviation_milli": 205663
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 492,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 248667,
+                    "mean_t_interval_milli": [
+                        -275111,
+                        772445
+                    ],
+                    "median_milli": 134000,
+                    "minimum": 120,
+                    "standard_deviation_milli": 210849
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": [
+                        -20000,
+                        0
+                    ],
+                    "mean_milli": -6667,
+                    "mean_t_interval_milli": [
+                        -35351,
+                        22017
+                    ],
+                    "median_milli": 0,
+                    "minimum": -20,
+                    "standard_deviation_milli": 11547
+                },
+                "name": "max_abs_position",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "subject",
+                "unit": "shares"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 123400,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 70533333,
+                    "mean_t_interval_milli": [
+                        -48918661,
+                        189985327
+                    ],
+                    "median_milli": 58800000,
+                    "minimum": 29400,
+                    "standard_deviation_milli": 48085895
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 123400,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 65700000,
+                    "mean_t_interval_milli": [
+                        -59803552,
+                        191203552
+                    ],
+                    "median_milli": 44300000,
+                    "minimum": 29400,
+                    "standard_deviation_milli": 50521975
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": [
+                        -14500000,
+                        0
+                    ],
+                    "mean_milli": -4833333,
+                    "mean_t_interval_milli": [
+                        -25629489,
+                        15962823
+                    ],
+                    "median_milli": 0,
+                    "minimum": -14500,
+                    "standard_deviation_milli": 8371579
+                },
+                "name": "mean_abs_position",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "subject",
+                "unit": "millishares"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 492,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 323667,
+                    "mean_t_interval_milli": [
+                        -96162,
+                        743496
+                    ],
+                    "median_milli": 325000,
+                    "minimum": 154,
+                    "standard_deviation_milli": 169004
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 492,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 340333,
+                    "mean_t_interval_milli": [
+                        -18901,
+                        699567
+                    ],
+                    "median_milli": 325000,
+                    "minimum": 204,
+                    "standard_deviation_milli": 144611
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 50,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        50000
+                    ],
+                    "mean_milli": 16667,
+                    "mean_t_interval_milli": [
+                        -55044,
+                        88378
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 28868
+                },
+                "name": "traded_quantity",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "subject",
+                "unit": "shares"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 258947,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 154093333,
+                    "mean_t_interval_milli": [
+                        -82206889,
+                        390393555
+                    ],
+                    "median_milli": 130000000,
+                    "minimum": 73333,
+                    "standard_deviation_milli": 95123634
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 258947,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 162030000,
+                    "mean_t_interval_milli": [
+                        -50426598,
+                        374486598
+                    ],
+                    "median_milli": 130000000,
+                    "minimum": 97143,
+                    "standard_deviation_milli": 85525284
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 23810,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        23810000
+                    ],
+                    "mean_milli": 7936667,
+                    "mean_t_interval_milli": [
+                        -26212056,
+                        42085390
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 13746710
+                },
+                "name": "fill_rate",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "subject",
+                "unit": "ppm"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 46,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 41000,
+                    "mean_t_interval_milli": [
+                        19487,
+                        62513
+                    ],
+                    "median_milli": 46000,
+                    "minimum": 31,
+                    "standard_deviation_milli": 8660
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 46,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 41333,
+                    "mean_t_interval_milli": [
+                        21254,
+                        61412
+                    ],
+                    "median_milli": 46000,
+                    "minimum": 32,
+                    "standard_deviation_milli": 8083
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 1,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        1000
+                    ],
+                    "mean_milli": 333,
+                    "mean_t_interval_milli": [
+                        -1101,
+                        1767
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 577
+                },
+                "name": "trade_count",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "market",
+                "unit": "trades"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 1266,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 994333,
+                    "mean_t_interval_milli": [
+                        330764,
+                        1657902
+                    ],
+                    "median_milli": 985000,
+                    "minimum": 732,
+                    "standard_deviation_milli": 267122
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 1266,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 997667,
+                    "mean_t_interval_milli": [
+                        346253,
+                        1649081
+                    ],
+                    "median_milli": 985000,
+                    "minimum": 742,
+                    "standard_deviation_milli": 262230
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 10,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        10000
+                    ],
+                    "mean_milli": 3333,
+                    "mean_t_interval_milli": [
+                        -11009,
+                        17675
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 5774
+                },
+                "name": "volume",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "market",
+                "unit": "shares"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 4150,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 3783333,
+                    "mean_t_interval_milli": [
+                        2984794,
+                        4581872
+                    ],
+                    "median_milli": 3650000,
+                    "minimum": 3550,
+                    "standard_deviation_milli": 321455
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 3950,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 3716667,
+                    "mean_t_interval_milli": [
+                        3199552,
+                        4233782
+                    ],
+                    "median_milli": 3650000,
+                    "minimum": 3550,
+                    "standard_deviation_milli": 208167
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": [
+                        -200000,
+                        0
+                    ],
+                    "mean_milli": -66667,
+                    "mean_t_interval_milli": [
+                        -353511,
+                        220177
+                    ],
+                    "median_milli": 0,
+                    "minimum": -200,
+                    "standard_deviation_milli": 115470
+                },
+                "name": "mean_spread",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "market",
+                "unit": "milliticks"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 2766,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 2522000,
+                    "mean_t_interval_milli": [
+                        1990714,
+                        3053286
+                    ],
+                    "median_milli": 2433000,
+                    "minimum": 2367,
+                    "standard_deviation_milli": 213871
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 2633,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 2477667,
+                    "mean_t_interval_milli": [
+                        2133586,
+                        2821748
+                    ],
+                    "median_milli": 2433000,
+                    "minimum": 2367,
+                    "standard_deviation_milli": 138511
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": [
+                        -88667,
+                        0
+                    ],
+                    "mean_milli": -44333,
+                    "mean_t_interval_milli": [
+                        -235084,
+                        146418
+                    ],
+                    "median_milli": 0,
+                    "minimum": -133,
+                    "standard_deviation_milli": 76788
+                },
+                "name": "mean_relative_spread",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "market",
+                "unit": "millibps"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 392300,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 382550000,
+                    "mean_t_interval_milli": [
+                        361389213,
+                        403710787
+                    ],
+                    "median_milli": 378800000,
+                    "minimum": 376550,
+                    "standard_deviation_milli": 8518363
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 392300,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 382550000,
+                    "mean_t_interval_milli": [
+                        361389213,
+                        403710787
+                    ],
+                    "median_milli": 378800000,
+                    "minimum": 376550,
+                    "standard_deviation_milli": 8518363
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        0
+                    ],
+                    "mean_milli": 0,
+                    "mean_t_interval_milli": [
+                        0,
+                        0
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 0
+                },
+                "name": "mean_bid_depth",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "market",
+                "unit": "millishares"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 401100,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 389383333,
+                    "mean_t_interval_milli": [
+                        345673741,
+                        433092925
+                    ],
+                    "median_milli": 397900000,
+                    "minimum": 369150,
+                    "standard_deviation_milli": 17595478
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 401100,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 391183333,
+                    "mean_t_interval_milli": [
+                        355179542,
+                        427187124
+                    ],
+                    "median_milli": 397900000,
+                    "minimum": 374550,
+                    "standard_deviation_milli": 14493476
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 5400,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        3600000
+                    ],
+                    "mean_milli": 1800000,
+                    "mean_t_interval_milli": [
+                        -5944775,
+                        9544775
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 3117691
+                },
+                "name": "mean_ask_depth",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "market",
+                "unit": "millishares"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 46444,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 40885333,
+                    "mean_t_interval_milli": [
+                        19791491,
+                        61979175
+                    ],
+                    "median_milli": 45101000,
+                    "minimum": 31111,
+                    "standard_deviation_milli": 8491414
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 46444,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 41753667,
+                    "mean_t_interval_milli": [
+                        24381749,
+                        59125585
+                    ],
+                    "median_milli": 45101000,
+                    "minimum": 33716,
+                    "standard_deviation_milli": 6993138
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 2605,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        2605000
+                    ],
+                    "mean_milli": 868333,
+                    "mean_t_interval_milli": [
+                        -2867804,
+                        4604470
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 1503997
+                },
+                "name": "midpoint_return_volatility",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "market",
+                "unit": "ppb"
+            },
+            {
+                "baseline": {
+                    "count": 3,
+                    "maximum": 999950,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 999950000,
+                    "mean_t_interval_milli": [
+                        999950000,
+                        999950000
+                    ],
+                    "median_milli": 999950000,
+                    "minimum": 999950,
+                    "standard_deviation_milli": 0
+                },
+                "candidate": {
+                    "count": 3,
+                    "maximum": 999950,
+                    "mean_bootstrap_interval_milli": null,
+                    "mean_milli": 999950000,
+                    "mean_t_interval_milli": [
+                        999950000,
+                        999950000
+                    ],
+                    "median_milli": 999950000,
+                    "minimum": 999950,
+                    "standard_deviation_milli": 0
+                },
+                "difference": {
+                    "count": 3,
+                    "maximum": 0,
+                    "mean_bootstrap_interval_milli": [
+                        0,
+                        0
+                    ],
+                    "mean_milli": 0,
+                    "mean_t_interval_milli": [
+                        0,
+                        0
+                    ],
+                    "median_milli": 0,
+                    "minimum": 0,
+                    "standard_deviation_milli": 0
+                },
+                "name": "two_sided_time",
+                "pairs": 3,
+                "pairs_missing": 0,
+                "scope": "market",
+                "unit": "ppm"
+            }
+        ],
+        "pairs_completed": 3,
+        "subject_agent_id": 2
+    },
+    "config": {
+        "artifacts": "None",
+        "base_config": {
+            "commands": [],
+            "exchange": {
+                "agents": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6
+                ],
+                "max_accepted_orders": 1000000,
+                "max_active_orders": 100000,
+                "max_order_quantity": 1000000,
+                "max_snapshot_depth": 1000,
+                "max_trades": 1000000,
+                "symbol": 1
+            },
+            "horizon_ns": 60000000000,
+            "max_events": 5000000,
+            "max_queue": 100000,
+            "max_trace_bytes": 268435456,
+            "run_id": "scenario",
+            "scenario": {
+                "agents": [
+                    {
+                        "id": 1,
+                        "latency": {
+                            "market_data_ns": 1000000,
+                            "order_entry_jitter_ns": 0,
+                            "order_entry_ns": 1000000,
+                            "report_ns": 1000000
+                        },
+                        "limits": {
+                            "max_messages": 1000000,
+                            "max_open_orders": 16,
+                            "max_order_quantity": 100,
+                            "max_position": 10000
+                        },
+                        "policy": {
+                            "half_spread_ticks": 2,
+                            "kind": "MarketMaker",
+                            "level_spacing_ticks": 1,
+                            "levels": 2,
+                            "quote_size": 100
+                        },
+                        "wakeup": {
+                            "distribution": "Fixed",
+                            "first_ns": 0,
+                            "interval_ns": 500000000
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "latency": {
+                            "market_data_ns": 1000000,
+                            "order_entry_jitter_ns": 0,
+                            "order_entry_ns": 1000000,
+                            "report_ns": 1000000
+                        },
+                        "limits": {
+                            "max_messages": 1000000,
+                            "max_open_orders": 16,
+                            "max_order_quantity": 100,
+                            "max_position": 10000
+                        },
+                        "policy": {
+                            "half_spread_ticks": 2,
+                            "kind": "InventoryMarketMaker",
+                            "level_spacing_ticks": 1,
+                            "levels": 2,
+                            "max_skew_ticks": 2,
+                            "quote_size": 100,
+                            "risk_aversion_ppm": 20,
+                            "volatility_alpha_ppm": 50000,
+                            "volatility_floor_milliticks": 500
+                        },
+                        "wakeup": {
+                            "distribution": "Fixed",
+                            "first_ns": 0,
+                            "interval_ns": 500000000
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "latency": {
+                            "market_data_ns": 1000000,
+                            "order_entry_jitter_ns": 0,
+                            "order_entry_ns": 1000000,
+                            "report_ns": 1000000
+                        },
+                        "limits": {
+                            "max_messages": 1000000,
+                            "max_open_orders": 16,
+                            "max_order_quantity": 100,
+                            "max_position": 10000
+                        },
+                        "policy": {
+                            "estimate_noise_milliticks": 2000,
+                            "kind": "Value",
+                            "order_size": 50,
+                            "slippage_ticks": 1,
+                            "threshold_milliticks": 2000
+                        },
+                        "wakeup": {
+                            "distribution": "Fixed",
+                            "first_ns": 0,
+                            "interval_ns": 500000000
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "latency": {
+                            "market_data_ns": 1000000,
+                            "order_entry_jitter_ns": 0,
+                            "order_entry_ns": 1000000,
+                            "report_ns": 1000000
+                        },
+                        "limits": {
+                            "max_messages": 1000000,
+                            "max_open_orders": 16,
+                            "max_order_quantity": 100,
+                            "max_position": 10000
+                        },
+                        "policy": {
+                            "cooldown_ns": 0,
+                            "kind": "Momentum",
+                            "long_window": 5,
+                            "order_size": 10,
+                            "short_window": 2,
+                            "slippage_ticks": 1,
+                            "threshold_milliticks": 500
+                        },
+                        "wakeup": {
+                            "distribution": "Fixed",
+                            "first_ns": 0,
+                            "interval_ns": 1000000000
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "latency": {
+                            "market_data_ns": 1000000,
+                            "order_entry_jitter_ns": 0,
+                            "order_entry_ns": 1000000,
+                            "report_ns": 1000000
+                        },
+                        "limits": {
+                            "max_messages": 1000000,
+                            "max_open_orders": 16,
+                            "max_order_quantity": 100,
+                            "max_position": 10000
+                        },
+                        "policy": {
+                            "buy_probability_ppm": 500000,
+                            "kind": "Noise",
+                            "limit_offset_ticks": 5,
+                            "market_order_ppm": 300000,
+                            "max_quantity": 20,
+                            "max_resting_orders": 4,
+                            "min_quantity": 1
+                        },
+                        "wakeup": {
+                            "distribution": "Exponential",
+                            "first_ns": 0,
+                            "interval_ns": 1000000000
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "latency": {
+                            "market_data_ns": 1000000,
+                            "order_entry_jitter_ns": 0,
+                            "order_entry_ns": 1000000,
+                            "report_ns": 1000000
+                        },
+                        "limits": {
+                            "max_messages": 1000000,
+                            "max_open_orders": 16,
+                            "max_order_quantity": 100,
+                            "max_position": 10000
+                        },
+                        "policy": {
+                            "buy_probability_ppm": 500000,
+                            "kind": "Noise",
+                            "limit_offset_ticks": 5,
+                            "market_order_ppm": 300000,
+                            "max_quantity": 20,
+                            "max_resting_orders": 4,
+                            "min_quantity": 1
+                        },
+                        "wakeup": {
+                            "distribution": "Exponential",
+                            "first_ns": 0,
+                            "interval_ns": 1500000000
+                        }
+                    }
+                ],
+                "fundamental": {
+                    "initial_milliticks": 15000000,
+                    "mean_reversion_ppm": 200,
+                    "update_interval_ns": 1000000000,
+                    "volatility_milliticks": 1000
+                },
+                "reference_price_ticks": 15000,
+                "sampling": {
+                    "depth": 5,
+                    "interval_ns": 1000000000
+                },
+                "shocks": []
+            },
+            "schema_version": 2,
+            "seed": 7,
+            "tick_size_minor": 1
+        },
+        "bootstrap": {
+            "resamples": 200,
+            "seed": 5
+        },
+        "comparison": {
+            "baseline": "plain",
+            "candidate": "inventory",
+            "subject_agent_id": 2
+        },
+        "experiment_id": "makers",
+        "horizon_ns": 20000000000,
+        "limits": {
+            "max_output_bytes": 0,
+            "max_runs": 6
+        },
+        "schema_version": 1,
+        "seeds": [
+            11,
+            12,
+            13
+        ],
+        "variants": [
+            {
+                "name": "plain",
+                "policy_overrides": [
+                    {
+                        "agent_id": 2,
+                        "policy": {
+                            "half_spread_ticks": 2,
+                            "kind": "MarketMaker",
+                            "level_spacing_ticks": 1,
+                            "levels": 2,
+                            "quote_size": 100
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "inventory",
+                "policy_overrides": [
+                    {
+                        "agent_id": 2,
+                        "policy": {
+                            "half_spread_ticks": 2,
+                            "kind": "InventoryMarketMaker",
+                            "level_spacing_ticks": 1,
+                            "levels": 2,
+                            "max_skew_ticks": 2,
+                            "quote_size": 100,
+                            "risk_aversion_ppm": 20,
+                            "volatility_alpha_ppm": 50000,
+                            "volatility_floor_milliticks": 500
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "config_digest": "376cd31ad6d1a1077b68bfd301a705d9bce462bce7772759297bad38df22a3ab",
+    "counts": [
+        {
+            "completed": 3,
+            "failed": 0,
+            "variant": "plain"
+        },
+        {
+            "completed": 3,
+            "failed": 0,
+            "variant": "inventory"
+        }
+    ],
+    "design": {
+        "pairing": "same_seed",
+        "seeds": 3,
+        "total_runs": 6,
+        "variants": 2
+    },
+    "kind": "ExperimentResults",
+    "metrics_schema_version": 1,
+    "runs": [
+        {
+            "accounting_digest": "5946bdf19857d84a4cbf0e681707ff753e8a1556aff604ba1923a1cf8f2888b1",
+            "artifacts": null,
+            "book_digest": "c30fabe575278cbdafd6c47773919242931f08105d23366c53a873589a3d42f1",
+            "commands_digest": "a42ea855571cf0e3a08c7792b36795ee59572ad8e2320227953c8932cf83ec0a",
+            "config_digest": "7de5f175dad76136738ed2c9a4d02e9edeea163b9e0e88bd8bbc04c1f126fef4",
+            "error_code": null,
+            "error_message": null,
+            "event_count": 1095,
+            "final_time_ns": 20000000000,
+            "metrics_digest": "88cc8788bbe11a44a5552ac1ca5a1d74d4c8faa04fe337d4435c1cdafab78ef4",
+            "run_id": "makers-plain-s11",
+            "seed": 11,
+            "status": "Completed",
+            "stop_reason": "Horizon",
+            "trace_digest": "b1f30be0df1ee8f7bb0a89b44b23c9af1b9c21bf9f4374a989725af93292cac4",
+            "trade_count": 46,
+            "trade_digest": "933c8865682be0fa2bf2d1eba71b430e86216e4932c23506122369d6531d17eb",
+            "variant": "plain"
+        },
+        {
+            "accounting_digest": "503782d17aaa4b3847fba851f51da8ed588f783e213ef0a870c8b209bf689374",
+            "artifacts": null,
+            "book_digest": "c30fabe575278cbdafd6c47773919242931f08105d23366c53a873589a3d42f1",
+            "commands_digest": "fd46f8b9e55fb13075f34d4600281c3e92e36ce4f51f697b644bdd7643f17a35",
+            "config_digest": "2318ed1ddff9b0094bc61c2011b3ea4e6f6e9efb6b2f6c58cde5b82df9766187",
+            "error_code": null,
+            "error_message": null,
+            "event_count": 1095,
+            "final_time_ns": 20000000000,
+            "metrics_digest": "61e8d724d67222d4050e94ee65c699bd8b9de6455be9df7e558f923bd334dfe0",
+            "run_id": "makers-inventory-s11",
+            "seed": 11,
+            "status": "Completed",
+            "stop_reason": "Horizon",
+            "trace_digest": "f7ea218bdf44f9529f7c13c145926ff545f927f11b94c047f2bd2240fd9f7454",
+            "trade_count": 46,
+            "trade_digest": "933c8865682be0fa2bf2d1eba71b430e86216e4932c23506122369d6531d17eb",
+            "variant": "inventory"
+        },
+        {
+            "accounting_digest": "bdcbb0cba82003f9793d2d4538a539397ae48060367d96fa171557faeaa55a04",
+            "artifacts": null,
+            "book_digest": "37c6f5462d3d278141397a9805d19d8fa66b4f5634ca02d77bd19d5c99280a93",
+            "commands_digest": "2015d62b41bc5fa528e799a7ab27dffcc788c4bac794222235ee3afa1d186e9b",
+            "config_digest": "53ea0608ff5a3820bdf8951b79df20e79cc1089c3f77402058f97ee72084d22f",
+            "error_code": null,
+            "error_message": null,
+            "event_count": 888,
+            "final_time_ns": 20000000000,
+            "metrics_digest": "54d83e8fcfa79c7947fdd3d4bcdb04ed04ad285c63354b62863d2121fa94b9dc",
+            "run_id": "makers-plain-s12",
+            "seed": 12,
+            "status": "Completed",
+            "stop_reason": "Horizon",
+            "trace_digest": "3f421ab27a9cf9ab7e458434477fc2d34595d5cc058043883be8bd265212f6e1",
+            "trade_count": 31,
+            "trade_digest": "c0f456db28d8839453a3e2d52ef9c1b1c8dde850ce7d7d2223321c5fe526daa7",
+            "variant": "plain"
+        },
+        {
+            "accounting_digest": "3649f9434b9970a135216868a5268c1cee41d00dd8bc978d3ce3e689af34f12b",
+            "artifacts": null,
+            "book_digest": "92caf02adc16097c1aabb7081f85d48fcbde8fa8f0aee2e39f9fd53d1a67ab41",
+            "commands_digest": "ec3cbe6a4c35200c7f80a511e900731a67c5516b775844d7ccdd919e5717c15b",
+            "config_digest": "ef570cef7ee9dcbbcc34530b5730b78fbc4510798619d4cd7ae438dbfdcdebdf",
+            "error_code": null,
+            "error_message": null,
+            "event_count": 919,
+            "final_time_ns": 20000000000,
+            "metrics_digest": "d0b27c7820f29117570cac913a46ac75a862e5c1c3457fb377d649d9dba6a599",
+            "run_id": "makers-inventory-s12",
+            "seed": 12,
+            "status": "Completed",
+            "stop_reason": "Horizon",
+            "trace_digest": "7bafcb9012c39224d8143e4fc6f303f915928bbf0d3b386824e0d70527863f76",
+            "trade_count": 32,
+            "trade_digest": "82a11e0215c85065bbf6a0e996dc98c14b98120dc5e97d9b81286d390c3f18dc",
+            "variant": "inventory"
+        },
+        {
+            "accounting_digest": "f02df1a3bb59edddd5739bab6158ad52933f35349d94250895185d219b3728a5",
+            "artifacts": null,
+            "book_digest": "eb508f3610c4852ead7aa589dbe4de576f171c63c0180ff816a290d5860cadad",
+            "commands_digest": "bbed6dab205078f35d430d0a25cf8fd7881408bd20927fe1509c6e74e2745389",
+            "config_digest": "8b03d528e4c37ffafb2fd08834b30108d1a2f79260b81ad5dd33cd915e90b93d",
+            "error_code": null,
+            "error_message": null,
+            "event_count": 974,
+            "final_time_ns": 20000000000,
+            "metrics_digest": "24caf0665fdba8e7c04e3987bb68754b5d24ca9044f3245636811d0dc26c69b1",
+            "run_id": "makers-plain-s13",
+            "seed": 13,
+            "status": "Completed",
+            "stop_reason": "Horizon",
+            "trace_digest": "f5ab2c15098a9031317efd2b89be503ff52587252732817d61b3e8b81e36fd53",
+            "trade_count": 46,
+            "trade_digest": "cf24be8d853df3b3ddb95bb65380622a6bde5c769d44ae21714b88664a4f25a8",
+            "variant": "plain"
+        },
+        {
+            "accounting_digest": "62c923b85233a3953785c1543b949c5022e47d9f021f1bc90969d9887979644e",
+            "artifacts": null,
+            "book_digest": "eb508f3610c4852ead7aa589dbe4de576f171c63c0180ff816a290d5860cadad",
+            "commands_digest": "be9c81221a56262b9a0ed565b82a8944e1b03f82da05e2acee7d91fe5825b533",
+            "config_digest": "06a9e2550d0c5d18567310d49b48764c88a06e1993a353f601e411a48014dd03",
+            "error_code": null,
+            "error_message": null,
+            "event_count": 974,
+            "final_time_ns": 20000000000,
+            "metrics_digest": "133b741e3432c33155e595aa2acfd22f08f63f7ce261b25931573483ef9ab345",
+            "run_id": "makers-inventory-s13",
+            "seed": 13,
+            "status": "Completed",
+            "stop_reason": "Horizon",
+            "trace_digest": "d3b73d4e35b14b33bc44b806863143a66aa697e48737abadc74438a59963386c",
+            "trade_count": 46,
+            "trade_digest": "cf24be8d853df3b3ddb95bb65380622a6bde5c769d44ae21714b88664a4f25a8",
+            "variant": "inventory"
+        }
+    ],
+    "schema_version": 1,
+    "statistics": {
+        "bootstrap_interval": "percentile",
+        "confidence_level_ppm": 950000,
+        "rng_algorithm": "xoshiro256**-splitmix64-v1",
+        "rounding": "half_away_from_zero",
+        "scale": "milli",
+        "t_interval": "student_t_two_sided"
+    }
+}

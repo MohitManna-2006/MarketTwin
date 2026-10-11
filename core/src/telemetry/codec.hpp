@@ -10,6 +10,7 @@
 #include <concepts>
 #include <initializer_list>
 #include <nlohmann/json.hpp>
+#include <span>
 #include <string_view>
 
 namespace markettwin::codec {
@@ -20,6 +21,9 @@ inline constexpr std::size_t kMaxRecordBytes = 1024 * 1024;
 
 inline constexpr std::uint64_t kScriptedConfigSchema = 1;
 inline constexpr std::uint64_t kScenarioConfigSchema = 2;
+// Schema 2 with a required accounting object and a scenario that may be null.
+inline constexpr std::uint64_t kAccountingConfigSchema = 3;
+inline constexpr std::uint64_t kManifestSchema = 2;
 
 [[noreturn]] void invalid(std::string_view message);
 [[nodiscard]] Json parse(std::string_view input);
@@ -57,6 +61,11 @@ public:
     member(key).append("\"").append(value).append("\"");
     return *this;
   }
+  // A member whose value is already canonical JSON text.
+  ObjectWriter& raw(std::string_view key, std::string_view value) {
+    member(key).append(value);
+    return *this;
+  }
   [[nodiscard]] std::string finish() {
     text_.push_back('}');
     return std::move(text_);
@@ -73,11 +82,24 @@ private:
 // Scenario records (scenario_codec.cpp).
 [[nodiscard]] Json scenario(const ScenarioConfig& value);
 [[nodiscard]] ScenarioConfig read_scenario(const Json& value);
+[[nodiscard]] Json policy(const PolicyConfig& value);
+[[nodiscard]] PolicyConfig read_policy(const Json& value);
 [[nodiscard]] Json shock_transition(std::size_t index, ShockPhase phase, const Shock& value);
 [[nodiscard]] Json fundamental_update(const FundamentalProcess& value);
 [[nodiscard]] Json scenario_summary(const ScenarioSummary& value);
 [[nodiscard]] std::string rng_digest(const Rng::State& fundamental,
                                      const std::vector<Rng::State>& agents);
+
+// Accounting configuration, records, and metrics (accounting_codec.cpp).
+[[nodiscard]] Json accounting(const AccountingConfig& value);
+[[nodiscard]] AccountingConfig read_accounting(const Json& value);
+[[nodiscard]] Json accounting_header(const RunConfig& config, std::string_view config_digest,
+                                     const std::vector<Account>& accounts);
+[[nodiscard]] Json market_metrics(const RunReport& value);
+[[nodiscard]] Json agent_report(const AgentReport& value);
+// The complete metrics.json document for a finished run.
+[[nodiscard]] Json metrics(const RunConfig& config, const RunSummary& summary);
+[[nodiscard]] std::string_view reject_reason_name(RejectReason value);
 
 // Enumerators serialize by spelling, in declaration order.
 template <typename Enum, std::size_t Size>

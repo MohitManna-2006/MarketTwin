@@ -21,7 +21,14 @@ TEST(ReplayTest, IndependentRunsProduceByteIdenticalArtifactsAndMatchEveryDigest
   EXPECT_EQ(summary.trade_count, 1U);
   EXPECT_EQ(summary.resting_order_count, 0U);
   EXPECT_EQ(summary.final_time, SimTime{20});
-  for (const auto* name : {"config.json", "commands.jsonl", "trace.jsonl", "manifest.json"}) {
+  for (const auto* name : {
+           "config.json",
+           "commands.jsonl",
+           "trace.jsonl",
+           "accounting.jsonl",
+           "metrics.json",
+           "manifest.json",
+       }) {
     EXPECT_EQ(test::read(first.run() / name), test::read(second.run() / name));
   }
   EXPECT_EQ(summary.commands_digest, sha256(test::read(simulation.artifacts().commands)));
@@ -102,7 +109,7 @@ TEST(ReplayTest, RejectsSchemaEngineChecksumAndSummaryTampering) {
   const auto path = root.run() / "manifest.json";
   const auto original = Json::parse(test::read(path));
   auto changed = original;
-  changed.at("schema_version") = 2;
+  changed.at("schema_version") = 3;
   test::write(path, changed.dump());
   EXPECT_EQ(verify_replay(root.run()).code, "UnsupportedSchema");
   changed = original;

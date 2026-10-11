@@ -35,20 +35,26 @@ class VerifySink final : public RecordSink {
 public:
   VerifySink(const RunArtifacts& paths, ReplayResult& result)
       : commands_(paths.commands, std::ios::binary), trace_(paths.trace, std::ios::binary),
-        result_(&result) {
-    if (!commands_ || !trace_) {
-      throw RunError{"IncompleteArtifacts", "command or execution log is missing"};
+        accounting_(paths.accounting, std::ios::binary), result_(&result) {
+    if (!commands_ || !trace_ || !accounting_) {
+      throw RunError{"IncompleteArtifacts", "command, execution, or accounting log is missing"};
     }
   }
   void append(TraceChannel channel, std::string_view record, Sequence sequence) override {
-    auto& input = channel == TraceChannel::Commands ? commands_ : trace_;
+    const bool accounting = channel == TraceChannel::Accounting;
+    auto& input = stream(channel);
     const auto expected = bounded_line(input, sequence);
     if (sequence == Sequence{}) {
-      check_header(expected);
+      check_header(expected, accounting ? kAccountingSchema : 1);
     }
     if (expected != record) {
       result_->expected = expected;
       result_->actual = record;
+      if (accounting) {
+        // The commands and executions up to here agreed, so the same market produced
+        // different books: the sequence is the accounting stream's own.
+        throw RunError{"AccountingMismatch", "accounting record differs", sequence};
+      }
       throw RunError{"TraceMismatch",
                      channel == TraceChannel::Commands ? "command differs before exchange dispatch"
                                                        : "execution output differs",
@@ -56,30 +62,43 @@ public:
     }
     if (channel == TraceChannel::Commands) {
       result_->previous_command = record;
-    } else {
+    } else if (channel == TraceChannel::Execution) {
       result_->previous_output = record;
     }
   }
   void finish() {
     if (commands_.peek() != std::char_traits<char>::eof() ||
-        trace_.peek() != std::char_traits<char>::eof()) {
+        trace_.peek() != std::char_traits<char>::eof() ||
+        accounting_.peek() != std::char_traits<char>::eof()) {
       throw RunError{"ExtraRecords", "records remain after the terminal run state"};
     }
-    if (commands_.bad() || trace_.bad()) {
+    if (commands_.bad() || trace_.bad() || accounting_.bad()) {
       throw RunError{"IoError", "failed checking trace EOF"};
     }
   }
 
 private:
-  static void check_header(std::string_view header) {
+  [[nodiscard]] std::ifstream& stream(TraceChannel channel) noexcept {
+    switch (channel) {
+    case TraceChannel::Commands:
+      return commands_;
+    case TraceChannel::Execution:
+      return trace_;
+    case TraceChannel::Accounting:
+      break;
+    }
+    return accounting_;
+  }
+  static void check_header(std::string_view header, std::uint64_t schema) {
     const auto value = codec::parse(header);
     if (!value.is_object() || !value.contains("schema_version") ||
-        codec::unsigned_integer(value.at("schema_version")) != 1) {
-      throw RunError{"UnsupportedSchema", "unsupported trace schema"};
+        codec::unsigned_integer(value.at("schema_version")) != schema) {
+      throw RunError{"UnsupportedSchema", "unsupported trace or accounting schema"};
     }
   }
   std::ifstream commands_;
   std::ifstream trace_;
+  std::ifstream accounting_;
   ReplayResult* result_;
 };
 
@@ -89,7 +108,7 @@ Json load_manifest(const RunArtifacts& paths) {
   }
   auto manifest = codec::parse(codec::read_file(paths.manifest, codec::kMaxRecordBytes));
   if (!manifest.is_object() || !manifest.contains("schema_version") ||
-      codec::unsigned_integer(manifest.at("schema_version")) != 1) {
+      codec::unsigned_integer(manifest.at("schema_version")) != codec::kManifestSchema) {
     throw RunError{"UnsupportedSchema", "unsupported manifest schema"};
   }
   codec::fields(manifest, {
@@ -101,6 +120,7 @@ Json load_manifest(const RunArtifacts& paths) {
                               "provenance",
                               "summary",
                               "artifacts",
+                              "schemas",
                           });
   if (codec::text(manifest.at("status")) != "Completed") {
     throw RunError{"IncompleteArtifacts", "manifest is not complete"};
@@ -113,7 +133,21 @@ Json load_manifest(const RunArtifacts& paths) {
   for (const auto& value : manifest.at("provenance")) {
     static_cast<void>(codec::text(value));
   }
-  codec::fields(manifest.at("artifacts"), {"config.json", "commands.jsonl", "trace.jsonl"});
+  codec::fields(manifest.at("artifacts"), {
+                                              "config.json",
+                                              "commands.jsonl",
+                                              "trace.jsonl",
+                                              "accounting.jsonl",
+                                              "metrics.json",
+                                          });
+  const Json schemas{
+      {"trace", 1},
+      {"accounting", kAccountingSchema},
+      {"metrics", kMetricsSchema},
+  };
+  if (manifest.at("schemas") != schemas) {
+    throw RunError{"UnsupportedSchema", "unsupported trace, accounting, or metrics schema"};
+  }
   return manifest;
 }
 
@@ -124,9 +158,9 @@ void verify_manifest(const Json& manifest, const RunConfig& config, const RunSum
     throw RunError{"SummaryMismatch", "manifest run identity or terminal summary differs"};
   }
   const Json expected{
-      {"config.json", sha256(config_bytes)},
-      {"commands.jsonl", summary.commands_digest},
-      {"trace.jsonl", summary.trace_digest},
+      {"config.json", sha256(config_bytes)},    {"commands.jsonl", summary.commands_digest},
+      {"trace.jsonl", summary.trace_digest},    {"accounting.jsonl", summary.accounting_digest},
+      {"metrics.json", summary.metrics_digest},
   };
   if (manifest.at("artifacts") != expected) {
     throw RunError{"ChecksumMismatch", "manifest artifact checksum differs"};
@@ -147,10 +181,16 @@ ReplayResult verify_replay(const std::filesystem::path& directory) {
     VerifySink sink{paths, result};
     result.summary = run_kernel(config, sink);
     sink.finish();
+    // The recomputed metrics must be the stored file, byte for byte.
+    const auto metrics_bytes = codec::metrics(config, result.summary).dump() + '\n';
+    if (codec::read_file(paths.metrics, metrics_bytes.size() + 1) != metrics_bytes) {
+      throw RunError{"MetricsMismatch", "stored metrics differ from the recomputed run"};
+    }
     verify_manifest(manifest, config, result.summary, config_bytes);
     result.verified = true;
     result.code = "Verified";
-    result.message = "command trace, execution trace, final book, trades, and checksums agree";
+    result.message = "command trace, execution trace, accounting stream, metrics, final book, "
+                     "trades, and checksums agree";
     result.previous_command.clear();
     result.previous_output.clear();
   } catch (const RunError& error) {
@@ -181,6 +221,10 @@ std::string replay_result_json(const ReplayResult& result) {
 
 std::string summary_json(const RunSummary& summary) {
   return codec::summary(summary).dump();
+}
+
+std::string metrics_json(const RunConfig& config, const RunSummary& summary) {
+  return codec::metrics(config, summary).dump();
 }
 
 } // namespace markettwin

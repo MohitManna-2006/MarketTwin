@@ -51,6 +51,7 @@ void validate_config(const RunConfig& config) {
     validate_command(item, config);
   }
   validate_scenario(config);
+  validate_accounting(config);
 }
 
 RunConfig parse_config(std::string_view text) {

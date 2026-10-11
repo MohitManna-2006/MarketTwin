@@ -26,12 +26,14 @@ Fill fill_for(const Trade& trade, bool maker) {
 
 } // namespace
 
-Population::Agent::Agent(const AgentConfig& agent, std::uint64_t seed)
+Population::Agent::Agent(const AgentConfig& agent, const RunConfig& run)
     : config(&agent), policy(make_policy(agent.policy)),
-      policy_rng(seed, RngStream::AgentPolicy, agent.id.value()),
-      wakeup_rng(seed, RngStream::AgentWakeup, agent.id.value()),
-      latency_rng(seed, RngStream::AgentLatency, agent.id.value()),
-      signal_rng(seed, RngStream::AgentSignal, agent.id.value()) {
+      policy_rng(run.seed, RngStream::AgentPolicy, agent.id.value()),
+      wakeup_rng(run.seed, RngStream::AgentWakeup, agent.id.value()),
+      latency_rng(run.seed, RngStream::AgentLatency, agent.id.value()),
+      signal_rng(run.seed, RngStream::AgentSignal, agent.id.value()),
+      credit_limit(markettwin::credit_limit(run.accounting, agent.id)),
+      cash(initial_cash(run.accounting, agent.id)) {
   if (const auto* value = std::get_if<ValueParams>(&agent.policy)) {
     signal_noise_milliticks = value->estimate_noise_milliticks;
   }
@@ -45,7 +47,7 @@ Population::Population(const RunConfig& config, const ScenarioConfig& scenario,
   agents_.reserve(scenario.agents.size());
   for (const auto& item : scenario.agents) {
     slots_.emplace_back(item.id, agents_.size());
-    agents_.emplace_back(item, config.seed);
+    agents_.emplace_back(item, config);
   }
   std::ranges::sort(slots_);
 }
@@ -133,6 +135,13 @@ void Population::deliver(AgentSlot slot, const Fill& fill) {
   auto& agent = agents_.at(slot);
   const auto quantity = to_signed(fill.quantity.value());
   agent.position += fill.side == Side::Buy ? quantity : -quantity;
+  if (agent.credit_limit) {
+    const auto value = notional(fill.price, fill.quantity, config_->tick_size_minor);
+    const auto& fees = config_->accounting.fees;
+    const auto fee = fee_for(value, fill.maker ? fees.maker_ppm : fees.taker_ppm);
+    const auto traded = fill.side == Side::Buy ? checked_negate(value) : value;
+    agent.cash = checked_subtract(checked_add(agent.cash, traded), fee);
+  }
   agent.policy->on_execution(fill);
 }
 
@@ -223,6 +232,31 @@ void Population::flush(Agent& agent) {
   intents_.clear();
 }
 
+// A conservative pre-trade check, in the same place and spirit as the position limit.
+// Every working buy is costed in full at its limit price plus the larger fee rate, as if
+// it filled entirely as it stands. A market order has no limit, so it is costed at the
+// agent's own reference price: an estimate, not a bound. Sales are never refused here.
+bool Population::can_fund(const Agent& agent, const SubmitIntent& intent) const {
+  if (!agent.credit_limit || intent.side != Side::Buy) {
+    return true;
+  }
+  const auto& fees = config_->accounting.fees;
+  const auto rate = std::max<std::int64_t>({fees.maker_ppm, fees.taker_ppm, 0});
+  const auto reference = PriceTicks{ceil_div(reference_twice(observe(agent)), 2)};
+  const auto cost = [&](OrderType type, PriceTicks limit, Quantity quantity) {
+    const auto value =
+        notional(type == OrderType::Limit ? limit : reference, quantity, config_->tick_size_minor);
+    return Int128{value.value()} + fee_for(value, rate).value();
+  };
+  Int128 committed = cost(intent.type, intent.limit_price, intent.quantity);
+  for (const auto& order : agent.orders) {
+    if (order.side == Side::Buy) {
+      committed += cost(order.type, order.price, order.remaining);
+    }
+  }
+  return Int128{agent.cash.value()} + agent.credit_limit->value() >= committed;
+}
+
 bool Population::send(Agent& agent, const SubmitIntent& intent) {
   const auto& limits = agent.config->limits;
   const bool priced =
@@ -233,6 +267,10 @@ bool Population::send(Agent& agent, const SubmitIntent& intent) {
       intent.quantity > limits.max_order_quantity ||
       agent.orders.size() >= limits.max_open_orders ||
       intent.quantity.value() > side_capacity(observe(agent), intent.side)) {
+    return false;
+  }
+  if (!can_fund(agent, intent)) {
+    ++agent.cash_refusals;
     return false;
   }
   ++agent.messages;
@@ -290,6 +328,15 @@ std::vector<AgentActivity> Population::activity() const {
   result.reserve(agents_.size());
   for (const auto& agent : agents_) {
     result.push_back(agent.activity);
+  }
+  return result;
+}
+
+std::vector<std::pair<AgentId, std::uint64_t>> Population::cash_refusals() const {
+  std::vector<std::pair<AgentId, std::uint64_t>> result;
+  result.reserve(agents_.size());
+  for (const auto& agent : agents_) {
+    result.emplace_back(agent.config->id, agent.cash_refusals);
   }
   return result;
 }

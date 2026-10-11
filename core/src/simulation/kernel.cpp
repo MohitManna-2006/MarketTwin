@@ -1,5 +1,6 @@
 #include "markettwin/simulation/kernel.hpp"
 
+#include "../accounting/accountant.hpp"
 #include "../telemetry/recorder.hpp"
 #include "population.hpp"
 
@@ -26,7 +27,7 @@ class Run {
 public:
   Run(const RunConfig& config, RecordSink& sink)
       : config_(&config), scheduler_(config.limits), exchange_(config.exchange),
-        recorder_(config, sink) {
+        recorder_(config, sink), accountant_(config, sink, recorder_.config_digest()) {
     if (config.scenario) {
       scenario_ = std::make_unique<Scenario>(config, *config.scenario, scheduler_);
     }
@@ -88,7 +89,12 @@ private:
     schedule(end, ShockTransition{.shock = shock, .phase = ShockPhase::End});
   }
 
+  [[nodiscard]] TopOfBook top() const noexcept {
+    return {.bid = exchange_.book().top(Side::Buy), .ask = exchange_.book().top(Side::Sell)};
+  }
+
   void handle(const Event& event, const Order& input) {
+    const auto before = top();
     const auto sequence = recorder_.command(event, input);
     auto order = input;
     order.arrival_time = event.timestamp;
@@ -102,9 +108,14 @@ private:
       recorder_.outcome(event, sequence, "OrderStatus", codec::status(status), status.owner,
                         status.order_id);
     }
+    // The books are posted from the exchange's own report, at the moment of execution.
+    // What each agent learns of it still travels through its report latency below.
+    accountant_.on_order(event.timestamp, before, report);
+    const auto after = top();
+    accountant_.on_book(event.timestamp, after);
     if (scenario_) {
       scenario_->population.route(report);
-      publish(event.timestamp, report.trades);
+      publish(event.timestamp, report.trades, after);
     }
   }
 
@@ -113,16 +124,22 @@ private:
     const auto result = exchange_.cancel(cancel.order_id, cancel.owner);
     recorder_.outcome(event, sequence, "CancelResult", codec::status(result.order), cancel.owner,
                       cancel.order_id);
+    accountant_.on_cancel(result);
+    const auto after = top();
+    accountant_.on_book(event.timestamp, after);
     if (scenario_) {
       scenario_->population.route(result);
-      publish(event.timestamp, {});
+      publish(event.timestamp, {}, after);
     }
   }
 
   void handle(const Event& event, const SnapshotCommand& snapshot) {
     const auto sequence = recorder_.command(event, snapshot);
-    recorder_.outcome(event, sequence, "BookSnapshot",
-                      codec::snapshot(exchange_.snapshot(snapshot.depth)).dump());
+    const auto book = exchange_.snapshot(snapshot.depth);
+    recorder_.outcome(event, sequence, "BookSnapshot", codec::snapshot(book).dump());
+    // Every depth snapshot, scripted or periodic, is also one point of the time series.
+    accountant_.sample(event.timestamp, book, snapshot.depth,
+                       scenario_ ? std::optional{scenario_->fundamental.value()} : std::nullopt);
   }
 
   void handle(const Event& event, const StopCommand& stop) {
@@ -178,17 +195,15 @@ private:
   }
 
   // One update per exchange command that traded or changed the best bid or ask.
-  void publish(SimTime now, std::span<const Trade> trades) {
+  void publish(SimTime now, std::span<const Trade> trades, const TopOfBook& top) {
     auto& feed = scenario_->feed;
-    const auto bid = exchange_.book().top(Side::Buy);
-    const auto ask = exchange_.book().top(Side::Sell);
-    if (trades.empty() && bid == feed.best_bid && ask == feed.best_ask) {
+    if (trades.empty() && top.bid == feed.best_bid && top.ask == feed.best_ask) {
       return;
     }
     feed.sequence = Sequence{feed.sequence.value() + 1};
     feed.exchange_time = now;
-    feed.best_bid = bid;
-    feed.best_ask = ask;
+    feed.best_bid = top.bid;
+    feed.best_ask = top.ask;
     for (const auto& trade : trades) {
       feed.last_trade_price = trade.price_ticks;
       feed.cumulative_volume = checked_add(feed.cumulative_volume, trade.quantity);
@@ -221,6 +236,9 @@ private:
       };
     }
     recorder_.finish(summary_);
+    accountant_.finish(summary_, exchange_,
+                       scenario_ ? scenario_->population.cash_refusals()
+                                 : std::vector<std::pair<AgentId, std::uint64_t>>{});
     return summary_;
   }
 
@@ -228,6 +246,7 @@ private:
   Scheduler scheduler_;
   MatchingEngine exchange_;
   Recorder recorder_;
+  Accountant accountant_;
   std::unique_ptr<Scenario> scenario_;
   RunSummary summary_;
 };

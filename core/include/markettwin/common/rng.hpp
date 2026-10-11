@@ -17,6 +17,7 @@ enum class RngStream : std::uint64_t {
   AgentWakeup = 3,
   AgentLatency = 4,
   AgentSignal = 5,
+  Bootstrap = 6, // experiment statistics only; never drawn inside a run
 };
 
 [[nodiscard]] std::uint64_t splitmix64(std::uint64_t& state) noexcept;

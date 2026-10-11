@@ -32,10 +32,12 @@ public:
   [[nodiscard]] std::vector<AgentActivity> activity() const;
   // Final state of every stream, four per agent in slot order.
   [[nodiscard]] std::vector<Rng::State> rng_states() const;
+  // Buy intents dropped by each agent's cash constraint, in slot order.
+  [[nodiscard]] std::vector<std::pair<AgentId, std::uint64_t>> cash_refusals() const;
 
 private:
   struct Agent {
-    Agent(const AgentConfig& agent, std::uint64_t seed);
+    Agent(const AgentConfig& agent, const RunConfig& run);
 
     const AgentConfig* config;
     std::unique_ptr<ITradingAgent> policy;
@@ -48,6 +50,11 @@ private:
     std::optional<MarketDataUpdate> market;
     AgentControls controls;
     std::int64_t position = 0;
+    // Present only for an agent with a credit limit: its cash as far as delivered fills
+    // say, which is all the pre-trade check is allowed to know.
+    std::optional<Money> credit_limit;
+    Money cash;
+    std::uint64_t cash_refusals = 0;
     std::uint64_t orders_issued = 0;
     std::uint64_t messages = 0;
     SimTime order_channel; // latest delivery time already scheduled on each path
@@ -65,6 +72,8 @@ private:
   [[nodiscard]] bool send(Agent& agent, const SubmitIntent& intent);
   [[nodiscard]] bool send(Agent& agent, const CancelIntent& intent);
   void record_fill(AgentId id, Side side, Quantity quantity);
+  // Whether the agent can fund one more buy on top of every buy it already has working.
+  [[nodiscard]] bool can_fund(const Agent& agent, const SubmitIntent& intent) const;
 
   const RunConfig* config_;
   const ScenarioConfig* scenario_;

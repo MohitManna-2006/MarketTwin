@@ -7,7 +7,9 @@
 
 namespace markettwin {
 
-enum class TraceChannel { Commands, Execution };
+// Accounting records carry their own sequence, separate from the trace sequence that
+// orders commands and their outcomes.
+enum class TraceChannel { Commands, Execution, Accounting };
 
 // Native internal boundary. Implementations write artifacts or verify replay records.
 class RecordSink {

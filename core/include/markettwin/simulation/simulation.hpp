@@ -1,6 +1,7 @@
 #ifndef MARKETTWIN_SIMULATION_SIMULATION_HPP
 #define MARKETTWIN_SIMULATION_SIMULATION_HPP
 
+#include "markettwin/accounting/report.hpp"
 #include "markettwin/simulation/config.hpp"
 
 namespace markettwin {
@@ -46,6 +47,12 @@ struct RunSummary {
   std::string commands_digest;
   std::string trace_digest;
   std::optional<ScenarioSummary> scenario;
+  // Phase 2B. None of these is part of the trace's terminal record or of summary_json,
+  // so trace format 1 is unchanged. The digests cover the exact bytes of accounting.jsonl
+  // and metrics.json.
+  std::string accounting_digest;
+  std::string metrics_digest;
+  RunReport report;
   bool operator==(const RunSummary&) const = default;
 };
 
@@ -54,6 +61,8 @@ struct RunArtifacts {
   std::filesystem::path config;
   std::filesystem::path commands;
   std::filesystem::path trace;
+  std::filesystem::path accounting;
+  std::filesystem::path metrics;
   std::filesystem::path manifest;
   bool operator==(const RunArtifacts&) const = default;
 };

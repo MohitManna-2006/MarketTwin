@@ -16,13 +16,14 @@ class FileSink final : public RecordSink {
 public:
   explicit FileSink(const RunArtifacts& paths)
       : commands_(paths.commands.string() + ".partial", std::ios::binary),
-        trace_(paths.trace.string() + ".partial", std::ios::binary) {
-    if (!commands_ || !trace_) {
+        trace_(paths.trace.string() + ".partial", std::ios::binary),
+        accounting_(paths.accounting.string() + ".partial", std::ios::binary) {
+    if (!commands_ || !trace_ || !accounting_) {
       throw RunError{"IoError", "cannot create trace streams"};
     }
   }
   void append(TraceChannel channel, std::string_view record, Sequence sequence) override {
-    auto& output = channel == TraceChannel::Commands ? commands_ : trace_;
+    auto& output = stream(channel);
     output << record;
     if (!output) {
       throw RunError{"IoError", "failed writing trace record", sequence};
@@ -31,14 +32,27 @@ public:
   void close() {
     commands_.close();
     trace_.close();
-    if (!commands_ || !trace_) {
+    accounting_.close();
+    if (!commands_ || !trace_ || !accounting_) {
       throw RunError{"IoError", "failed closing trace streams"};
     }
   }
 
 private:
+  [[nodiscard]] std::ofstream& stream(TraceChannel channel) noexcept {
+    switch (channel) {
+    case TraceChannel::Commands:
+      return commands_;
+    case TraceChannel::Execution:
+      return trace_;
+    case TraceChannel::Accounting:
+      break;
+    }
+    return accounting_;
+  }
   std::ofstream commands_;
   std::ofstream trace_;
+  std::ofstream accounting_;
 };
 
 void write_file(const std::filesystem::path& path, std::string_view contents) {
@@ -57,6 +71,8 @@ RunArtifacts artifact_paths(const std::filesystem::path& directory) {
       .config = directory / "config.json",
       .commands = directory / "commands.jsonl",
       .trace = directory / "trace.jsonl",
+      .accounting = directory / "accounting.jsonl",
+      .metrics = directory / "metrics.json",
       .manifest = directory / "manifest.json",
   };
 }
@@ -75,11 +91,14 @@ RunSummary write_run(const RunConfig& config, const std::filesystem::path& direc
     FileSink sink{paths};
     auto summary = run_kernel(config, sink);
     sink.close();
-    for (const auto& path : {paths.config, paths.commands, paths.trace}) {
+    const auto metrics_bytes = codec::metrics(config, summary).dump() + '\n';
+    write_file(paths.metrics.string() + ".partial", metrics_bytes);
+    for (const auto& path :
+         {paths.config, paths.commands, paths.trace, paths.accounting, paths.metrics}) {
       std::filesystem::rename(path.string() + ".partial", path);
     }
     const Json manifest{
-        {"schema_version", 1},
+        {"schema_version", codec::kManifestSchema},
         {"status", "Completed"},
         {"run_id", config.run_id},
         {"engine_version", version()},
@@ -99,6 +118,16 @@ RunSummary write_run(const RunConfig& config, const std::filesystem::path& direc
                 {"config.json", sha256(config_bytes)},
                 {"commands.jsonl", summary.commands_digest},
                 {"trace.jsonl", summary.trace_digest},
+                {"accounting.jsonl", summary.accounting_digest},
+                {"metrics.json", summary.metrics_digest},
+            },
+        },
+        {
+            "schemas",
+            {
+                {"trace", 1},
+                {"accounting", kAccountingSchema},
+                {"metrics", kMetricsSchema},
             },
         },
     };
