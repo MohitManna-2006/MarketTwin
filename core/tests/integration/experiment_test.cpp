@@ -179,6 +179,65 @@ TEST(ExperimentTest, PairedDifferencesAreCandidateMinusBaselineSeedBySeed) {
             summarize(std::vector<std::int64_t>{0, 0, 0}, config.bootstrap, 3));
 }
 
+TEST(ExperimentTest, PairedValuesAreTheNumbersBehindEveryReportedSummary) {
+  const auto config = fixture();
+  const auto result = run_experiment(config);
+  const auto document = Json::parse(experiment_paired_values_json(config, result));
+  EXPECT_EQ(document.at("kind"), "ExperimentPairedValues");
+  EXPECT_EQ(document.at("baseline"), "plain");
+  EXPECT_EQ(document.at("candidate"), "inventory");
+  EXPECT_EQ(document.at("subject_agent_id"), 2);
+  EXPECT_EQ(document.at("seeds"), (Json{11, 12, 13}));
+  ASSERT_EQ(document.at("metrics").size(), result.comparisons.size());
+  // Summarizing the published values reproduces each native summary exactly.
+  for (std::size_t index = 0; index < result.comparisons.size(); ++index) {
+    const auto& expected = result.comparisons.at(index);
+    const auto& item = document.at("metrics").at(index);
+    EXPECT_EQ(item.at("name"), expected.name);
+    EXPECT_EQ(item.at("unit"), expected.unit);
+    EXPECT_EQ(item.at("scope"), expected.scope);
+    std::vector<std::int64_t> baseline;
+    std::vector<std::int64_t> candidate;
+    std::vector<std::int64_t> difference;
+    for (std::size_t seed = 0; seed < 3; ++seed) {
+      if (item.at("difference").at(seed).is_null()) {
+        continue;
+      }
+      baseline.push_back(item.at("baseline").at(seed).get<std::int64_t>());
+      candidate.push_back(item.at("candidate").at(seed).get<std::int64_t>());
+      difference.push_back(item.at("difference").at(seed).get<std::int64_t>());
+      EXPECT_EQ(difference.back(), candidate.back() - baseline.back()) << expected.name;
+    }
+    EXPECT_EQ(difference.size(), expected.pairs) << expected.name;
+    EXPECT_EQ(summarize(baseline), expected.baseline) << expected.name;
+    EXPECT_EQ(summarize(candidate), expected.candidate) << expected.name;
+    EXPECT_EQ(summarize(difference, config.bootstrap, index), expected.difference) << expected.name;
+  }
+  const auto& pnl = document.at("metrics").at(0);
+  EXPECT_EQ(pnl.at("baseline").at(0), total_pnl(result.runs.at(0)));
+  EXPECT_EQ(pnl.at("candidate").at(0), total_pnl(result.runs.at(1)));
+
+  // A seed with a failed side is not a pair and has no row.
+  const RunFunction flaky = [](const RunConfig& run, const std::filesystem::path& directory) {
+    if (run.run_id == "makers-inventory-s12") {
+      throw RunError{"Injected", "candidate failed"};
+    }
+    return Simulation{run, directory}.run();
+  };
+  const auto partial = run_experiment(config, {}, flaky);
+  const auto fewer = Json::parse(experiment_paired_values_json(config, partial));
+  EXPECT_EQ(fewer.at("seeds"), (Json{11, 13}));
+  EXPECT_EQ(fewer.at("metrics").at(0).at("difference").size(), 2U);
+
+  // Without a comparison there is nothing to pair.
+  auto unpaired = config;
+  unpaired.comparison.reset();
+  const auto none = Json::parse(experiment_paired_values_json(unpaired, run_experiment(unpaired)));
+  EXPECT_TRUE(none.at("baseline").is_null());
+  EXPECT_TRUE(none.at("seeds").empty());
+  EXPECT_TRUE(none.at("metrics").empty());
+}
+
 TEST(ExperimentTest, IdenticalVariantsShowNoDifferenceAtAll) {
   auto config = fixture();
   config.variants.at(1).overrides = config.variants.at(0).overrides;

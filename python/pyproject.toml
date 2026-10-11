@@ -1,0 +1,24 @@
+[build-system]
+requires = ["scikit-build-core>=0.11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "markettwin"
+version = "0.4.0"
+description = "Run-level Python interface to the MarketTwin C++20 simulation core"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+cmake.version = ">=3.25"
+cmake.source-dir = ".."
+cmake.build-type = "Release"
+build-dir = "../build/python/{wheel_tag}"
+wheel.packages = ["markettwin"]
+wheel.install-dir = ""
+
+[tool.scikit-build.cmake.define]
+MARKETTWIN_BUILD_PYTHON = "ON"
+MARKETTWIN_BUILD_TESTS = "OFF"
+MARKETTWIN_BUILD_BENCHMARKS = "OFF"

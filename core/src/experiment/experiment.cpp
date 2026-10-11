@@ -163,19 +163,18 @@ std::optional<std::int64_t> metric_value(const MetricDefinition& metric, const R
   return metric.extract(run.summary.report, *found);
 }
 
-std::vector<MetricComparison> compare(const ExperimentConfig& config,
-                                      const std::vector<RunOutcome>& runs,
-                                      std::uint64_t& pairs_completed) {
-  std::vector<MetricComparison> result;
-  if (!config.comparison) {
-    return result;
-  }
+using RunPair = std::pair<const RunOutcome*, const RunOutcome*>;
+
+// The (baseline, candidate) runs of every seed both variants completed, in seed order.
+std::vector<RunPair> completed_pairs(const ExperimentConfig& config,
+                                     const ComparisonConfig& comparison,
+                                     const std::vector<RunOutcome>& runs) {
   const auto index_of = [&](std::string_view name) {
     return static_cast<std::size_t>(find_variant(config, name) - config.variants.data());
   };
-  const auto baseline_index = index_of(config.comparison->baseline);
-  const auto candidate_index = index_of(config.comparison->candidate);
-  std::vector<std::pair<const RunOutcome*, const RunOutcome*>> pairs;
+  const auto baseline_index = index_of(comparison.baseline);
+  const auto candidate_index = index_of(comparison.candidate);
+  std::vector<RunPair> pairs;
   for (std::size_t seed = 0; seed < config.seeds.size(); ++seed) {
     const auto& baseline = runs.at((seed * config.variants.size()) + baseline_index);
     const auto& candidate = runs.at((seed * config.variants.size()) + candidate_index);
@@ -183,6 +182,18 @@ std::vector<MetricComparison> compare(const ExperimentConfig& config,
       pairs.emplace_back(&baseline, &candidate);
     }
   }
+  return pairs;
+}
+
+std::vector<MetricComparison> compare(const ExperimentConfig& config,
+                                      const std::vector<RunOutcome>& runs,
+                                      std::uint64_t& pairs_completed) {
+  std::vector<MetricComparison> result;
+  if (!config.comparison) {
+    return result;
+  }
+  const auto& compared = *config.comparison;
+  const auto pairs = completed_pairs(config, compared, runs);
   pairs_completed = pairs.size();
   for (std::size_t index = 0; index < kMetrics.size(); ++index) {
     const auto& metric = kMetrics.at(index);
@@ -194,8 +205,8 @@ std::vector<MetricComparison> compare(const ExperimentConfig& config,
     std::vector<std::int64_t> candidate;
     std::vector<std::int64_t> difference;
     for (const auto& [first, second] : pairs) {
-      const auto before = metric_value(metric, *first, config.comparison->subject);
-      const auto after = metric_value(metric, *second, config.comparison->subject);
+      const auto before = metric_value(metric, *first, compared.subject);
+      const auto after = metric_value(metric, *second, compared.subject);
       if (!before || !after) {
         ++comparison.pairs_missing;
         continue;
@@ -746,6 +757,56 @@ ExperimentResult run_experiment(const ExperimentConfig& config,
 std::string experiment_results_json(const ExperimentConfig& config,
                                     const ExperimentResult& result) {
   return results_json(config, result).dump();
+}
+
+std::string experiment_paired_values_json(const ExperimentConfig& config,
+                                          const ExperimentResult& result) {
+  auto seeds = Json::array();
+  auto metrics = Json::array();
+  if (config.comparison) {
+    const auto& compared = *config.comparison;
+    const auto pairs = completed_pairs(config, compared, result.runs);
+    for (const auto& pair : pairs) {
+      seeds.push_back(pair.first->seed);
+    }
+    const auto value_json = [](const Value& value) { return value ? Json(*value) : Json(nullptr); };
+    for (const auto& metric : kMetrics) {
+      auto baseline = Json::array();
+      auto candidate = Json::array();
+      auto difference = Json::array();
+      for (const auto& [first, second] : pairs) {
+        const auto before = metric_value(metric, *first, compared.subject);
+        const auto after = metric_value(metric, *second, compared.subject);
+        baseline.push_back(value_json(before));
+        candidate.push_back(value_json(after));
+        difference.push_back(before && after ? Json(narrow(Int128{*after} - Int128{*before}))
+                                             : Json(nullptr));
+      }
+      metrics.push_back({
+          {"name", metric.name},
+          {"unit", metric.unit},
+          {"scope", metric.scope},
+          {"baseline", baseline},
+          {"candidate", candidate},
+          {"difference", difference},
+      });
+    }
+  }
+  return Json{
+      {"schema_version", kExperimentSchema},
+      {"kind", "ExperimentPairedValues"},
+      {"experiment_id", config.experiment_id},
+      {"baseline", config.comparison ? Json(config.comparison->baseline) : Json(nullptr)},
+      {"candidate", config.comparison ? Json(config.comparison->candidate) : Json(nullptr)},
+      {
+          "subject_agent_id",
+          config.comparison ? Json(config.comparison->subject.value()) : Json(nullptr),
+      },
+      {"difference", "candidate_minus_baseline"},
+      {"seeds", seeds},
+      {"metrics", metrics},
+  }
+      .dump();
 }
 
 std::string experiment_report(const ExperimentConfig& config, const ExperimentResult& result) {

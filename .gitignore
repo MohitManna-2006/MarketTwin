@@ -27,5 +27,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 *.egg-info/
+.ruff_cache/
+.mypy_cache/
 node_modules/
 dist/
+/apps/web/test-results/
+/apps/web/playwright-report/

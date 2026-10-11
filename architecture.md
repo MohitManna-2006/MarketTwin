@@ -601,6 +601,19 @@ class Simulation {
 - Package with CMake/scikit-build-core or an equivalently reproducible wheel build.
 - Treat C++ ABI and Python binding compatibility as separate versioned contracts.
 
+### 12.4 Phase 3A resolved binding
+
+[ADR 0005](docs/adr/0005-bindings-api-and-terminal.md) implements 12.3 as the extension
+module `markettwin._native`, built with `-DMARKETTWIN_BUILD_PYTHON=ON` and packaged by
+`python/pyproject.toml`. It was chosen over a CLI subprocess because the service needs a
+failed run's code and sequence, counts from a running experiment, and cancellation. Each
+function is one whole native operation exchanging JSON text; the GIL is released for the
+whole call, and independent runs execute concurrently on threads because the core has no
+global mutable state. `RunError` becomes `markettwin.NativeRunError` with its code and
+sequence. The core gained one function, `experiment_paired_values_json`, which publishes
+the per-seed values behind each comparison; no artifact, schema, or digest changed. A test
+holds a run through the binding to the golden summary and metrics the CLI tests pin.
+
 ## 13. Artifact schemas and storage design
 
 ### 13.1 PostgreSQL (application metadata)
@@ -640,6 +653,17 @@ manifest. Experiments write `experiment.json`, `runs.jsonl`, and optionally one 
 directory per cell. Parquet tables are not implemented: the JSONL streams carry the same
 rows without a new dependency. A failed single run still publishes no manifest; an
 experiment records each failed cell with its error code.
+
+### 13.5 Phase 3A resolved storage
+
+[ADR 0005](docs/adr/0005-bindings-api-and-terminal.md) keeps the filesystem as the store
+of record and replaces 13.1 with a single SQLite registry in the workspace
+(`data/research/` by default): one row per run and per experiment, holding what the engine
+does not record (who asked, wall-clock times, the last replay result). PostgreSQL is
+deferred until more than one process needs the registry. The service never modifies an
+engine artifact; the columnar index it builds for a run is written beside the workspace,
+under `derived/`, and can be deleted and rebuilt. Request-supplied paths are not accepted
+anywhere, and the only downloadable files are the six artifacts of a run.
 
 ## 14. Python research, experiments, and statistics
 
@@ -717,6 +741,33 @@ against the pre-trade midpoint is.
 - Workers enforce CPU, run duration, event count, memory, and disk budgets.
 - Cancellation is cooperative at safe simulation checkpoints; final status is explicit.
 
+### 15.4 Phase 3A resolved API and worker
+
+[ADR 0005](docs/adr/0005-bindings-api-and-terminal.md) implements 15.1 and 15.3 as a
+FastAPI service, `services/api/markettwin_api`, bound to the loopback interface. Jobs run
+on a bounded thread pool inside the API process, not a queue: two at a time, sixteen
+waiting, then `429`. A job interrupted by a restart is recorded as failed. Endpoints, all
+under `/api/v1`:
+
+| Area | Endpoints |
+| --- | --- |
+| Service | `GET /health` |
+| Scenarios | `GET /scenarios`, `GET /scenarios/{key}`, `GET /schema/fields` |
+| Validation | `POST /configs/validate`, `POST /experiments/validate` |
+| Runs | `POST /runs`, `GET /runs`, `GET /runs/{id}`, `DELETE /runs/{id}` |
+| Recorded series | `GET /runs/{id}/samples/times`, `/samples`, `/series/market`, `/series/agents/{agent}`, `/book` |
+| Records | `GET /runs/{id}/trades`, `/events`, `/agents/{agent}/ledger`, `/artifacts/{name}` |
+| Replay | `POST /runs/{id}/replay`, `GET /runs/{id}/replay` |
+| Experiments | `POST /experiments`, `GET /experiments`, `GET /experiments/{id}`, `/results`, `/paired-values`, `POST /experiments/{id}/cancel`, `POST /experiments/{id}/cells/materialize` |
+
+These differ from 15.1 in three ways. The comparison is served as the engine's whole
+results document (`/results`) with the per-seed values beside it. Depth is served both by
+time (`/book`) and in windows of exact samples (`/samples`), because the terminal's cursor
+is a sample index. Progress is polled; the WebSocket of 15.2 and the health/ready split
+are not implemented. Validation reports the schema's, the service's, and the engine's
+errors separately. A run reports no progress, because the core runs it as one call; an
+experiment reports the count of finished runs.
+
 ## 16. AI quantitative research assistant
 
 ### 16.1 Allowed capabilities
@@ -778,6 +829,27 @@ against the pre-trade midpoint is.
 - User can identify incomplete/failed runs and inspect reasons.
 - Replay timeline uses persisted events/snapshots and never alters run source data.
 - Avoid chart downsampling methods that obscure extreme market events without disclosure.
+
+### 17.3 Phase 3A resolved terminal
+
+[ADR 0005](docs/adr/0005-bindings-api-and-terminal.md) implements the console as the
+MarketTwin research terminal in `apps/web`. Routes:
+
+| Route | Screen |
+| --- | --- |
+| `/` | Research overview |
+| `/simulations`, `/simulations/new` | Stored runs; Simulation Lab |
+| `/runs/:id` | Market Microscope |
+| `/runs/:id/agents/:agent` | Agent Inspector |
+| `/runs/:id/replay`, `/replay` | Replay Inspector; verification of stored runs |
+| `/experiments`, `/experiments/new`, `/experiments/:id` | Stored experiments; configurator; Experiment Lab |
+| `/experiments/:id/seeds/:seed` | One seed's baseline and candidate runs, side by side |
+
+The replay screens of 17.1 are part of this phase; the AI panel is not. Every chart has an
+elapsed-simulation-time axis with units, sampled series are drawn as steps, and a time
+resolves to the latest record at or before it. A missing value is shown as unavailable,
+never as zero. The terminal formats, plots, and bins; it computes no P&L, statistic, or
+interval, and when the API does not answer it shows nothing in its place.
 
 ## 18. Security and operational safety
 
@@ -865,14 +937,17 @@ against the pre-trade midpoint is.
 ### Phase 3A: Service integration (Days 15-17)
 
 - Add pybind11 run-level wrapper, Python schemas, FastAPI endpoints, worker orchestration.
-- Add PostgreSQL metadata and optional Redis queue; preserve local CLI fallback.
-- Build UI baseline: experiment builder, progress, run charts, trade tape, agent metrics.
+- Keep run metadata in a local SQLite registry and run jobs on an in-process worker;
+  PostgreSQL and a Redis queue are deferred (ADR 0005). Preserve the CLI.
+- Build the research terminal: scenario and experiment configuration, progress, synchronized
+  run charts and depth, the execution stream, agent accounting, and paired comparisons.
+- Add the replay timeline, verification status and diagnostics, and first-divergence
+  inspection.
 - Exit: browser can initiate a bounded scenario, view results, and inspect artifacts.
 
-### Phase 3B: AI, replay UI, and polish (Days 18-21)
+### Phase 3B: AI and polish (Days 18-21)
 
 - Add typed research tools, AI experiment planner, report grounding and evaluation.
-- Add persisted replay timeline, verification badge/diagnostics, first-divergence inspection.
 - Run end-to-end regression, load/memory checks, threat tests, and documentation/examples.
 - Exit: a research query launches validated experiments and produces a traceable report; reference demos reproduce from clean build.
 
@@ -961,8 +1036,8 @@ You are implementing MarketTwin. Read architecture.md, the current phase, and re
 - ADR-0005: Canonical event log, hash format, and replay modes.
 - ADR-0006: RNG algorithm, stream partition, and distribution portability.
 - ADR-0007: Accounting convention and mark-to-market fallbacks.
-- ADR-0008: pybind11 vs subprocess CLI for integration and why.
-- ADR-0009: Worker queue and result store selection.
+- ADR-0008: pybind11 vs subprocess CLI for integration and why. (Settled in `docs/adr/0005`.)
+- ADR-0009: Worker queue and result store selection. (Settled in `docs/adr/0005`.)
 - ADR-0010: AI allowed tools, permission model, and execution budgets.
 
 ## 25. Launch checklist and definition of done

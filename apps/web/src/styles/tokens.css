@@ -1,0 +1,68 @@
+/*
+ * Institutional Obsidian — semantic tokens.
+ *
+ * Components use these names (through the Tailwind theme in global.css), never a hex
+ * value. Gold is the product's identity colour and says nothing about a result. Positive
+ * and negative tones mark financial direction only, and always travel with a sign, a
+ * label, or a shape.
+ *
+ * Contrast (scripts/contrast-audit.mjs, WCAG 2.1): every text token is at least 4.5:1 on
+ * every surface, including a hovered or selected row. Four values were lightened from the
+ * design brief for that reason, each by the smallest step that passes:
+ *   --text-tertiary  #738188 -> #909BA1   (was 3.2:1 on a selected row)
+ *   --text-disabled  #55636A -> #727E83   (exempt from the criterion; held to 3:1)
+ *   --data-positive-text       #77A390    (--data-positive is 4.4:1 on a selected row)
+ *   --data-negative-text       #C68A8A    (--data-negative is 3.8:1 on a selected row)
+ *   --accent-label             #AB9878    (--accent-muted is 4.0:1 on a panel header)
+ * The brief's positive and negative tones are kept for marks: bars, lines, and dots.
+ */
+:root {
+  --canvas: #111417;
+  --surface-0: #15191c;
+  --surface-1: #1a1f23;
+  --surface-2: #20262b;
+  --surface-hover: #262d32;
+  --surface-selected: #2b3237;
+
+  --border-subtle: #293136;
+  --border-default: #343e43;
+  --border-strong: #475258;
+
+  --text-primary: #e9ecea;
+  --text-secondary: #a5b3b8;
+  --text-tertiary: #909ba1;
+  --text-disabled: #727e83;
+
+  --accent-primary: #c6a774;
+  --accent-hover: #d6b988;
+  --accent-muted: #927950;
+  --accent-label: #ab9878;
+  --accent-wash: rgb(198 167 116 / 0.1);
+
+  --data-positive: #719f8b;
+  --data-negative: #be7878;
+  --data-neutral: #83a9b4;
+  --data-warning: #d3aa70;
+  --data-positive-text: #77a390;
+  --data-negative-text: #c68a8a;
+  --data-positive-wash: rgb(113 159 139 / 0.14);
+  --data-negative-wash: rgb(190 120 120 / 0.14);
+  --data-neutral-wash: rgb(131 169 180 / 0.12);
+
+  --chart-price: #c6a774;
+  --chart-fundamental: #83a9b4;
+  --chart-baseline: #8193a0;
+  --chart-inventory-aware: #bda070;
+  --chart-grid: #232a2f;
+  --chart-axis: #909ba1;
+
+  --focus-ring: #d8bd90;
+
+  /* Motion: brief, linear, and absent when the reader asks for less. */
+  --motion-hover: 100ms;
+  --motion-panel: 140ms;
+  --motion-dialog: 160ms;
+
+  --bar-top: 48px;
+  --bar-context: 32px;
+}
