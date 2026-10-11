@@ -9,6 +9,7 @@ description = "Local research API for the MarketTwin simulation core"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115",
+  "httpx>=0.27",
   "markettwin",
   "pydantic>=2.9",
   "uvicorn>=0.32",

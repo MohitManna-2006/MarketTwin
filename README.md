@@ -490,7 +490,7 @@ data/                          generated run output, untracked (data/research is
 | Google Benchmark | 1.9.4, SHA256 pinned in `cmake/Dependencies.cmake` | `MARKETTWIN_BUILD_BENCHMARKS=ON` |
 | pybind11 | 3.0.1, SHA256 pinned in `cmake/Dependencies.cmake` | `MARKETTWIN_BUILD_PYTHON=ON` |
 
-The core needs nothing beyond CMake FetchContent. The service's Python dependencies (FastAPI, Pydantic, Uvicorn) are locked in `services/api/uv.lock`, and the terminal's packages in `apps/web/pnpm-lock.yaml`. PostgreSQL and Redis are intentionally absent.
+The core needs nothing beyond CMake FetchContent. The service's Python dependencies (FastAPI, Pydantic, Uvicorn, HTTPX) are locked in `services/api/uv.lock`, and the terminal's packages in `apps/web/pnpm-lock.yaml`. PostgreSQL and Redis are intentionally absent.
 
 Useful CMake options:
 
@@ -504,7 +504,7 @@ Useful CMake options:
 
 ## Phases
 
-Status follows [`architecture.md`](architecture.md) section 20. Phases 1A through 3A are implemented; Phase 3B is next.
+Status follows [`architecture.md`](architecture.md) section 20. Phases 1A through 3A are implemented; Phase 3B is in progress. See [Phase 3B setup and evaluation](docs/phase3b-ai-research.md) and [ADR 0006](docs/adr/0006-supervised-ai-research.md).
 
 | Phase | Scope | State |
 | --- | --- | --- |
@@ -514,7 +514,7 @@ Status follows [`architecture.md`](architecture.md) section 20. Phases 1A throug
 | 2A | Trading agents, latency, shocks | Implemented and locally verified |
 | 2B | Accounting, artifacts, paired experiments | Implemented and locally verified |
 | 3A | pybind11, API, worker, research terminal, replay inspection | Implemented and locally verified |
-| 3B | AI research tools, end-to-end polish | Not started |
+| 3B | Supervised AI research workflow and institutional workspace | In progress |
 | 4 | Stretch work after the exit gates | Not started |
 
 ## License

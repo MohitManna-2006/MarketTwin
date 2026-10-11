@@ -75,6 +75,40 @@ CREATE TABLE IF NOT EXISTS experiments (
   error_message TEXT
 );
 CREATE INDEX IF NOT EXISTS experiments_created ON experiments (created_at DESC);
+CREATE TABLE IF NOT EXISTS investigations (
+  id TEXT PRIMARY KEY,
+  question TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  provider TEXT,
+  model TEXT,
+  plan_json TEXT,
+  experiment_id TEXT UNIQUE,
+  report_json TEXT,
+  error_code TEXT,
+  error_message TEXT,
+  parent_id TEXT
+);
+CREATE INDEX IF NOT EXISTS investigations_created ON investigations (created_at DESC);
+CREATE TABLE IF NOT EXISTS ai_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  investigation_id TEXT NOT NULL REFERENCES investigations(id),
+  created_at TEXT NOT NULL,
+  stage TEXT NOT NULL,
+  operation TEXT NOT NULL,
+  status TEXT NOT NULL,
+  detail_json TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ai_events_investigation ON ai_events (investigation_id, id);
+CREATE TABLE IF NOT EXISTS ai_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  investigation_id TEXT NOT NULL REFERENCES investigations(id),
+  created_at TEXT NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  evidence_json TEXT NOT NULL
+);
 """
 
 _JSON_COLUMNS = (
@@ -85,6 +119,10 @@ _JSON_COLUMNS = (
     "variants_json",
     "comparison_json",
     "headline_json",
+    "plan_json",
+    "report_json",
+    "detail_json",
+    "evidence_json",
 )
 
 ACTIVE = ("pending", "running")
@@ -209,6 +247,113 @@ class Registry:
     def count_experiments(self) -> int:
         return self._count("SELECT COUNT(*) FROM experiments")
 
+    # ---- AI investigations --------------------------------------------------------------
+
+    def insert_investigation(self, values: Row) -> None:
+        self._insert("investigations", values)
+
+    def insert_investigation_bounded(
+        self, values: Row, total_limit: int, active_limit: int
+    ) -> bool:
+        with self._cursor() as cursor:
+            total = cursor.execute("SELECT COUNT(*) FROM investigations").fetchone()[0]
+            active = cursor.execute(
+                "SELECT COUNT(*) FROM investigations WHERE status IN "
+                "('CREATED', 'PLANNING', 'AWAITING_APPROVAL', 'APPROVED', 'EXECUTING', 'ANALYZING')"
+            ).fetchone()[0]
+            if total >= total_limit or active >= active_limit:
+                return False
+            columns = ", ".join(values)
+            marks = ", ".join("?" for _ in values)
+            cursor.execute(
+                f"INSERT INTO investigations ({columns}) VALUES ({marks})",
+                [_encode(key, value) for key, value in values.items()],
+            )
+            return True
+
+    def investigation(self, investigation_id: str) -> Row | None:
+        return self._one("SELECT * FROM investigations WHERE id = ?", (investigation_id,))
+
+    def investigations(self, limit: int, offset: int) -> list[Row]:
+        return self._many(
+            "SELECT * FROM investigations ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        )
+
+    def count_investigations(self) -> int:
+        return self._count("SELECT COUNT(*) FROM investigations")
+
+    def active_investigations(self) -> int:
+        return self._count(
+            "SELECT COUNT(*) FROM investigations WHERE status IN "
+            "('CREATED', 'PLANNING', 'AWAITING_APPROVAL', 'APPROVED', 'EXECUTING', 'ANALYZING')"
+        )
+
+    def transition_investigation(
+        self, investigation_id: str, expected: tuple[str, ...], status: str, **values: Any
+    ) -> bool:
+        """A compare-and-swap transition; repeat approvals cannot submit a second job."""
+        assignments = ", ".join(f"{key} = ?" for key in values)
+        extra = f", {assignments}" if assignments else ""
+        marks = ", ".join("?" for _ in expected)
+        with self._cursor() as cursor:
+            cursor.execute(
+                f"UPDATE investigations SET status = ?, updated_at = ?{extra} "
+                f"WHERE id = ? AND status IN ({marks})",
+                [
+                    status,
+                    now(),
+                    *(_encode(k, v) for k, v in values.items()),
+                    investigation_id,
+                    *expected,
+                ],
+            )
+            return cursor.rowcount == 1
+
+    def ai_event(
+        self,
+        investigation_id: str,
+        stage: str,
+        operation: str,
+        status: str,
+        detail: Row | None = None,
+    ) -> None:
+        self._insert(
+            "ai_events",
+            {
+                "investigation_id": investigation_id,
+                "created_at": now(),
+                "stage": stage,
+                "operation": operation,
+                "status": status,
+                "detail_json": detail or {},
+            },
+        )
+
+    def ai_events(self, investigation_id: str) -> list[Row]:
+        return self._many(
+            "SELECT * FROM ai_events WHERE investigation_id = ? ORDER BY id", (investigation_id,)
+        )
+
+    def ai_message(
+        self, investigation_id: str, role: str, content: str, evidence: list[str] | None = None
+    ) -> None:
+        self._insert(
+            "ai_messages",
+            {
+                "investigation_id": investigation_id,
+                "created_at": now(),
+                "role": role,
+                "content": content,
+                "evidence_json": evidence or [],
+            },
+        )
+
+    def ai_messages(self, investigation_id: str) -> list[Row]:
+        return self._many(
+            "SELECT * FROM ai_messages WHERE investigation_id = ? ORDER BY id", (investigation_id,)
+        )
+
     # ---- jobs ---------------------------------------------------------------------------
 
     def active_jobs(self) -> int:
@@ -239,6 +384,13 @@ class Registry:
             ).rowcount
             cursor.execute(
                 "UPDATE runs SET replay_status = 'not_checked' WHERE replay_status = 'running'"
+            )
+            cursor.execute(
+                "UPDATE investigations SET status = 'FAILED', updated_at = ?, "
+                "error_code = 'WorkerInterrupted', "
+                "error_message = 'the API process stopped during this investigation' "
+                "WHERE status IN ('PLANNING', 'APPROVED', 'ANALYZING')",
+                (stamp,),
             )
         return int(runs) + int(experiments)
 

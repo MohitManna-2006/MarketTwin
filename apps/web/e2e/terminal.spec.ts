@@ -293,3 +293,47 @@ test("when the API is unreachable the terminal says so and shows nothing stale",
   await expect(page.getByText("RESEARCH API UNREACHABLE").first()).toBeVisible();
   await expect(page.locator("canvas")).toHaveCount(0);
 });
+
+test("AI research requires approval and reports native evidence", async ({ page, request }) => {
+  await page.goto("/ai-research");
+  await expect(page.getByRole("heading", { name: "AI research" })).toBeVisible();
+  await page
+    .getByLabel("RESEARCH QUESTION")
+    .fill(
+      "[E2E fixture] Compare makers in liquidity withdrawal over two paired seeds; analyze P&L and inventory.",
+    );
+  await page.getByRole("button", { name: "Build research plan" }).click();
+  await expect(page).toHaveURL(/\/ai-research\/inv-[0-9a-f]+/);
+  await expect(page.getByText("4 native runs")).toBeVisible();
+  const investigationId = /\/ai-research\/(inv-[0-9a-f]+)/.exec(page.url())?.[1] ?? "";
+  const before = await request.get(`${API}/ai/investigations/${investigationId}`);
+  expect(before.ok()).toBeTruthy();
+  expect((await before.json()).experiment_id).toBeNull();
+  await page.getByRole("button", { name: "Approve & run" }).click();
+  await expect(page.getByText("INSTITUTIONAL RESEARCH NOTE")).toBeVisible({ timeout: 60_000 });
+  const after = await request.get(`${API}/ai/investigations/${investigationId}`);
+  const investigation = await after.json();
+  expect(investigation.status).toBe("REPORT_READY");
+  const report = investigation.report;
+  const native = await request.get(`${API}/experiments/${report.experiment_id}/results`);
+  const document = (await native.json()).document;
+  expect(report.results_digest).toBe(document.results_digest);
+  expect(report.claims[0].difference_mean_milli).toBe(
+    document.results.comparison.metrics[0].difference.mean_milli,
+  );
+  await page.locator("td", { hasText: "total pnl" }).click();
+  await expect(page.getByText(`experiment:${report.experiment_id}:metric:total_pnl`)).toBeVisible();
+  await page
+    .getByRole("textbox", { name: "Follow-up question" })
+    .fill("Which maker had lower drawdown?");
+  await page.getByRole("button", { name: "Ask" }).click();
+  await expect(
+    page.getByText("The native evidence table contains the paired result."),
+  ).toBeVisible();
+  const { violations } = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
+  expect(violations.map((item) => item.id)).toEqual([]);
+  await page.getByRole("link", { name: `Open experiment ${report.experiment_id}` }).click();
+  await expect(page).toHaveURL(new RegExp(`/experiments/${report.experiment_id}$`));
+});

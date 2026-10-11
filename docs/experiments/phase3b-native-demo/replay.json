@@ -1,0 +1,19 @@
+{
+  "run_id": "run-59c4d17e14",
+  "replay": {
+    "status": "verified",
+    "checked_at": "2026-10-11T20:21:25.347Z",
+    "processing_ms": 801,
+    "verified": true,
+    "code": "Verified",
+    "message": "command trace, execution trace, accounting stream, metrics, final book, trades, and checksums agree",
+    "sequence": null,
+    "expected": null,
+    "actual": null,
+    "expected_raw": null,
+    "actual_raw": null,
+    "previous_command": null,
+    "previous_output": null
+  },
+  "digests_match": true
+}

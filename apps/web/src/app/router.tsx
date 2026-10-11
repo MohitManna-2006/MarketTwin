@@ -18,7 +18,7 @@ function NotFound() {
             </Button>
           }
         >
-          The terminal has four sections: Overview, Simulations, Experiments, and Replay.
+          The terminal has Overview, Simulations, Experiments, AI Research, and Replay.
         </EmptyState>
       </div>
     </Page>
@@ -100,6 +100,18 @@ export function createRouter() {
           path: "experiments/:experimentId/seeds/:seed",
           lazy: async () => ({
             Component: (await import("@/features/experiments/SeedPairPage")).SeedPairPage,
+          }),
+        },
+        {
+          path: "ai-research",
+          lazy: async () => ({
+            Component: (await import("@/features/ai/AIResearchPage")).AIResearchPage,
+          }),
+        },
+        {
+          path: "ai-research/:investigationId",
+          lazy: async () => ({
+            Component: (await import("@/features/ai/AIResearchPage")).AIResearchPage,
           }),
         },
         {

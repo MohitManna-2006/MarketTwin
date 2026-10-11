@@ -1,0 +1,824 @@
+{
+  "version": 1,
+  "question": "Compare inventory-aware market making against baseline over four paired seeds during liquidity withdrawal; analyze total P&L, max drawdown, inventory risk and spread capture.",
+  "hypothesis": "Inventory-aware quoting changes measured risk during liquidity withdrawal.",
+  "plan": {
+    "version": 1,
+    "question": "Compare inventory-aware market making against baseline over four paired seeds during liquidity withdrawal; analyze total P&L, max drawdown, inventory risk and spread capture.",
+    "intent": "compare_strategies",
+    "hypothesis": "Inventory-aware quoting changes measured risk during liquidity withdrawal.",
+    "scenario_key": "liquidity_shock",
+    "scenario_digest": "37c07aa8dad7a7ca1122dd58e3695803cd00cc196f3960625ae0a9f8ee8eb343",
+    "subject_agent_id": 3,
+    "baseline": "baseline_maker",
+    "candidate": "inventory_maker",
+    "seed_count": 4,
+    "primary_metric": "total_pnl",
+    "secondary_metrics": [
+      "max_drawdown",
+      "mean_abs_position",
+      "maker_spread_capture"
+    ],
+    "methodology": "Native paired-seed maker comparison with t and bootstrap intervals",
+    "limitations": [
+      "Synthetic single-symbol market; no real-market calibration"
+    ],
+    "total_runs": 8,
+    "config_digest": "d4cd783a554c5daeab42383ae49b8ff299b00e94e822f492e08bb28b1b3b6363",
+    "experiment_config": {
+      "artifacts": "None",
+      "base_config": {
+        "commands": [],
+        "exchange": {
+          "agents": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "max_accepted_orders": 5000000,
+          "max_active_orders": 100000,
+          "max_order_quantity": 1000000,
+          "max_snapshot_depth": 1000,
+          "max_trades": 5000000,
+          "symbol": 1
+        },
+        "horizon_ns": 3600000000000,
+        "max_events": 20000000,
+        "max_queue": 100000,
+        "max_trace_bytes": 1073741824,
+        "run_id": "liquidity-shock",
+        "scenario": {
+          "agents": [
+            {
+              "id": 1,
+              "latency": {
+                "market_data_ns": 100000,
+                "order_entry_jitter_ns": 50000,
+                "order_entry_ns": 200000,
+                "report_ns": 100000
+              },
+              "limits": {
+                "max_messages": 1000000,
+                "max_open_orders": 16,
+                "max_order_quantity": 200,
+                "max_position": 2000
+              },
+              "policy": {
+                "half_spread_ticks": 2,
+                "kind": "MarketMaker",
+                "level_spacing_ticks": 1,
+                "levels": 3,
+                "quote_size": 100
+              },
+              "wakeup": {
+                "distribution": "Fixed",
+                "first_ns": 0,
+                "interval_ns": 500000000
+              }
+            },
+            {
+              "id": 2,
+              "latency": {
+                "market_data_ns": 100000,
+                "order_entry_jitter_ns": 50000,
+                "order_entry_ns": 200000,
+                "report_ns": 100000
+              },
+              "limits": {
+                "max_messages": 1000000,
+                "max_open_orders": 16,
+                "max_order_quantity": 200,
+                "max_position": 2000
+              },
+              "policy": {
+                "half_spread_ticks": 3,
+                "kind": "MarketMaker",
+                "level_spacing_ticks": 2,
+                "levels": 3,
+                "quote_size": 150
+              },
+              "wakeup": {
+                "distribution": "Fixed",
+                "first_ns": 100000000,
+                "interval_ns": 750000000
+              }
+            },
+            {
+              "id": 3,
+              "latency": {
+                "market_data_ns": 100000,
+                "order_entry_jitter_ns": 50000,
+                "order_entry_ns": 200000,
+                "report_ns": 100000
+              },
+              "limits": {
+                "max_messages": 1000000,
+                "max_open_orders": 16,
+                "max_order_quantity": 200,
+                "max_position": 2000
+              },
+              "policy": {
+                "half_spread_ticks": 2,
+                "kind": "InventoryMarketMaker",
+                "level_spacing_ticks": 1,
+                "levels": 3,
+                "max_skew_ticks": 2,
+                "quote_size": 100,
+                "risk_aversion_ppm": 20,
+                "volatility_alpha_ppm": 50000,
+                "volatility_floor_milliticks": 500
+              },
+              "wakeup": {
+                "distribution": "Fixed",
+                "first_ns": 250000000,
+                "interval_ns": 500000000
+              }
+            },
+            {
+              "id": 4,
+              "latency": {
+                "market_data_ns": 500000,
+                "order_entry_jitter_ns": 200000,
+                "order_entry_ns": 1000000,
+                "report_ns": 500000
+              },
+              "limits": {
+                "max_messages": 100000,
+                "max_open_orders": 8,
+                "max_order_quantity": 200,
+                "max_position": 20000
+              },
+              "policy": {
+                "estimate_noise_milliticks": 3000,
+                "kind": "Value",
+                "order_size": 20,
+                "slippage_ticks": 1,
+                "threshold_milliticks": 2000
+              },
+              "wakeup": {
+                "distribution": "Exponential",
+                "first_ns": 1000000000,
+                "interval_ns": 2000000000
+              }
+            },
+            {
+              "id": 5,
+              "latency": {
+                "market_data_ns": 500000,
+                "order_entry_jitter_ns": 200000,
+                "order_entry_ns": 1000000,
+                "report_ns": 500000
+              },
+              "limits": {
+                "max_messages": 100000,
+                "max_open_orders": 8,
+                "max_order_quantity": 200,
+                "max_position": 20000
+              },
+              "policy": {
+                "estimate_noise_milliticks": 3000,
+                "kind": "Value",
+                "order_size": 20,
+                "slippage_ticks": 1,
+                "threshold_milliticks": 2000
+              },
+              "wakeup": {
+                "distribution": "Exponential",
+                "first_ns": 2000000000,
+                "interval_ns": 2000000000
+              }
+            },
+            {
+              "id": 6,
+              "latency": {
+                "market_data_ns": 500000,
+                "order_entry_jitter_ns": 200000,
+                "order_entry_ns": 1000000,
+                "report_ns": 500000
+              },
+              "limits": {
+                "max_messages": 100000,
+                "max_open_orders": 8,
+                "max_order_quantity": 50,
+                "max_position": 300
+              },
+              "policy": {
+                "cooldown_ns": 10000000000,
+                "kind": "Momentum",
+                "long_window": 30,
+                "order_size": 15,
+                "short_window": 5,
+                "slippage_ticks": 1,
+                "threshold_milliticks": 1500
+              },
+              "wakeup": {
+                "distribution": "Fixed",
+                "first_ns": 1000000000,
+                "interval_ns": 1000000000
+              }
+            },
+            {
+              "id": 7,
+              "latency": {
+                "market_data_ns": 500000,
+                "order_entry_jitter_ns": 200000,
+                "order_entry_ns": 1000000,
+                "report_ns": 500000
+              },
+              "limits": {
+                "max_messages": 100000,
+                "max_open_orders": 8,
+                "max_order_quantity": 50,
+                "max_position": 300
+              },
+              "policy": {
+                "cooldown_ns": 10000000000,
+                "kind": "Momentum",
+                "long_window": 30,
+                "order_size": 15,
+                "short_window": 5,
+                "slippage_ticks": 1,
+                "threshold_milliticks": 1500
+              },
+              "wakeup": {
+                "distribution": "Fixed",
+                "first_ns": 1500000000,
+                "interval_ns": 1000000000
+              }
+            },
+            {
+              "id": 8,
+              "latency": {
+                "market_data_ns": 1000000,
+                "order_entry_jitter_ns": 500000,
+                "order_entry_ns": 2000000,
+                "report_ns": 1000000
+              },
+              "limits": {
+                "max_messages": 100000,
+                "max_open_orders": 8,
+                "max_order_quantity": 50,
+                "max_position": 5000
+              },
+              "policy": {
+                "buy_probability_ppm": 500000,
+                "kind": "Noise",
+                "limit_offset_ticks": 4,
+                "market_order_ppm": 350000,
+                "max_quantity": 30,
+                "max_resting_orders": 4,
+                "min_quantity": 1
+              },
+              "wakeup": {
+                "distribution": "Exponential",
+                "first_ns": 500000000,
+                "interval_ns": 2000000000
+              }
+            },
+            {
+              "id": 9,
+              "latency": {
+                "market_data_ns": 1000000,
+                "order_entry_jitter_ns": 500000,
+                "order_entry_ns": 2000000,
+                "report_ns": 1000000
+              },
+              "limits": {
+                "max_messages": 100000,
+                "max_open_orders": 8,
+                "max_order_quantity": 50,
+                "max_position": 5000
+              },
+              "policy": {
+                "buy_probability_ppm": 500000,
+                "kind": "Noise",
+                "limit_offset_ticks": 4,
+                "market_order_ppm": 350000,
+                "max_quantity": 30,
+                "max_resting_orders": 4,
+                "min_quantity": 1
+              },
+              "wakeup": {
+                "distribution": "Exponential",
+                "first_ns": 1000000000,
+                "interval_ns": 2000000000
+              }
+            },
+            {
+              "id": 10,
+              "latency": {
+                "market_data_ns": 1000000,
+                "order_entry_jitter_ns": 500000,
+                "order_entry_ns": 2000000,
+                "report_ns": 1000000
+              },
+              "limits": {
+                "max_messages": 100000,
+                "max_open_orders": 8,
+                "max_order_quantity": 50,
+                "max_position": 5000
+              },
+              "policy": {
+                "buy_probability_ppm": 500000,
+                "kind": "Noise",
+                "limit_offset_ticks": 4,
+                "market_order_ppm": 350000,
+                "max_quantity": 30,
+                "max_resting_orders": 4,
+                "min_quantity": 1
+              },
+              "wakeup": {
+                "distribution": "Exponential",
+                "first_ns": 1500000000,
+                "interval_ns": 2000000000
+              }
+            },
+            {
+              "id": 11,
+              "latency": {
+                "market_data_ns": 1000000,
+                "order_entry_jitter_ns": 500000,
+                "order_entry_ns": 2000000,
+                "report_ns": 1000000
+              },
+              "limits": {
+                "max_messages": 100000,
+                "max_open_orders": 8,
+                "max_order_quantity": 50,
+                "max_position": 5000
+              },
+              "policy": {
+                "buy_probability_ppm": 500000,
+                "kind": "Noise",
+                "limit_offset_ticks": 4,
+                "market_order_ppm": 350000,
+                "max_quantity": 30,
+                "max_resting_orders": 4,
+                "min_quantity": 1
+              },
+              "wakeup": {
+                "distribution": "Exponential",
+                "first_ns": 2000000000,
+                "interval_ns": 2000000000
+              }
+            }
+          ],
+          "fundamental": {
+            "initial_milliticks": 15000000,
+            "mean_reversion_ppm": 200,
+            "update_interval_ns": 1000000000,
+            "volatility_milliticks": 1000
+          },
+          "reference_price_ticks": 15000,
+          "sampling": {
+            "depth": 5,
+            "interval_ns": 1000000000
+          },
+          "shocks": [
+            {
+              "agents": [
+                1,
+                2
+              ],
+              "end_ns": 1800000000000,
+              "kind": "LiquidityWithdrawal",
+              "quote_size_ppm": 0,
+              "start_ns": 1200000000000
+            }
+          ]
+        },
+        "schema_version": 2,
+        "seed": 42,
+        "tick_size_minor": 1
+      },
+      "bootstrap": {
+        "resamples": 1000,
+        "seed": 20261010
+      },
+      "comparison": {
+        "baseline": "baseline_maker",
+        "candidate": "inventory_maker",
+        "subject_agent_id": 3
+      },
+      "experiment_id": "ai_maker_comparison",
+      "horizon_ns": null,
+      "limits": {
+        "max_output_bytes": 0,
+        "max_runs": 8
+      },
+      "schema_version": 1,
+      "seeds": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "variants": [
+        {
+          "name": "baseline_maker",
+          "policy_overrides": [
+            {
+              "agent_id": 3,
+              "policy": {
+                "half_spread_ticks": 2,
+                "kind": "MarketMaker",
+                "level_spacing_ticks": 1,
+                "levels": 3,
+                "quote_size": 100
+              }
+            }
+          ]
+        },
+        {
+          "name": "inventory_maker",
+          "policy_overrides": [
+            {
+              "agent_id": 3,
+              "policy": {
+                "half_spread_ticks": 2,
+                "kind": "InventoryMarketMaker",
+                "level_spacing_ticks": 1,
+                "levels": 3,
+                "max_skew_ticks": 2,
+                "quote_size": 100,
+                "risk_aversion_ppm": 20,
+                "volatility_alpha_ppm": 50000,
+                "volatility_floor_milliticks": 500
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "approval_required": true
+  },
+  "experiment_id": "exp-2beafabd99",
+  "engine_version": "0.4.0",
+  "config_digest": "d4cd783a554c5daeab42383ae49b8ff299b00e94e822f492e08bb28b1b3b6363",
+  "results_digest": "4e0be712ec914c7e8a0923bbc1c34434b6680e103b68fd237ec29f65cffd1152",
+  "pairs_completed": 4,
+  "claims": [
+    {
+      "metric": "total_pnl",
+      "scope": "subject",
+      "unit": "minor",
+      "pairs": 4,
+      "baseline_mean_milli": -115260500,
+      "candidate_mean_milli": -117825500,
+      "difference_mean_milli": -2565000,
+      "difference_t_interval_milli": [
+        -42422805,
+        37292805
+      ],
+      "difference_bootstrap_interval_milli": [
+        -26431000,
+        13783000
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:total_pnl"
+    },
+    {
+      "metric": "realized_pnl",
+      "scope": "subject",
+      "unit": "minor",
+      "pairs": 4,
+      "baseline_mean_milli": -109343250,
+      "candidate_mean_milli": -97212250,
+      "difference_mean_milli": 12131000,
+      "difference_t_interval_milli": [
+        -14210368,
+        38472368
+      ],
+      "difference_bootstrap_interval_milli": [
+        -1009500,
+        25271500
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:realized_pnl"
+    },
+    {
+      "metric": "unrealized_pnl",
+      "scope": "subject",
+      "unit": "minor",
+      "pairs": 4,
+      "baseline_mean_milli": -5917250,
+      "candidate_mean_milli": -20613250,
+      "difference_mean_milli": -14696000,
+      "difference_t_interval_milli": [
+        -37956349,
+        8564349
+      ],
+      "difference_bootstrap_interval_milli": [
+        -27705000,
+        -4073500
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:unrealized_pnl"
+    },
+    {
+      "metric": "fees_paid",
+      "scope": "subject",
+      "unit": "minor",
+      "pairs": 4,
+      "baseline_mean_milli": 0,
+      "candidate_mean_milli": 0,
+      "difference_mean_milli": 0,
+      "difference_t_interval_milli": [
+        0,
+        0
+      ],
+      "difference_bootstrap_interval_milli": [
+        0,
+        0
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:fees_paid"
+    },
+    {
+      "metric": "max_drawdown",
+      "scope": "subject",
+      "unit": "minor",
+      "pairs": 4,
+      "baseline_mean_milli": 149995250,
+      "candidate_mean_milli": 138367250,
+      "difference_mean_milli": -11628000,
+      "difference_t_interval_milli": [
+        -44315119,
+        21059119
+      ],
+      "difference_bootstrap_interval_milli": [
+        -25907000,
+        7320250
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:max_drawdown"
+    },
+    {
+      "metric": "maker_spread_capture",
+      "scope": "subject",
+      "unit": "minor",
+      "pairs": 4,
+      "baseline_mean_milli": 107282250,
+      "candidate_mean_milli": 112809500,
+      "difference_mean_milli": 5527250,
+      "difference_t_interval_milli": [
+        -11576882,
+        22631382
+      ],
+      "difference_bootstrap_interval_milli": [
+        -1215000,
+        16434000
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:maker_spread_capture"
+    },
+    {
+      "metric": "final_abs_position",
+      "scope": "subject",
+      "unit": "shares",
+      "pairs": 4,
+      "baseline_mean_milli": 911500,
+      "candidate_mean_milli": 1372250,
+      "difference_mean_milli": 460750,
+      "difference_t_interval_milli": [
+        -134025,
+        1055525
+      ],
+      "difference_bootstrap_interval_milli": [
+        90500,
+        736750
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:final_abs_position"
+    },
+    {
+      "metric": "max_abs_position",
+      "scope": "subject",
+      "unit": "shares",
+      "pairs": 4,
+      "baseline_mean_milli": 2000000,
+      "candidate_mean_milli": 1933000,
+      "difference_mean_milli": -67000,
+      "difference_t_interval_milli": [
+        -268724,
+        134724
+      ],
+      "difference_bootstrap_interval_milli": [
+        -192750,
+        0
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:max_abs_position"
+    },
+    {
+      "metric": "mean_abs_position",
+      "scope": "subject",
+      "unit": "millishares",
+      "pairs": 4,
+      "baseline_mean_milli": 1063898250,
+      "candidate_mean_milli": 279010250,
+      "difference_mean_milli": -784888000,
+      "difference_t_interval_milli": [
+        -1145715909,
+        -424060091
+      ],
+      "difference_bootstrap_interval_milli": [
+        -960558000,
+        -599030750
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:mean_abs_position"
+    },
+    {
+      "metric": "traded_quantity",
+      "scope": "subject",
+      "unit": "shares",
+      "pairs": 4,
+      "baseline_mean_milli": 52675000,
+      "candidate_mean_milli": 57295750,
+      "difference_mean_milli": 4620750,
+      "difference_t_interval_milli": [
+        -4264516,
+        13506016
+      ],
+      "difference_bootstrap_interval_milli": [
+        1001750,
+        10157500
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:traded_quantity"
+    },
+    {
+      "metric": "fill_rate",
+      "scope": "subject",
+      "unit": "ppm",
+      "pairs": 4,
+      "baseline_mean_milli": 136625250,
+      "candidate_mean_milli": 119818500,
+      "difference_mean_milli": -16806750,
+      "difference_t_interval_milli": [
+        -31182747,
+        -2430753
+      ],
+      "difference_bootstrap_interval_milli": [
+        -23326250,
+        -8657000
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:fill_rate"
+    },
+    {
+      "metric": "trade_count",
+      "scope": "market",
+      "unit": "trades",
+      "pairs": 4,
+      "baseline_mean_milli": 7971250,
+      "candidate_mean_milli": 7951250,
+      "difference_mean_milli": -20000,
+      "difference_t_interval_milli": [
+        -279953,
+        239953
+      ],
+      "difference_bootstrap_interval_milli": [
+        -139500,
+        123500
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:trade_count"
+    },
+    {
+      "metric": "volume",
+      "scope": "market",
+      "unit": "shares",
+      "pairs": 4,
+      "baseline_mean_milli": 127179000,
+      "candidate_mean_milli": 130143000,
+      "difference_mean_milli": 2964000,
+      "difference_t_interval_milli": [
+        -12588453,
+        18516453
+      ],
+      "difference_bootstrap_interval_milli": [
+        -4081000,
+        11666750
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:volume"
+    },
+    {
+      "metric": "mean_spread",
+      "scope": "market",
+      "unit": "milliticks",
+      "pairs": 4,
+      "baseline_mean_milli": 3325500,
+      "candidate_mean_milli": 3211500,
+      "difference_mean_milli": -114000,
+      "difference_t_interval_milli": [
+        -143684,
+        -84316
+      ],
+      "difference_bootstrap_interval_milli": [
+        -128500,
+        -98500
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:mean_spread"
+    },
+    {
+      "metric": "mean_relative_spread",
+      "scope": "market",
+      "unit": "millibps",
+      "pairs": 4,
+      "baseline_mean_milli": 2218250,
+      "candidate_mean_milli": 2142250,
+      "difference_mean_milli": -76000,
+      "difference_t_interval_milli": [
+        -96990,
+        -55010
+      ],
+      "difference_bootstrap_interval_milli": [
+        -86250,
+        -65250
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:mean_relative_spread"
+    },
+    {
+      "metric": "mean_bid_depth",
+      "scope": "market",
+      "unit": "millishares",
+      "pairs": 4,
+      "baseline_mean_milli": 823767500,
+      "candidate_mean_milli": 852856000,
+      "difference_mean_milli": 29088500,
+      "difference_t_interval_milli": [
+        -11887244,
+        70064244
+      ],
+      "difference_bootstrap_interval_milli": [
+        3878750,
+        45064750
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:mean_bid_depth"
+    },
+    {
+      "metric": "mean_ask_depth",
+      "scope": "market",
+      "unit": "millishares",
+      "pairs": 4,
+      "baseline_mean_milli": 840899250,
+      "candidate_mean_milli": 848543750,
+      "difference_mean_milli": 7644500,
+      "difference_t_interval_milli": [
+        -41674193,
+        56963193
+      ],
+      "difference_bootstrap_interval_milli": [
+        -21984500,
+        34099000
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:mean_ask_depth"
+    },
+    {
+      "metric": "midpoint_return_volatility",
+      "scope": "market",
+      "unit": "ppb",
+      "pairs": 4,
+      "baseline_mean_milli": 54937000,
+      "candidate_mean_milli": 65161250,
+      "difference_mean_milli": 10224250,
+      "difference_t_interval_milli": [
+        3246980,
+        17201520
+      ],
+      "difference_bootstrap_interval_milli": [
+        5683750,
+        13211500
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:midpoint_return_volatility"
+    },
+    {
+      "metric": "two_sided_time",
+      "scope": "market",
+      "unit": "ppm",
+      "pairs": 4,
+      "baseline_mean_milli": 997848750,
+      "candidate_mean_milli": 1000000000,
+      "difference_mean_milli": 2151250,
+      "difference_t_interval_milli": [
+        209764,
+        4092736
+      ],
+      "difference_bootstrap_interval_milli": [
+        1256500,
+        3224250
+      ],
+      "evidence_ref": "experiment:exp-2beafabd99:metric:two_sided_time"
+    }
+  ],
+  "interpretation": "The paired results show the measured strategy differences under liquidity withdrawal. Confidence intervals describe uncertainty in this synthetic experiment.",
+  "limitations": [
+    "The market is synthetic and not calibrated to a real exchange.",
+    "The seed sample is small."
+  ],
+  "follow_up": [
+    "Repeat with more paired seeds.",
+    "Compare sensitivity to the maker risk setting."
+  ],
+  "replay_status": "not_checked; materialize a cell and request replay verification",
+  "baseline": "baseline_maker",
+  "candidate": "inventory_maker"
+}

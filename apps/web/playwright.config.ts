@@ -28,7 +28,11 @@ export default defineConfig({
     {
       command: `uv run python -m markettwin_api --port ${API_PORT}`,
       cwd: "../../services/api",
-      env: { MARKETTWIN_WORKSPACE: process.env.MARKETTWIN_E2E_WORKSPACE },
+      env: {
+        MARKETTWIN_WORKSPACE: process.env.MARKETTWIN_E2E_WORKSPACE,
+        MARKETTWIN_AI_PROVIDER: "fixture",
+        MARKETTWIN_AI_MODEL: "deterministic-fixture",
+      },
       url: `http://127.0.0.1:${API_PORT}/api/v1/health`,
       reuseExistingServer: false,
       timeout: 180_000,

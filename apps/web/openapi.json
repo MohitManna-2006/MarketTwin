@@ -1829,6 +1829,592 @@
           }
         }
       }
+    },
+    "/api/v1/ai/investigations": {
+      "post": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Create",
+        "operationId": "create_api_v1_ai_investigations_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvestigation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "List Investigations",
+        "operationId": "list_investigations_api_v1_ai_investigations_get",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/investigations/{investigation_id}": {
+      "get": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Get",
+        "operationId": "get_api_v1_ai_investigations__investigation_id__get",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/investigations/{investigation_id}/plan": {
+      "post": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Plan",
+        "operationId": "plan_api_v1_ai_investigations__investigation_id__plan_post",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/investigations/{investigation_id}/approve": {
+      "post": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Approve",
+        "operationId": "approve_api_v1_ai_investigations__investigation_id__approve_post",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovePlan"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/investigations/{investigation_id}/reject": {
+      "post": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Reject",
+        "operationId": "reject_api_v1_ai_investigations__investigation_id__reject_post",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/investigations/{investigation_id}/cancel": {
+      "post": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Cancel",
+        "operationId": "cancel_api_v1_ai_investigations__investigation_id__cancel_post",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/investigations/{investigation_id}/status": {
+      "get": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Status",
+        "operationId": "status_api_v1_ai_investigations__investigation_id__status_get",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/investigations/{investigation_id}/report": {
+      "get": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Report",
+        "operationId": "report_api_v1_ai_investigations__investigation_id__report_get",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/investigations/{investigation_id}/report/markdown": {
+      "get": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Report Markdown",
+        "operationId": "report_markdown_api_v1_ai_investigations__investigation_id__report_markdown_get",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/investigations/{investigation_id}/tool-events": {
+      "get": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Events",
+        "operationId": "events_api_v1_ai_investigations__investigation_id__tool_events_get",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolEvents"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/investigations/{investigation_id}/seeds/{seed}": {
+      "get": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Seed",
+        "operationId": "seed_api_v1_ai_investigations__investigation_id__seeds__seed__get",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          },
+          {
+            "name": "seed",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Seed"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeedEvidence"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/investigations/{investigation_id}/messages": {
+      "post": {
+        "tags": [
+          "AI research"
+        ],
+        "summary": "Message",
+        "operationId": "message_api_v1_ai_investigations__investigation_id__messages_post",
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Message"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1973,6 +2559,20 @@
           "report"
         ],
         "title": "AgentView"
+      },
+      "ApprovePlan": {
+        "properties": {
+          "config_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Config Digest"
+          }
+        },
+        "type": "object",
+        "required": [
+          "config_digest"
+        ],
+        "title": "ApprovePlan"
       },
       "ArtifactFile": {
         "properties": {
@@ -2202,6 +2802,120 @@
         ],
         "title": "CellRun"
       },
+      "Claim": {
+        "properties": {
+          "metric": {
+            "type": "string",
+            "title": "Metric"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "pairs": {
+            "type": "integer",
+            "title": "Pairs"
+          },
+          "baseline_mean_milli": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Mean Milli"
+          },
+          "candidate_mean_milli": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Mean Milli"
+          },
+          "difference_mean_milli": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Difference Mean Milli"
+          },
+          "difference_t_interval_milli": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 2,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Difference T Interval Milli"
+          },
+          "difference_bootstrap_interval_milli": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 2,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Difference Bootstrap Interval Milli"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "title": "Evidence Ref"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "metric",
+          "scope",
+          "unit",
+          "pairs",
+          "baseline_mean_milli",
+          "candidate_mean_milli",
+          "difference_mean_milli",
+          "difference_t_interval_milli",
+          "difference_bootstrap_interval_milli",
+          "evidence_ref"
+        ],
+        "title": "Claim"
+      },
       "ConfigError": {
         "properties": {
           "source": {
@@ -2258,6 +2972,33 @@
           "config"
         ],
         "title": "CreateExperimentRequest"
+      },
+      "CreateInvestigation": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Question"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "CreateInvestigation"
       },
       "CreateRunRequest": {
         "properties": {
@@ -3389,6 +4130,280 @@
         ],
         "title": "Health"
       },
+      "Intent": {
+        "type": "string",
+        "enum": [
+          "compare_strategies",
+          "analyze_experiment",
+          "explain_metric",
+          "inspect_seed",
+          "unsupported"
+        ],
+        "title": "Intent"
+      },
+      "InvestigationList": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "investigations": {
+            "items": {
+              "$ref": "#/components/schemas/InvestigationView"
+            },
+            "type": "array",
+            "title": "Investigations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "offset",
+          "investigations"
+        ],
+        "title": "InvestigationList"
+      },
+      "InvestigationStatus": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "experiment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiment Id"
+          },
+          "experiment_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiment Status"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "experiment_id",
+          "experiment_status",
+          "progress",
+          "error_code",
+          "error_message"
+        ],
+        "title": "InvestigationStatus"
+      },
+      "InvestigationView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "experiment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiment Id"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "experiment_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiment Status"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "messages": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "question",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "InvestigationView"
+      },
       "LedgerPage": {
         "properties": {
           "total": {
@@ -3605,6 +4620,21 @@
         ],
         "title": "MaterializeCellRequest"
       },
+      "Message": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 2,
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "Message"
+      },
       "PairedValues": {
         "properties": {
           "document": {
@@ -3787,6 +4817,226 @@
           "actual_raw"
         ],
         "title": "ReplayView"
+      },
+      "ResearchPlan": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Version",
+            "default": 1
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "intent": {
+            "$ref": "#/components/schemas/Intent"
+          },
+          "hypothesis": {
+            "type": "string",
+            "title": "Hypothesis"
+          },
+          "scenario_key": {
+            "type": "string",
+            "title": "Scenario Key"
+          },
+          "scenario_digest": {
+            "type": "string",
+            "title": "Scenario Digest"
+          },
+          "subject_agent_id": {
+            "type": "integer",
+            "title": "Subject Agent Id"
+          },
+          "baseline": {
+            "type": "string",
+            "const": "baseline_maker",
+            "title": "Baseline",
+            "default": "baseline_maker"
+          },
+          "candidate": {
+            "type": "string",
+            "const": "inventory_maker",
+            "title": "Candidate",
+            "default": "inventory_maker"
+          },
+          "seed_count": {
+            "type": "integer",
+            "title": "Seed Count"
+          },
+          "primary_metric": {
+            "type": "string",
+            "title": "Primary Metric"
+          },
+          "secondary_metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Secondary Metrics"
+          },
+          "analysis_topics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Analysis Topics"
+          },
+          "methodology": {
+            "type": "string",
+            "title": "Methodology"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs"
+          },
+          "config_digest": {
+            "type": "string",
+            "title": "Config Digest"
+          },
+          "experiment_config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Experiment Config"
+          },
+          "approval_required": {
+            "type": "boolean",
+            "const": true,
+            "title": "Approval Required",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question",
+          "intent",
+          "hypothesis",
+          "scenario_key",
+          "scenario_digest",
+          "subject_agent_id",
+          "seed_count",
+          "primary_metric",
+          "secondary_metrics",
+          "methodology",
+          "limitations",
+          "total_runs",
+          "config_digest",
+          "experiment_config"
+        ],
+        "title": "ResearchPlan"
+      },
+      "ResearchReport": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Version"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "hypothesis": {
+            "type": "string",
+            "title": "Hypothesis"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "experiment_id": {
+            "type": "string",
+            "title": "Experiment Id"
+          },
+          "engine_version": {
+            "type": "string",
+            "title": "Engine Version"
+          },
+          "config_digest": {
+            "type": "string",
+            "title": "Config Digest"
+          },
+          "results_digest": {
+            "type": "string",
+            "title": "Results Digest"
+          },
+          "baseline": {
+            "type": "string",
+            "title": "Baseline"
+          },
+          "candidate": {
+            "type": "string",
+            "title": "Candidate"
+          },
+          "pairs_completed": {
+            "type": "integer",
+            "title": "Pairs Completed"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            },
+            "type": "array",
+            "title": "Claims"
+          },
+          "interpretation": {
+            "type": "string",
+            "title": "Interpretation"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "follow_up": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Follow Up"
+          },
+          "replay_status": {
+            "type": "string",
+            "title": "Replay Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "question",
+          "hypothesis",
+          "plan",
+          "experiment_id",
+          "engine_version",
+          "config_digest",
+          "results_digest",
+          "baseline",
+          "candidate",
+          "pairs_completed",
+          "claims",
+          "interpretation",
+          "limitations",
+          "follow_up",
+          "replay_status"
+        ],
+        "title": "ResearchReport"
       },
       "RunAvailability": {
         "properties": {
@@ -4871,6 +6121,50 @@
         ],
         "title": "ScenarioSummary"
       },
+      "SeedEvidence": {
+        "properties": {
+          "seed": {
+            "type": "integer",
+            "title": "Seed"
+          },
+          "experiment_id": {
+            "type": "string",
+            "title": "Experiment Id"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "title": "Evidence Ref"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Metrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seed",
+          "experiment_id",
+          "evidence_ref",
+          "metrics"
+        ],
+        "title": "SeedEvidence"
+      },
       "ShockSpec": {
         "properties": {
           "kind": {
@@ -4951,6 +6245,23 @@
           "transitions"
         ],
         "title": "ShockView"
+      },
+      "ToolEvents": {
+        "properties": {
+          "events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "events"
+        ],
+        "title": "ToolEvents"
       },
       "TradePage": {
         "properties": {

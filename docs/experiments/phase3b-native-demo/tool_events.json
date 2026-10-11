@@ -1,0 +1,87 @@
+[
+  {
+    "id": 1,
+    "investigation_id": "inv-8b2aa719aad2",
+    "created_at": "2026-10-11T20:21:11.948Z",
+    "stage": "CREATED",
+    "operation": "request_received",
+    "status": "ok",
+    "detail": {}
+  },
+  {
+    "id": 2,
+    "investigation_id": "inv-8b2aa719aad2",
+    "created_at": "2026-10-11T20:21:11.950Z",
+    "stage": "PLANNING",
+    "operation": "list_scenarios",
+    "status": "ok",
+    "detail": {}
+  },
+  {
+    "id": 3,
+    "investigation_id": "inv-8b2aa719aad2",
+    "created_at": "2026-10-11T20:21:11.950Z",
+    "stage": "PLANNING",
+    "operation": "classify_intent",
+    "status": "ok",
+    "detail": {
+      "intent": "compare_strategies"
+    }
+  },
+  {
+    "id": 4,
+    "investigation_id": "inv-8b2aa719aad2",
+    "created_at": "2026-10-11T20:21:11.952Z",
+    "stage": "AWAITING_APPROVAL",
+    "operation": "validate_experiment",
+    "status": "ok",
+    "detail": {
+      "config_digest": "d4cd783a554c5daeab42383ae49b8ff299b00e94e822f492e08bb28b1b3b6363",
+      "runs": 8
+    }
+  },
+  {
+    "id": 5,
+    "investigation_id": "inv-8b2aa719aad2",
+    "created_at": "2026-10-11T20:21:11.954Z",
+    "stage": "APPROVED",
+    "operation": "human_approved",
+    "status": "ok",
+    "detail": {
+      "config_digest": "d4cd783a554c5daeab42383ae49b8ff299b00e94e822f492e08bb28b1b3b6363"
+    }
+  },
+  {
+    "id": 6,
+    "investigation_id": "inv-8b2aa719aad2",
+    "created_at": "2026-10-11T20:21:11.956Z",
+    "stage": "EXECUTING",
+    "operation": "experiment_submitted",
+    "status": "ok",
+    "detail": {
+      "experiment_id": "exp-2beafabd99"
+    }
+  },
+  {
+    "id": 7,
+    "investigation_id": "inv-8b2aa719aad2",
+    "created_at": "2026-10-11T20:21:14.649Z",
+    "stage": "ANALYZING",
+    "operation": "results_retrieved",
+    "status": "ok",
+    "detail": {
+      "experiment_id": "exp-2beafabd99"
+    }
+  },
+  {
+    "id": 8,
+    "investigation_id": "inv-8b2aa719aad2",
+    "created_at": "2026-10-11T20:21:14.651Z",
+    "stage": "REPORT_READY",
+    "operation": "report_validated",
+    "status": "ok",
+    "detail": {
+      "claim_count": 19
+    }
+  }
+]

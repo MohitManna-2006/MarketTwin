@@ -16,6 +16,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 
 from markettwin_api import API_VERSION, models, views
+from markettwin_api.ai_routes import router as ai_router
+from markettwin_api.ai_service import AIResearch
 from markettwin_api.artifacts import RUN_FILES, ArtifactError, RunStore
 from markettwin_api.scenarios import field_catalogue
 from markettwin_api.service import Research, ServiceError
@@ -377,9 +379,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.research = Research(resolved)
+        app.state.ai = AIResearch(app.state.research)
         try:
             yield
         finally:
+            app.state.ai.close()
             app.state.research.close()
 
     app = FastAPI(
@@ -430,4 +434,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return _error(422, "InvalidRequest", "the request is not valid", details)
 
     app.include_router(router)
+    app.include_router(ai_router)
     return app
