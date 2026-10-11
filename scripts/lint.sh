@@ -58,15 +58,34 @@ while IFS= read -r file; do
 done < <(
   ruby -rjson -e '
     database = JSON.parse(File.read(ARGV[0]))
-    root = ARGV[1]
+    root = File.realpath(ARGV[1])
+    core_stat = File.stat(File.join(root, "core"))
     seen = {}
+    inside = lambda do |path|
+      dir = File.dirname(path)
+      loop do
+        stat = File.stat(dir)
+        return true if stat.dev == core_stat.dev && stat.ino == core_stat.ino
+        parent = File.dirname(dir)
+        return false if parent == dir
+        dir = parent
+      rescue Errno::ENOENT
+        return false
+      end
+    end
     database.each do |entry|
       file = entry["file"]
-      next unless file&.start_with?("#{root}/core/")
-      next unless file.end_with?(".cpp")
+      next unless file&.end_with?(".cpp")
       next if seen[file]
+      # macOS can record this repository through a different-case path or a
+      # symlink. Identify it by the core directory inode, and pass clang-tidy
+      # the path stored in the database so its lookup still matches.
+      real = File.realpath(file)
+      next unless inside.call(real)
       seen[file] = true
       puts file
+    rescue Errno::ENOENT
+      next
     end
   ' "${build_dir}/compile_commands.json" "${root}" | sort
 )

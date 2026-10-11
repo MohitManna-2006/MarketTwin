@@ -68,6 +68,17 @@ std::optional<PriceTicks> OrderBook::best_ask() const noexcept {
   return asks_.begin()->first;
 }
 
+std::optional<BookLevel> OrderBook::top(Side side) const noexcept {
+  const auto best = [](const auto& levels) -> std::optional<BookLevel> {
+    if (levels.empty()) {
+      return std::nullopt;
+    }
+    const auto& [price, level] = *levels.begin();
+    return BookLevel{price, level.total_quantity, level.orders.size()};
+  };
+  return side == Side::Buy ? best(bids_) : best(asks_);
+}
+
 OrderBookSnapshot OrderBook::snapshot(std::size_t depth) const {
   if (depth == 0 || depth > max_snapshot_depth_) {
     throw ExchangeError{RejectReason::InvalidDepth, "snapshot depth outside configured bounds"};

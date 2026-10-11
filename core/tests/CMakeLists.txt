@@ -1,6 +1,7 @@
 # Suite layout for later phases:
 #   unit/exchange/     price-time matching and order validation
-#   unit/simulation/   scheduler, clock, and kernel
+#   unit/agents/       trading policies against hand-built observations
+#   unit/simulation/   scheduler, clock, kernel, scenario config, and fundamental
 #   integration/       cross-subsystem runs once those subsystems exist
 #   property/          randomized invariant traces
 #   replay/            digest equality and first-divergence checks
@@ -11,6 +12,11 @@ add_executable(
   property/exchange_trace_test.cpp
   unit/version_test.cpp
   unit/common/hash_test.cpp
+  unit/common/rng_test.cpp
+  unit/agents/policy_test.cpp
+  unit/simulation/fundamental_test.cpp
+  unit/simulation/scenario_config_test.cpp
+  integration/scenario_run_test.cpp
   unit/simulation/scheduler_test.cpp
   unit/simulation/config_test.cpp
   replay/replay_test.cpp
@@ -31,7 +37,7 @@ gtest_discover_tests(
   markettwin_tests
   DISCOVERY_MODE PRE_TEST
   PROPERTIES
-    TIMEOUT 30
+    TIMEOUT 120
 )
 
 add_test(NAME markettwin_cli.version COMMAND markettwin --version)
@@ -54,3 +60,11 @@ add_test(NAME markettwin_cli.run_and_replay
     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/cli-smoke
     -P ${CMAKE_CURRENT_SOURCE_DIR}/integration/cli_smoke.cmake)
 set_tests_properties(markettwin_cli.run_and_replay PROPERTIES TIMEOUT 120)
+
+add_test(NAME markettwin_cli.baseline_hour_run_and_replay
+  COMMAND ${CMAKE_COMMAND}
+    -DCLI=$<TARGET_FILE:markettwin>
+    -DSOURCE=${PROJECT_SOURCE_DIR}
+    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/scenario-smoke
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/integration/scenario_smoke.cmake)
+set_tests_properties(markettwin_cli.baseline_hour_run_and_replay PROPERTIES TIMEOUT 300)

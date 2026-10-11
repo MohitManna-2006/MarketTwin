@@ -12,19 +12,6 @@
 namespace markettwin::codec {
 namespace {
 
-[[noreturn]] void invalid(std::string_view message) {
-  throw RunError{"InvalidConfig", std::string{message}};
-}
-
-template <typename Enum, std::size_t Size>
-std::string_view enum_name(Enum value, const std::array<std::string_view, Size>& names) {
-  const auto index = static_cast<std::size_t>(value);
-  if (index >= names.size()) {
-    invalid("unknown enum value");
-  }
-  return names.at(index);
-}
-
 constexpr std::array<std::string_view, 2> kSides{"Buy", "Sell"};
 constexpr std::array<std::string_view, 2> kOrderTypes{"Limit", "Market"};
 constexpr std::array<std::string_view, 2> kTifs{"Gtc", "Ioc"};
@@ -45,16 +32,6 @@ constexpr std::array<std::string_view, 4> kStops{
     "EventLimit",
     "Requested",
 };
-
-template <typename Enum, std::size_t Size>
-Enum read_enum(const Json& value, const std::array<std::string_view, Size>& names) {
-  const auto name = text(value);
-  const auto found = std::ranges::find(names, name);
-  if (found == names.end()) {
-    invalid("unknown enum spelling: " + name);
-  }
-  return static_cast<Enum>(std::distance(names.begin(), found));
-}
 
 Order read_order(const Json& value) {
   fields(value,
@@ -118,6 +95,10 @@ ExchangeConfig read_exchange(const Json& value) {
 }
 
 } // namespace
+
+void invalid(std::string_view message) {
+  throw RunError{"InvalidConfig", std::string{message}};
+}
 
 Json parse(std::string_view input) {
   // Object stack catches duplicate keys before the DOM could silently overwrite them.
@@ -256,8 +237,8 @@ Json config(const RunConfig& value) {
     commands.push_back(
         {{"timestamp_ns", item.timestamp.value()}, {"command", command(item.command)}});
   }
-  return {
-      {"schema_version", 1},
+  Json output{
+      {"schema_version", value.scenario ? kScenarioConfigSchema : kScriptedConfigSchema},
       {"run_id", value.run_id},
       {"seed", value.seed},
       {"tick_size_minor", value.tick_size_minor},
@@ -268,25 +249,47 @@ Json config(const RunConfig& value) {
       {"max_trace_bytes", value.max_trace_bytes},
       {"commands", commands},
   };
+  // A scripted config keeps its version 1 bytes, and so its Phase 1B digest.
+  if (value.scenario) {
+    output.update({{"scenario", scenario(*value.scenario)}});
+  }
+  return output;
 }
 
 RunConfig read_config(const Json& value) {
-  if (!value.is_object() || !value.contains("schema_version") ||
-      unsigned_integer(value.at("schema_version")) != 1) {
-    throw RunError{"UnsupportedSchema", "expected run config schema version 1"};
+  const auto version = value.is_object() && value.contains("schema_version")
+                           ? unsigned_integer(value.at("schema_version"))
+                           : 0;
+  if (version == kScriptedConfigSchema) {
+    fields(value, {
+                      "schema_version",
+                      "run_id",
+                      "seed",
+                      "tick_size_minor",
+                      "exchange",
+                      "horizon_ns",
+                      "max_events",
+                      "max_queue",
+                      "max_trace_bytes",
+                      "commands",
+                  });
+  } else if (version == kScenarioConfigSchema) {
+    fields(value, {
+                      "schema_version",
+                      "run_id",
+                      "seed",
+                      "tick_size_minor",
+                      "exchange",
+                      "horizon_ns",
+                      "max_events",
+                      "max_queue",
+                      "max_trace_bytes",
+                      "commands",
+                      "scenario",
+                  });
+  } else {
+    throw RunError{"UnsupportedSchema", "expected run config schema version 1 or 2"};
   }
-  fields(value, {
-                    "schema_version",
-                    "run_id",
-                    "seed",
-                    "tick_size_minor",
-                    "exchange",
-                    "horizon_ns",
-                    "max_events",
-                    "max_queue",
-                    "max_trace_bytes",
-                    "commands",
-                });
   RunConfig result;
   result.run_id = text(value.at("run_id"));
   result.seed = unsigned_integer(value.at("seed"));
@@ -307,6 +310,9 @@ RunConfig read_config(const Json& value) {
         .command = read_command(item.at("command")),
     });
   }
+  if (version == kScenarioConfigSchema) {
+    result.scenario = read_scenario(value.at("scenario"));
+  }
   validate_config(result);
   return result;
 }
@@ -322,34 +328,34 @@ Json order(const Order& value) {
   return output;
 }
 
-Json trade(const Trade& value) {
-  return {
-      {"id", value.id.value()},
-      {"symbol", value.symbol.value()},
-      {"buy_order_id", value.buy_order_id.value()},
-      {"sell_order_id", value.sell_order_id.value()},
-      {"aggressor_order_id", value.aggressor_order_id.value()},
-      {"resting_order_id", value.resting_order_id.value()},
-      {"maker_agent_id", value.maker_agent_id.value()},
-      {"taker_agent_id", value.taker_agent_id.value()},
-      {"price_ticks", value.price_ticks.value()},
-      {"quantity", value.quantity.value()},
-      {"timestamp_ns", value.timestamp.value()},
-      {"execution_sequence", value.sequence.value()},
-      {"arrival_sequence", value.arrival_sequence.value()},
-  };
+std::string trade(const Trade& value) {
+  return ObjectWriter{}
+      .number("aggressor_order_id", value.aggressor_order_id.value())
+      .number("arrival_sequence", value.arrival_sequence.value())
+      .number("buy_order_id", value.buy_order_id.value())
+      .number("execution_sequence", value.sequence.value())
+      .number("id", value.id.value())
+      .number("maker_agent_id", value.maker_agent_id.value())
+      .number("price_ticks", value.price_ticks.value())
+      .number("quantity", value.quantity.value())
+      .number("resting_order_id", value.resting_order_id.value())
+      .number("sell_order_id", value.sell_order_id.value())
+      .number("symbol", value.symbol.value())
+      .number("taker_agent_id", value.taker_agent_id.value())
+      .number("timestamp_ns", value.timestamp.value())
+      .finish();
 }
 
-Json status(const OrderStatus& value) {
-  return {
-      {"order_id", value.order_id.value()},
-      {"owner", value.owner.value()},
-      {"state", enum_name(value.state, kStates)},
-      {"reason", enum_name(value.reason, kReasons)},
-      {"filled_quantity", value.filled_quantity.value()},
-      {"canceled_quantity", value.canceled_quantity.value()},
-      {"resting_quantity", value.resting_quantity.value()},
-  };
+std::string status(const OrderStatus& value) {
+  return ObjectWriter{}
+      .number("canceled_quantity", value.canceled_quantity.value())
+      .number("filled_quantity", value.filled_quantity.value())
+      .number("order_id", value.order_id.value())
+      .number("owner", value.owner.value())
+      .name("reason", enum_name(value.reason, kReasons))
+      .number("resting_quantity", value.resting_quantity.value())
+      .name("state", enum_name(value.state, kStates))
+      .finish();
 }
 
 Json snapshot(const OrderBookSnapshot& value) {
@@ -380,7 +386,7 @@ Json snapshot(const OrderBookSnapshot& value) {
 }
 
 Json terminal(const RunSummary& value) {
-  return {
+  Json output{
       {"status", "Completed"},
       {"stop_reason", enum_name(value.stop_reason, kStops)},
       {"event_count", value.event_count},
@@ -391,6 +397,10 @@ Json terminal(const RunSummary& value) {
       {"book_digest", value.book_digest},
       {"trade_digest", value.trade_digest},
   };
+  if (value.scenario) {
+    output.update({{"scenario", scenario_summary(*value.scenario)}});
+  }
+  return output;
 }
 
 Json summary(const RunSummary& value) {
@@ -408,7 +418,7 @@ std::string book_digest(const MatchingEngine& exchange) {
   for (const auto& resting : exchange.book().ordered_orders()) {
     orders.push_back(order(resting));
   }
-  return sha256(Json{{"symbol", exchange.snapshot(1).symbol.value()}, {"orders", orders}}.dump());
+  return sha256(Json{{"symbol", exchange.symbol().value()}, {"orders", orders}}.dump());
 }
 
 std::string read_file(const std::filesystem::path& path, std::size_t limit) {

@@ -1,0 +1,145 @@
+{
+    "book_digest": "50f78abbc41eb924202f57e3bc79f2fe954a5143184b58cff9d45e8b5abe3769",
+    "commands_digest": "93f8b2308b3ff72ef5546b993f1d1a3753eb570ad186d9a49291b9812541e570",
+    "config_digest": "dd21c57970f4aa72f2e66bbc90f7095dacc69239b0f113e6f55d823caf02c9b4",
+    "event_count": 298798,
+    "final_time_ns": 3600000000000,
+    "resting_order_count": 27,
+    "scenario": {
+        "agents": [
+            {
+                "cancels_sent": 3806,
+                "filled_quantity": 46508,
+                "fills": 2156,
+                "id": 1,
+                "intents_dropped": 0,
+                "net_position": 1884,
+                "orders_sent": 4089,
+                "policy": "MarketMaker",
+                "wakeups": 7201
+            },
+            {
+                "cancels_sent": 8073,
+                "filled_quantity": 1182,
+                "fills": 47,
+                "id": 2,
+                "intents_dropped": 0,
+                "net_position": 342,
+                "orders_sent": 8079,
+                "policy": "MarketMaker",
+                "wakeups": 4800
+            },
+            {
+                "cancels_sent": 4014,
+                "filled_quantity": 53107,
+                "fills": 2627,
+                "id": 3,
+                "intents_dropped": 0,
+                "net_position": 1961,
+                "orders_sent": 4266,
+                "policy": "InventoryMarketMaker",
+                "wakeups": 7200
+            },
+            {
+                "cancels_sent": 0,
+                "filled_quantity": 36723,
+                "fills": 1469,
+                "id": 4,
+                "intents_dropped": 0,
+                "net_position": -869,
+                "orders_sent": 887,
+                "policy": "Value",
+                "wakeups": 1785
+            },
+            {
+                "cancels_sent": 0,
+                "filled_quantity": 36985,
+                "fills": 1479,
+                "id": 5,
+                "intents_dropped": 0,
+                "net_position": -3405,
+                "orders_sent": 899,
+                "policy": "Value",
+                "wakeups": 1744
+            },
+            {
+                "cancels_sent": 0,
+                "filled_quantity": 3483,
+                "fills": 325,
+                "id": 6,
+                "intents_dropped": 0,
+                "net_position": -275,
+                "orders_sent": 239,
+                "policy": "Momentum",
+                "wakeups": 3600
+            },
+            {
+                "cancels_sent": 0,
+                "filled_quantity": 3570,
+                "fills": 332,
+                "id": 7,
+                "intents_dropped": 0,
+                "net_position": -254,
+                "orders_sent": 240,
+                "policy": "Momentum",
+                "wakeups": 3599
+            },
+            {
+                "cancels_sent": 212,
+                "filled_quantity": 22739,
+                "fills": 2034,
+                "id": 8,
+                "intents_dropped": 0,
+                "net_position": 5,
+                "orders_sent": 1839,
+                "policy": "Noise",
+                "wakeups": 1839
+            },
+            {
+                "cancels_sent": 243,
+                "filled_quantity": 22021,
+                "fills": 1979,
+                "id": 9,
+                "intents_dropped": 0,
+                "net_position": 383,
+                "orders_sent": 1818,
+                "policy": "Noise",
+                "wakeups": 1818
+            },
+            {
+                "cancels_sent": 212,
+                "filled_quantity": 21749,
+                "fills": 1938,
+                "id": 10,
+                "intents_dropped": 0,
+                "net_position": 909,
+                "orders_sent": 1777,
+                "policy": "Noise",
+                "wakeups": 1777
+            },
+            {
+                "cancels_sent": 243,
+                "filled_quantity": 22797,
+                "fills": 2024,
+                "id": 11,
+                "intents_dropped": 0,
+                "net_position": -681,
+                "orders_sent": 1909,
+                "policy": "Noise",
+                "wakeups": 1909
+            }
+        ],
+        "fundamental_milliticks": 14933028,
+        "fundamental_updates": 3600,
+        "market_data_updates": 13093,
+        "rng_algorithm": "xoshiro256**-splitmix64-v1",
+        "rng_digest": "6a7b40fc47c319d7c019560645d38c956041f4d31b1e7dfea51518d5417d0ff2",
+        "shock_transitions": 0
+    },
+    "seed": 42,
+    "status": "Completed",
+    "stop_reason": "Horizon",
+    "trace_digest": "bd6b6186ddb2153cfd76633f75b1a85e45097d33c45c5c2e7f309f1eb8f547e6",
+    "trade_count": 8205,
+    "trade_digest": "1befe3ff48bd0c8311af0cf580b5928414850ba0f15659ebdf313fc62ff5781e"
+}

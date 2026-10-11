@@ -1,0 +1,309 @@
+#include "population.hpp"
+
+#include <algorithm>
+
+namespace markettwin {
+namespace {
+
+// Never earlier than a message already in flight on the same channel.
+SimTime fifo(SimTime& channel, SimTime now, std::uint64_t delay) {
+  channel = std::max(channel, SimTime{now.value() + delay});
+  return channel;
+}
+
+Fill fill_for(const Trade& trade, bool maker) {
+  const bool maker_buys = trade.buy_order_id == trade.resting_order_id;
+  return {
+      .order_id = maker ? trade.resting_order_id : trade.aggressor_order_id,
+      .trade_id = trade.id,
+      .side = maker == maker_buys ? Side::Buy : Side::Sell,
+      .price = trade.price_ticks,
+      .quantity = trade.quantity,
+      .maker = maker,
+      .exchange_time = trade.timestamp,
+  };
+}
+
+} // namespace
+
+Population::Agent::Agent(const AgentConfig& agent, std::uint64_t seed)
+    : config(&agent), policy(make_policy(agent.policy)),
+      policy_rng(seed, RngStream::AgentPolicy, agent.id.value()),
+      wakeup_rng(seed, RngStream::AgentWakeup, agent.id.value()),
+      latency_rng(seed, RngStream::AgentLatency, agent.id.value()),
+      signal_rng(seed, RngStream::AgentSignal, agent.id.value()) {
+  if (const auto* value = std::get_if<ValueParams>(&agent.policy)) {
+    signal_noise_milliticks = value->estimate_noise_milliticks;
+  }
+  activity.id = agent.id;
+  activity.policy = policy_name(agent.policy);
+}
+
+Population::Population(const RunConfig& config, const ScenarioConfig& scenario,
+                       const FundamentalProcess& fundamental, Scheduler& scheduler)
+    : config_(&config), scenario_(&scenario), fundamental_(&fundamental), scheduler_(&scheduler) {
+  agents_.reserve(scenario.agents.size());
+  for (const auto& item : scenario.agents) {
+    slots_.emplace_back(item.id, agents_.size());
+    agents_.emplace_back(item, config.seed);
+  }
+  std::ranges::sort(slots_);
+}
+
+void Population::start() {
+  for (AgentSlot slot = 0; slot < agents_.size(); ++slot) {
+    static_cast<void>(
+        scheduler_->schedule(agents_.at(slot).config->wakeup.first, AgentWakeup{.slot = slot}));
+  }
+}
+
+AgentObservation Population::observe(const Agent& agent,
+                                     std::optional<std::int64_t> estimate) const {
+  return {
+      .now = scheduler_->now(),
+      .horizon = config_->limits.horizon,
+      .reference_price = scenario_->reference_price,
+      .market = agent.market,
+      .open_orders = agent.orders,
+      .position = agent.position,
+      .limits = agent.config->limits,
+      .controls = agent.controls,
+      .fundamental_estimate_milliticks = estimate,
+  };
+}
+
+std::optional<AgentSlot> Population::slot_of(AgentId id) const noexcept {
+  const auto found =
+      std::ranges::lower_bound(slots_, id, {}, &std::pair<AgentId, AgentSlot>::first);
+  if (found == slots_.end() || found->first != id) {
+    return std::nullopt;
+  }
+  return found->second;
+}
+
+void Population::wake(AgentSlot slot) {
+  auto& agent = agents_.at(slot);
+  ++agent.activity.wakeups;
+  std::optional<std::int64_t> estimate;
+  if (agent.signal_noise_milliticks) {
+    // One draw per wakeup whatever the policy then does, to keep the stream aligned.
+    const auto error =
+        (agent.signal_rng.normal_q16() * to_signed(*agent.signal_noise_milliticks)) / 65'536;
+    estimate = fundamental_->value() + error;
+  }
+  AgentActions actions{agent.policy_rng, intents_};
+  agent.policy->on_timer(observe(agent, estimate), actions);
+  flush(agent);
+
+  const auto& wakeup = agent.config->wakeup;
+  const auto delay =
+      wakeup.distribution == WakeupDistribution::Fixed
+          ? wakeup.interval.value()
+          : std::max<std::uint64_t>(agent.wakeup_rng.exponential(wakeup.interval.value()), 1);
+  static_cast<void>(scheduler_->schedule_after(SimTime{delay}, AgentWakeup{.slot = slot}));
+}
+
+void Population::deliver(AgentSlot slot, const MarketDataUpdate& update) {
+  auto& agent = agents_.at(slot);
+  agent.market = update;
+  AgentActions actions{agent.policy_rng, intents_};
+  agent.policy->on_market_data(observe(agent), actions);
+  flush(agent);
+}
+
+void Population::deliver(AgentSlot slot, const OrderReport& report) {
+  auto& agent = agents_.at(slot);
+  const auto found = std::ranges::find(agent.orders, report.status.order_id, &WorkingOrder::id);
+  if (found != agent.orders.end()) {
+    const auto state = report.status.state;
+    const bool live = report.kind == ReportKind::Order &&
+                      (state == OrderState::Resting || state == OrderState::PartiallyFilled);
+    if (live) {
+      found->acknowledged = true;
+      found->remaining = report.status.resting_quantity;
+    } else {
+      // Finished, rejected, canceled, or a cancel that found nothing left to cancel.
+      agent.orders.erase(found);
+    }
+  }
+  agent.policy->on_order_report(report);
+}
+
+void Population::deliver(AgentSlot slot, const Fill& fill) {
+  auto& agent = agents_.at(slot);
+  const auto quantity = to_signed(fill.quantity.value());
+  agent.position += fill.side == Side::Buy ? quantity : -quantity;
+  agent.policy->on_execution(fill);
+}
+
+void Population::publish(const MarketDataUpdate& update) {
+  for (AgentSlot slot = 0; slot < agents_.size(); ++slot) {
+    auto& agent = agents_.at(slot);
+    const auto time =
+        fifo(agent.market_channel, scheduler_->now(), agent.config->latency.market_data.value());
+    static_cast<void>(
+        scheduler_->schedule(time, MarketDataDelivery{.slot = slot, .update = update}));
+  }
+}
+
+SimTime Population::order_arrival(Agent& agent) {
+  const auto& latency = agent.config->latency;
+  auto delay = latency.order_entry.value();
+  if (latency.order_entry_jitter != SimTime{}) {
+    delay += agent.latency_rng.uniform_below(latency.order_entry_jitter.value() + 1);
+  }
+  return fifo(agent.order_channel, scheduler_->now(), delay);
+}
+
+SimTime Population::report_delivery(Agent& agent) const {
+  return fifo(agent.report_channel, scheduler_->now(), agent.config->latency.report.value());
+}
+
+void Population::record_fill(AgentId id, Side side, Quantity quantity) {
+  if (const auto slot = slot_of(id)) {
+    auto& activity = agents_.at(*slot).activity;
+    const auto shares = to_signed(quantity.value());
+    ++activity.fills;
+    activity.filled_quantity = checked_add(activity.filled_quantity, quantity);
+    activity.net_position += side == Side::Buy ? shares : -shares;
+  }
+}
+
+void Population::route(const ExecutionReport& report) {
+  const auto now = scheduler_->now();
+  const auto send_report = [&](const OrderStatus& status) {
+    if (const auto slot = slot_of(status.owner)) {
+      const OrderReport delivered{
+          .kind = ReportKind::Order,
+          .status = status,
+          .exchange_time = now,
+      };
+      static_cast<void>(
+          scheduler_->schedule(report_delivery(agents_.at(*slot)),
+                               OrderReportDelivery{.slot = *slot, .report = delivered}));
+    }
+  };
+  const auto send_fill = [&](AgentId owner, const Fill& fill) {
+    record_fill(owner, fill.side, fill.quantity);
+    if (const auto slot = slot_of(owner)) {
+      static_cast<void>(scheduler_->schedule(report_delivery(agents_.at(*slot)),
+                                             FillDelivery{.slot = *slot, .fill = fill}));
+    }
+  };
+  // ADR 0001: one maker status follows each trade, then the final incoming status.
+  for (std::size_t index = 0; index < report.trades.size(); ++index) {
+    const auto& trade = report.trades.at(index);
+    send_fill(trade.maker_agent_id, fill_for(trade, true));
+    send_report(report.order_updates.at(index));
+    send_fill(trade.taker_agent_id, fill_for(trade, false));
+  }
+  send_report(report.incoming);
+}
+
+void Population::route(const CancelResult& result) {
+  if (const auto slot = slot_of(result.order.owner)) {
+    const OrderReport delivered{
+        .kind = ReportKind::Cancel,
+        .status = result.order,
+        .exchange_time = scheduler_->now(),
+    };
+    static_cast<void>(
+        scheduler_->schedule(report_delivery(agents_.at(*slot)),
+                             OrderReportDelivery{.slot = *slot, .report = delivered}));
+  }
+}
+
+void Population::flush(Agent& agent) {
+  for (const auto& intent : intents_) {
+    const bool sent = std::visit([&](const auto& item) { return send(agent, item); }, intent);
+    if (!sent) {
+      ++agent.activity.intents_dropped;
+    }
+  }
+  intents_.clear();
+}
+
+bool Population::send(Agent& agent, const SubmitIntent& intent) {
+  const auto& limits = agent.config->limits;
+  const bool priced =
+      intent.type == OrderType::Limit
+          ? intent.limit_price.value() >= 1 && intent.limit_price.value() <= kMaxScenarioPriceTicks
+          : intent.limit_price == PriceTicks{};
+  if (!priced || agent.messages >= limits.max_messages || intent.quantity == Quantity{} ||
+      intent.quantity > limits.max_order_quantity ||
+      agent.orders.size() >= limits.max_open_orders ||
+      intent.quantity.value() > side_capacity(observe(agent), intent.side)) {
+    return false;
+  }
+  ++agent.messages;
+  ++agent.orders_issued;
+  ++agent.activity.orders_sent;
+  const OrderId id{(agent.config->id.value() << kAgentOrderIdShift) + agent.orders_issued};
+  agent.orders.push_back({
+      .id = id,
+      .side = intent.side,
+      .type = intent.type,
+      .price = intent.limit_price,
+      .remaining = intent.quantity,
+      .tif = intent.tif,
+      .sent_at = scheduler_->now(),
+  });
+  static_cast<void>(
+      scheduler_->schedule(order_arrival(agent), Order{
+                                                     .id = id,
+                                                     .owner = agent.config->id,
+                                                     .symbol = config_->exchange.symbol,
+                                                     .side = intent.side,
+                                                     .type = intent.type,
+                                                     .limit_price = intent.limit_price,
+                                                     .original_quantity = intent.quantity,
+                                                     .remaining_quantity = intent.quantity,
+                                                     .tif = intent.tif,
+                                                     .arrival_time = {},
+                                                     .arrival_sequence = {},
+                                                 }));
+  return true;
+}
+
+bool Population::send(Agent& agent, const CancelIntent& intent) {
+  const auto found = std::ranges::find(agent.orders, intent.order_id, &WorkingOrder::id);
+  if (found == agent.orders.end() || found->cancel_requested ||
+      agent.messages >= agent.config->limits.max_messages) {
+    return false;
+  }
+  ++agent.messages;
+  ++agent.activity.cancels_sent;
+  found->cancel_requested = true;
+  static_cast<void>(scheduler_->schedule(
+      order_arrival(agent), CancelCommand{.order_id = intent.order_id, .owner = agent.config->id}));
+  return true;
+}
+
+void Population::set_quote_size(AgentId id, std::uint64_t quote_size_ppm) {
+  if (const auto slot = slot_of(id)) {
+    agents_.at(*slot).controls.quote_size_ppm = quote_size_ppm;
+  }
+}
+
+std::vector<AgentActivity> Population::activity() const {
+  std::vector<AgentActivity> result;
+  result.reserve(agents_.size());
+  for (const auto& agent : agents_) {
+    result.push_back(agent.activity);
+  }
+  return result;
+}
+
+std::vector<Rng::State> Population::rng_states() const {
+  std::vector<Rng::State> result;
+  result.reserve(agents_.size() * 4);
+  for (const auto& agent : agents_) {
+    for (const auto* rng :
+         {&agent.policy_rng, &agent.wakeup_rng, &agent.latency_rng, &agent.signal_rng}) {
+      result.push_back(rng->state());
+    }
+  }
+  return result;
+}
+
+} // namespace markettwin

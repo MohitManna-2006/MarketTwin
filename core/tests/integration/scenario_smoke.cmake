@@ -1,0 +1,23 @@
+# Phase 2A exit gate through the real CLI: run the one-hour baseline, replay it, and hold
+# the printed summary to the golden fixture. OUTPUT is a CTest-owned build directory.
+file(REMOVE_RECURSE "${OUTPUT}")
+file(MAKE_DIRECTORY "${OUTPUT}")
+execute_process(COMMAND "${CLI}" run --config "${SOURCE}/configs/baseline.json"
+  --output "${OUTPUT}/baseline" RESULT_VARIABLE result OUTPUT_VARIABLE summary ERROR_VARIABLE error)
+if(NOT result EQUAL 0)
+  message(FATAL_ERROR "CLI scenario run failed: ${error}")
+endif()
+file(READ "${SOURCE}/core/tests/replay/golden/phase2a_baseline_summary.json" golden)
+string(JSON matches EQUAL "${summary}" "${golden}")
+if(NOT matches)
+  message(FATAL_ERROR "Baseline summary differs from the golden fixture: ${summary}")
+endif()
+execute_process(COMMAND "${CLI}" replay --input "${OUTPUT}/baseline"
+  RESULT_VARIABLE result OUTPUT_VARIABLE replay ERROR_VARIABLE error)
+if(NOT result EQUAL 0)
+  message(FATAL_ERROR "CLI scenario replay failed: ${replay} ${error}")
+endif()
+string(JSON verified GET "${replay}" verified)
+if(NOT verified)
+  message(FATAL_ERROR "Scenario replay did not verify: ${replay}")
+endif()
