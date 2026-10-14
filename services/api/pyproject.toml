@@ -13,6 +13,7 @@ dependencies = [
   "markettwin",
   "pydantic>=2.9",
   "uvicorn>=0.32",
+  "websockets>=13",
 ]
 
 [dependency-groups]

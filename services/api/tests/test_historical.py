@@ -106,8 +106,7 @@ def test_failed_import_can_be_retried_without_losing_failed_evidence(tmp_path: P
 
         fixtures.mkdir()
         (fixtures / "aapl_records.jsonl").write_text(
-            '{"kind":"trade","symbol":"AAPL","t":"2024-03-11T13:30:00Z",'
-            '"p":"1.25","s":2}\n'
+            '{"kind":"trade","symbol":"AAPL","t":"2024-03-11T13:30:00Z","p":"1.25","s":2}\n'
         )
         second_id = client.post("/api/v1/historical/imports", json=body).json()["id"]
         assert second_id != first_id

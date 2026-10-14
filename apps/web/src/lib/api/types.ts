@@ -103,8 +103,36 @@ export interface HistoricalImport {
   error_message: string | null;
 }
 
+/** Present in the manifest metadata of a session finalized from a live recording. */
+export interface HistoricalCapture {
+  recording_id: string;
+  source_label: string;
+  capture_sha256: string;
+  started_at: string;
+  stopped_at: string;
+  stop_reason: string;
+  frames: number;
+  accepted_records: number;
+  rejected_records: number;
+  unsupported_messages: Record<string, number>;
+  truncated_tail: boolean;
+  uninterrupted: boolean;
+  disclaimer: string;
+  coverage_gaps: {
+    from: string;
+    to: string | null;
+    duration_ms: number | null;
+    reason: string;
+    closed_by: string;
+  }[];
+}
+
 export interface HistoricalSession extends HistoricalImport {
-  observation_kind: "REAL HISTORICAL DATA" | "FABRICATED TEST DATA";
+  observation_kind:
+    | "REAL HISTORICAL DATA"
+    | "FABRICATED TEST DATA"
+    | "ALPACA TEST STREAM DATA"
+    | "RECORDED LIVE DATA";
   quality: HistoricalQuality;
   metrics: HistoricalMetrics;
 }

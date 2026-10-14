@@ -126,6 +126,19 @@ CREATE TABLE IF NOT EXISTS historical_imports (
   error_message TEXT
 );
 CREATE INDEX IF NOT EXISTS historical_imports_created ON historical_imports(created_at DESC);
+CREATE TABLE IF NOT EXISTS live_recordings (
+  id TEXT PRIMARY KEY,
+  provider TEXT NOT NULL,
+  feed TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  finished_at TEXT,
+  stop_reason TEXT,
+  summary_json TEXT,
+  error_code TEXT,
+  error_message TEXT
+);
+CREATE INDEX IF NOT EXISTS live_recordings_created ON live_recordings(created_at DESC);
 """
 
 _JSON_COLUMNS = (
@@ -200,6 +213,31 @@ class Registry:
                 (request_key,),
             )
             return result.rowcount == 1
+
+    # ---- live recordings ------------------------------------------------------------------
+
+    def insert_live_recording(self, values: Row) -> None:
+        self._insert("live_recordings", values)
+
+    def update_live_recording(self, recording_id: str, **values: Any) -> None:
+        self._update("live_recordings", recording_id, values)
+
+    def live_recording(self, recording_id: str) -> Row | None:
+        return self._one("SELECT * FROM live_recordings WHERE id = ?", (recording_id,))
+
+    def live_recordings(self, limit: int, offset: int = 0) -> list[Row]:
+        return self._many(
+            "SELECT * FROM live_recordings ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        )
+
+    def unfinished_live_recordings(self) -> list[Row]:
+        """Recordings a previous process left open. A capture is owned by the process that
+        started it, so at startup these were interrupted."""
+        return self._many(
+            "SELECT * FROM live_recordings WHERE status IN ('recording', 'finalizing') "
+            "ORDER BY created_at"
+        )
 
     @contextmanager
     def _cursor(self) -> Iterator[sqlite3.Cursor]:

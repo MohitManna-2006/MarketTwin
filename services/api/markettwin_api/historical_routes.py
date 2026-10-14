@@ -75,7 +75,12 @@ class SessionListView(BaseModel):
 class SessionView(ImportView):
     quality: dict[str, Any]
     metrics: dict[str, Any]
-    observation_kind: Literal["REAL HISTORICAL DATA", "FABRICATED TEST DATA"]
+    observation_kind: Literal[
+        "REAL HISTORICAL DATA",
+        "FABRICATED TEST DATA",
+        "ALPACA TEST STREAM DATA",
+        "RECORDED LIVE DATA",
+    ]
 
 
 class RecordPageView(BaseModel):

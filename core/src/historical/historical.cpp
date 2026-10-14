@@ -5,16 +5,15 @@
 #include "markettwin/common/run_error.hpp"
 #include "markettwin/common/version.hpp"
 
+#include "observed_values.hpp"
+
 #include <algorithm>
 #include <array>
-#include <charconv>
-#include <chrono>
 #include <cstdint>
 #include <fstream>
 #include <limits>
 #include <nlohmann/json.hpp>
 #include <optional>
-#include <regex>
 #include <set>
 #include <string>
 #include <string_view>
@@ -31,7 +30,6 @@ namespace {
 using Json = nlohmann::json;
 constexpr std::size_t kMaxRecords = 500'000;
 constexpr std::uintmax_t kMaxBytes = 256'000'000;
-constexpr std::int64_t kPriceScale = 1'000'000;
 
 struct Event {
   Json value;
@@ -44,87 +42,16 @@ struct Event {
   throw RunError{"InvalidHistoricalData", message};
 }
 
-std::int64_t integer(std::string_view text, const std::string& field) {
-  std::int64_t number = 0;
-  const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), number);
-  if (error != std::errc{} || end != text.data() + text.size()) {
-    invalid("invalid or overflowing " + field);
-  }
-  return number;
-}
-
 std::int64_t price(const Json& record, const char* field, bool allow_zero = false) {
   if (!record.contains(field) || !record.at(field).is_string()) {
     invalid(std::string{"missing decimal-string price: "} + field);
   }
-  const std::string text = record.at(field).get<std::string>();
-  if (text.empty() || text.front() == '-' || text.front() == '+') {
-    invalid(std::string{"invalid price: "} + field);
-  }
-  const auto point = text.find('.');
-  if (point != std::string::npos && (text.find('.', point + 1) != std::string::npos ||
-                                     text.size() - point - 1 > 6 || point + 1 == text.size())) {
-    invalid(std::string{"price exceeds six decimal places: "} + field);
-  }
-  const auto whole = integer(std::string_view{text}.substr(0, point), field);
-  if (whole > std::numeric_limits<std::int64_t>::max() / kPriceScale) {
-    invalid(std::string{"price overflow: "} + field);
-  }
-  std::int64_t fractional = 0;
-  if (point != std::string::npos) {
-    const auto decimals = std::string_view{text}.substr(point + 1);
-    fractional = integer(decimals, field);
-    for (std::size_t index = decimals.size(); index < 6; ++index) {
-      fractional *= 10;
-    }
-  }
-  if (whole * kPriceScale > std::numeric_limits<std::int64_t>::max() - fractional) {
-    invalid(std::string{"price overflow: "} + field);
-  }
-  const auto result = (whole * kPriceScale) + fractional;
-  if (result == 0 && !allow_zero) {
-    invalid(std::string{"zero price: "} + field);
-  }
-  return result;
+  return detail::parse_price_micro_usd(record.at(field).get<std::string>(), field, allow_zero);
 }
 
 std::pair<std::int64_t, int> timestamp(const std::string& text) {
-  // Source precision is retained separately. Only explicit UTC timestamps are accepted;
-  // adapters must not guess offsets or create precision absent from the source.
-  static const std::regex pattern{
-      R"(^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?Z$)"};
-  std::smatch match;
-  if (!std::regex_match(text, match, pattern)) {
-    invalid("timestamp must be RFC3339 UTC with at most nine fractional digits");
-  }
-  const auto number = [&](std::size_t index) {
-    return static_cast<int>(integer(match[index].str(), "time"));
-  };
-  const std::chrono::year_month_day date{std::chrono::year{number(1)},
-                                         std::chrono::month{static_cast<unsigned>(number(2))},
-                                         std::chrono::day{static_cast<unsigned>(number(3))}};
-  if (!date.ok() || number(4) > 23 || number(5) > 59 || number(6) > 59) {
-    invalid("timestamp calendar fields are invalid");
-  }
-  const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(
-                           std::chrono::sys_days{date}.time_since_epoch())
-                           .count() +
-                       (static_cast<std::int64_t>(number(4)) * 3600) +
-                       (static_cast<std::int64_t>(number(5)) * 60) +
-                       static_cast<std::int64_t>(number(6));
-  if (seconds < 0 || seconds > std::numeric_limits<std::int64_t>::max() / 1'000'000'000) {
-    invalid("timestamp is outside supported UTC nanoseconds");
-  }
-  int precision = 0;
-  std::int64_t fraction = 0;
-  if (match[7].matched) {
-    precision = static_cast<int>(match[7].str().size());
-    fraction = integer(match[7].str(), "fractional timestamp");
-    for (int index = precision; index < 9; ++index) {
-      fraction *= 10;
-    }
-  }
-  return {(seconds * 1'000'000'000) + fraction, precision};
+  const auto parsed = detail::parse_utc_timestamp(text);
+  return {parsed.nanoseconds, parsed.precision_digits};
 }
 
 std::string file_digest(const std::filesystem::path& path) {
@@ -206,11 +133,7 @@ Json checked_metadata(const std::string& text) {
       !metadata.contains("acquired_at") || !metadata.at("acquired_at").is_string()) {
     invalid("metadata requires symbol, provider, feed, and acquired_at strings");
   }
-  const std::string symbol = metadata.at("symbol").get<std::string>();
-  if (symbol.empty() || symbol.size() > 12 ||
-      !std::ranges::all_of(symbol, [](unsigned char character) {
-        return (character >= 'A' && character <= 'Z') || character == '.';
-      })) {
+  if (!detail::valid_equity_symbol(metadata.at("symbol").get<std::string>())) {
     invalid("invalid historical equity symbol");
   }
   return metadata;

@@ -3,6 +3,8 @@ add_library(markettwin_core
   src/common/hash.cpp
   src/common/rng.cpp
   src/historical/historical.cpp
+  src/historical/observed_values.cpp
+  src/live/live.cpp
   src/accounting/money.cpp
   src/accounting/ledger.cpp
   src/accounting/valuation.cpp

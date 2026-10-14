@@ -16,12 +16,13 @@ export default defineConfig({
     port: Number(process.env.MARKETTWIN_WEB_PORT ?? 5173),
     strictPort: true,
     // The terminal talks to the research API on the same origin; nothing else is proxied.
-    proxy: { "/api": { target: api, changeOrigin: false } },
+    // `ws` carries the live market-data stream through the same proxy.
+    proxy: { "/api": { target: api, changeOrigin: false, ws: true } },
   },
   preview: {
     host: "127.0.0.1",
     port: 4173,
-    proxy: { "/api": { target: api, changeOrigin: false } },
+    proxy: { "/api": { target: api, changeOrigin: false, ws: true } },
   },
   test: {
     globals: true,

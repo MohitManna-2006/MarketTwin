@@ -5,16 +5,22 @@
 // results document comes out as JSON text. Nothing here is called per event, trade, or
 // price level, and no Python object is created while a run is in progress: the GIL is
 // released for the whole native call.
+//
+// LiveNormalizer is the one object that outlives a call: it holds the last observed state
+// of each live instrument. It is still driven by coarse calls, one per batch of provider
+// frames, never one per record.
 
 #include "markettwin/common/hash.hpp"
 #include "markettwin/common/run_error.hpp"
 #include "markettwin/common/version.hpp"
 #include "markettwin/experiment/experiment.hpp"
 #include "markettwin/historical/historical.hpp"
+#include "markettwin/live/live.hpp"
 #include "markettwin/simulation/simulation.hpp"
 #include "markettwin/telemetry/replay.hpp"
 
 #include <atomic>
+#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <mutex>
@@ -172,6 +178,7 @@ py::dict build_info() {
   info["historical_schema"] = markettwin::historical::kHistoricalSchema;
   info["historical_normalization_version"] =
       markettwin::historical::kHistoricalNormalizationVersion;
+  info["live_schema"] = markettwin::live::kLiveSchema;
   info["max_experiment_runs"] = markettwin::kMaxExperimentRuns;
   return info;
 }
@@ -212,6 +219,31 @@ PYBIND11_MODULE(_native, module) {
       },
       py::arg("session_directory"),
       "Verify historical artifact hashes and deterministic L1 playback.");
+  py::class_<markettwin::live::LiveNormalizer>(module, "LiveNormalizer")
+      .def(py::init<const std::string&>(), py::arg("config_json"))
+      .def(
+          "process_batch",
+          [](markettwin::live::LiveNormalizer& normalizer, const std::string& batch) {
+            const py::gil_scoped_release release;
+            return normalizer.process_batch(batch);
+          },
+          py::arg("batch_json"),
+          "Normalize one batch of provider frames. Returns events, rejects, and the changed "
+          "instrument states as JSON.")
+      .def(
+          "snapshot",
+          [](const markettwin::live::LiveNormalizer& normalizer, std::int64_t now_wall_ns,
+             std::int64_t now_monotonic_ns) {
+            const py::gil_scoped_release release;
+            return normalizer.snapshot(now_wall_ns, now_monotonic_ns);
+          },
+          py::arg("now_wall_ns"), py::arg("now_monotonic_ns"),
+          "State and freshness of every instrument as of the caller's clocks, as JSON.")
+      .def("retain_symbols", &markettwin::live::LiveNormalizer::retain_symbols,
+           py::arg("symbols_json"), "Forget every instrument not named in this JSON array.")
+      .def_property_readonly("last_batch_elapsed_ns",
+                             &markettwin::live::LiveNormalizer::last_batch_elapsed_ns);
+
   module.def("canonicalize_experiment", &canonicalize_experiment, py::arg("config_text"),
              py::arg("base_directory") = std::string{},
              "Parse and validate an experiment config. Returns its canonical JSON.");

@@ -73,6 +73,39 @@ def verify_historical(session_directory: str | PathLike[str]) -> JsonObject:
     return json.loads(_native.verify_historical(fspath(session_directory)))
 
 
+class LiveNormalizer:
+    """Native normalizer and per-instrument state of one live feed.
+
+    Provider messages go in as whole batches with prices already rendered as decimal
+    strings; the core does every conversion, classification, and state update. Python
+    never touches a price and is never called per record.
+    """
+
+    def __init__(self, config: JsonObject) -> None:
+        self._native = _native.LiveNormalizer(_text(config))
+
+    def process_batch(self, batch: JsonObject | str) -> JsonObject:
+        """Normalize one batch of frames; returns events, rejects, and changed states."""
+        return json.loads(self._native.process_batch(_text(batch)))
+
+    def process_batch_text(self, batch: str) -> str:
+        """The same call without parsing the result, for callers that forward the text."""
+        return self._native.process_batch(batch)
+
+    def snapshot(self, now_wall_ns: int, now_monotonic_ns: int) -> JsonObject:
+        """Every instrument's state and freshness as of the caller's clocks."""
+        return json.loads(self._native.snapshot(now_wall_ns, now_monotonic_ns))
+
+    def retain_symbols(self, symbols: list[str]) -> None:
+        """Forget every instrument that is no longer subscribed."""
+        self._native.retain_symbols(json.dumps(symbols))
+
+    @property
+    def last_batch_elapsed_ns(self) -> int:
+        """Steady-clock duration of the last native batch, measured inside the core."""
+        return int(self._native.last_batch_elapsed_ns)
+
+
 def canonicalize_experiment(
     config: JsonObject | str, base_directory: str | PathLike[str] | None = None
 ) -> str:

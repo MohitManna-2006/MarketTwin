@@ -18,7 +18,8 @@ function NotFound() {
             </Button>
           }
         >
-          The terminal has Overview, Simulations, Experiments, Historical, AI Research, and Replay.
+          The terminal has Overview, Simulations, Experiments, Historical, Live Markets, AI
+          Research, and Replay.
         </EmptyState>
       </div>
     </Page>
@@ -121,6 +122,12 @@ export function createRouter() {
           lazy: async () => ({
             Component: (await import("@/features/historical/HistoricalSessionPage"))
               .HistoricalSessionPage,
+          }),
+        },
+        {
+          path: "live",
+          lazy: async () => ({
+            Component: (await import("@/features/live/LivePage")).LivePage,
           }),
         },
         {

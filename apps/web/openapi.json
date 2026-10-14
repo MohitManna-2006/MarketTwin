@@ -3087,6 +3087,320 @@
           }
         }
       }
+    },
+    "/api/v1/live/status": {
+      "get": {
+        "tags": [
+          "Live market data"
+        ],
+        "summary": "Status",
+        "description": "Feed connection, market activity, pipeline, readers, and recording.",
+        "operationId": "status_api_v1_live_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Status Api V1 Live Status Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/health": {
+      "get": {
+        "tags": [
+          "Live market data"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_v1_live_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Health Api V1 Live Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/symbols": {
+      "get": {
+        "tags": [
+          "Live market data"
+        ],
+        "summary": "Symbols",
+        "operationId": "symbols_api_v1_live_symbols_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Symbols Api V1 Live Symbols Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Live market data"
+        ],
+        "summary": "Set Symbols",
+        "operationId": "set_symbols_api_v1_live_symbols_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SymbolsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Set Symbols Api V1 Live Symbols Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/snapshot": {
+      "get": {
+        "tags": [
+          "Live market data"
+        ],
+        "summary": "Snapshot",
+        "description": "The same document a stream reader receives first: status, states, recent events.",
+        "operationId": "snapshot_api_v1_live_snapshot_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Snapshot Api V1 Live Snapshot Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/feed/start": {
+      "post": {
+        "tags": [
+          "Live market data"
+        ],
+        "summary": "Start Feed",
+        "operationId": "start_feed_api_v1_live_feed_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartFeedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Start Feed Api V1 Live Feed Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/feed/stop": {
+      "post": {
+        "tags": [
+          "Live market data"
+        ],
+        "summary": "Stop Feed",
+        "operationId": "stop_feed_api_v1_live_feed_stop_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Stop Feed Api V1 Live Feed Stop Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/recordings": {
+      "get": {
+        "tags": [
+          "Live market data"
+        ],
+        "summary": "Recordings",
+        "operationId": "recordings_api_v1_live_recordings_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Recordings Api V1 Live Recordings Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Live market data"
+        ],
+        "summary": "Start Recording",
+        "operationId": "start_recording_api_v1_live_recordings_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Start Recording Api V1 Live Recordings Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/recordings/stop": {
+      "post": {
+        "tags": [
+          "Live market data"
+        ],
+        "summary": "Stop Recording",
+        "operationId": "stop_recording_api_v1_live_recordings_stop_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Stop Recording Api V1 Live Recordings Stop Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/recordings/{recording_id}": {
+      "get": {
+        "tags": [
+          "Live market data"
+        ],
+        "summary": "Recording",
+        "operationId": "recording_api_v1_live_recordings__recording_id__get",
+        "parameters": [
+          {
+            "name": "recording_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Recording Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Recording Api V1 Live Recordings  Recording Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7323,7 +7637,9 @@
             "type": "string",
             "enum": [
               "REAL HISTORICAL DATA",
-              "FABRICATED TEST DATA"
+              "FABRICATED TEST DATA",
+              "ALPACA TEST STREAM DATA",
+              "RECORDED LIVE DATA"
             ],
             "title": "Observation Kind"
           }
@@ -7429,6 +7745,62 @@
           "transitions"
         ],
         "title": "ShockView"
+      },
+      "StartFeedRequest": {
+        "properties": {
+          "feed": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "test",
+                  "iex",
+                  "mock"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feed"
+          }
+        },
+        "type": "object",
+        "title": "StartFeedRequest"
+      },
+      "SymbolsRequest": {
+        "properties": {
+          "symbols": {
+            "items": {
+              "type": "string",
+              "maxLength": 12
+            },
+            "type": "array",
+            "maxItems": 256,
+            "title": "Symbols"
+          },
+          "feed": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "test",
+                  "iex",
+                  "mock"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbols"
+        ],
+        "title": "SymbolsRequest"
       },
       "ToolEvents": {
         "properties": {

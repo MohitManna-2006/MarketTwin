@@ -8,6 +8,7 @@ P&L figure itself.
 from markettwin.native import (
     ExperimentOutput,
     ExperimentProgress,
+    LiveNormalizer,
     NativeRunError,
     build_info,
     canonicalize_config,
@@ -24,6 +25,7 @@ from markettwin.native import (
 __all__ = [
     "ExperimentOutput",
     "ExperimentProgress",
+    "LiveNormalizer",
     "NativeRunError",
     "build_info",
     "canonicalize_config",

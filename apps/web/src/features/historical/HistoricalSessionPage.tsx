@@ -15,7 +15,7 @@ import {
   historicalSeriesQuery,
   historicalSessionQuery,
 } from "@/lib/api/queries";
-import type { HistoricalSample } from "@/lib/api/types";
+import type { HistoricalCapture, HistoricalSample } from "@/lib/api/types";
 import { usePlayback } from "@/state/playback";
 
 function price(value: number | null | undefined) {
@@ -124,6 +124,8 @@ export function HistoricalSessionPage() {
     );
   }
   const detail = session.data;
+  const capture = (detail.manifest?.metadata as { capture?: HistoricalCapture } | undefined)
+    ?.capture;
   return (
     <Page
       context={
@@ -291,6 +293,54 @@ export function HistoricalSessionPage() {
                   );
                 })}
               </div>
+            </div>
+          ) : null}
+          {capture ? (
+            <div className="border-t border-line p-3" data-testid="capture-provenance">
+              <p className="label mb-2 text-fg-3">Live capture</p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {[
+                  ["Recording", capture.recording_id],
+                  ["Source", capture.source_label],
+                  ["Captured", `${capture.started_at} → ${capture.stopped_at}`],
+                  ["Stopped", capture.stop_reason.replaceAll("_", " ")],
+                  ["Rejected records", capture.rejected_records],
+                  [
+                    "Corrections / cancels (not applied)",
+                    Object.values(capture.unsupported_messages).reduce((sum, n) => sum + n, 0),
+                  ],
+                ].map(([label, value]) => (
+                  <div key={String(label)}>
+                    <div className="label text-fg-3">{label}</div>
+                    <div className="num mt-0.5 break-words whitespace-normal text-fg">{value}</div>
+                  </div>
+                ))}
+              </div>
+              <p className="label mt-3 mb-1 text-fg-3">Coverage interruptions</p>
+              {capture.coverage_gaps.length === 0 ? (
+                <p className="text-xs text-fg-2">
+                  No upstream interruption was recorded during this capture.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1">
+                  {capture.coverage_gaps.map((gap) => (
+                    <li
+                      key={`${gap.from}-${gap.closed_by}`}
+                      className="border-l-2 border-warn bg-surface-1 px-2 py-1 text-xs text-fg-2"
+                    >
+                      <span className="num">
+                        {gap.from} → {gap.to ?? "unknown"}
+                      </span>{" "}
+                      ·{" "}
+                      {gap.duration_ms === null
+                        ? "duration unknown"
+                        : `${(gap.duration_ms / 1000).toFixed(1)} s`}{" "}
+                      · {gap.reason}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="mt-2 text-xs text-fg-3">{capture.disclaimer}</p>
             </div>
           ) : null}
           {verify.data ? (

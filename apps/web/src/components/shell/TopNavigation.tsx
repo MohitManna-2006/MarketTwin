@@ -21,6 +21,7 @@ const SECTIONS = [
   { to: "/simulations", label: "Simulations", match: ["/simulations", "/runs"] },
   { to: "/experiments", label: "Experiments" },
   { to: "/historical", label: "Historical" },
+  { to: "/live", label: "Live Markets" },
   { to: "/ai-research", label: "AI Research" },
   { to: "/replay", label: "Replay" },
 ];

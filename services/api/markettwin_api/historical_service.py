@@ -6,13 +6,14 @@ import hashlib
 import json
 import re
 import secrets
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import markettwin
 
-from markettwin_api.historical_providers import AlpacaProvider, LocalFileProvider
+from markettwin_api.historical_providers import Acquisition, AlpacaProvider, LocalFileProvider
 from markettwin_api.registry import Row, now
 from markettwin_api.service import Research, ServiceError
 from markettwin_api.views import run_detail
@@ -33,6 +34,15 @@ def _utc_instant(value: str) -> datetime:
             422, "InvalidProviderRequest", "historical ranges must use an explicit UTC offset"
         )
     return parsed
+
+
+def observation_kind(provider: str, feed: str) -> str:
+    """The label every screen shows for a session, so test data is never taken for real."""
+    if provider in ("local_file", "mock_live"):
+        return "FABRICATED TEST DATA"
+    if provider == "alpaca_live":
+        return "ALPACA TEST STREAM DATA" if feed == "test" else "RECORDED LIVE DATA"
+    return "REAL HISTORICAL DATA"
 
 
 class HistoricalResearch:
@@ -143,15 +153,21 @@ class HistoricalResearch:
         if row["status"] != "pending":
             return
         self.registry.update_historical(import_id, status="running", started_at=now())
-        try:
-            provider = self.local if row["provider"] == "local_file" else self.alpaca
-            acquisition = provider.acquire(
+        provider = self.local if row["provider"] == "local_file" else self.alpaca
+        self._import(
+            import_id,
+            lambda: provider.acquire(
                 row["symbol"],
                 row["feed"],
                 row["start_time"],
                 row["end_time"],
                 self.root / "raw" / import_id,
-            )
+            ),
+        )
+
+    def _import(self, import_id: str, acquire: Callable[[], Acquisition]) -> None:
+        try:
+            acquisition = acquire()
             manifest = markettwin.import_historical_jsonl(
                 acquisition.input_path, self.session_dir(import_id), acquisition.metadata
             )
@@ -180,6 +196,55 @@ class HistoricalResearch:
                 error_message="historical import failed unexpectedly",
             )
 
+    def import_prepared(
+        self,
+        provider: str,
+        feed: str,
+        symbol: str,
+        start: str | None,
+        end: str | None,
+        identity: str,
+        prepare: Callable[[Path], Acquisition],
+    ) -> Row:
+        """Import records another subsystem already holds, on the calling thread.
+
+        ``prepare`` writes the normalizer input into a new raw directory. The same native
+        import and verification as a provider import follow, so a live recording becomes
+        an ordinary historical session. ``identity`` makes the call idempotent.
+        """
+        request_key = hashlib.sha256(
+            json.dumps([provider, symbol, feed, identity], separators=(",", ":")).encode()
+        ).hexdigest()
+        existing = self.registry.historical_by_key(request_key)
+        if existing:
+            if existing["status"] == "completed":
+                return existing
+            self.registry.update_historical(
+                existing["id"],
+                status="failed",
+                finished_at=now(),
+                error_code=existing["error_code"] or "WorkerInterrupted",
+                error_message=existing["error_message"] or "superseded by a later attempt",
+            )
+            self.registry.retire_failed_historical_key(request_key)
+        import_id = "hist-" + secrets.token_hex(5)
+        self.registry.insert_historical(
+            {
+                "id": import_id,
+                "request_key": request_key,
+                "provider": provider,
+                "feed": feed,
+                "symbol": symbol,
+                "start_time": start,
+                "end_time": end,
+                "status": "running",
+                "created_at": now(),
+                "started_at": now(),
+            }
+        )
+        self._import(import_id, lambda: prepare(self.root / "raw" / import_id))
+        return self.require(import_id)
+
     def require(self, import_id: str) -> Row:
         if _HISTORICAL_ID.fullmatch(import_id) is None:
             raise ServiceError(404, "HistoricalImportNotFound", "historical import ID is unknown")
@@ -205,9 +270,7 @@ class HistoricalResearch:
             **row,
             "quality": quality,
             "metrics": metrics,
-            "observation_kind": "REAL HISTORICAL DATA"
-            if row["provider"] != "local_file"
-            else "FABRICATED TEST DATA",
+            "observation_kind": observation_kind(row["provider"], row["feed"]),
         }
 
     def page(

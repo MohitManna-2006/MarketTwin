@@ -4,6 +4,8 @@
 #   unit/accounting/   checked money arithmetic, the ledger, marks, and drawdown
 #   unit/telemetry/    market statistics from exchange outputs
 #   unit/experiment/   integer statistics and confidence intervals
+#   unit/historical/   observed-market import, validation, and playback
+#   unit/live/         live trade and quote normalization and per-instrument state
 #   unit/simulation/   scheduler, clock, kernel, scenario config, and fundamental
 #   integration/       cross-subsystem runs once those subsystems exist
 #   property/          randomized invariant traces
@@ -17,6 +19,7 @@ add_executable(
   unit/common/hash_test.cpp
   unit/common/rng_test.cpp
   unit/historical/historical_test.cpp
+  unit/live/live_test.cpp
   unit/agents/policy_test.cpp
   unit/accounting/money_test.cpp
   unit/accounting/ledger_test.cpp
