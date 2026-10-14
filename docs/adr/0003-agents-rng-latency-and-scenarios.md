@@ -136,8 +136,8 @@ distance between midpoint and fundamental before interpreting maker results.
   transition is logged with the shock's full definition.
 - Overlapping volatility regimes, and overlapping withdrawals for one agent, are
   rejected at validation instead of being given a combination rule. Order-flow
-  imbalance, latency degradation, and quote-withdrawal stress from section 9.3 are not
-  implemented.
+  imbalance, latency degradation, and quote-withdrawal stress from section 9.3 were added
+  in Phase 5A; see [ADR 0010](0010-order-flow-latency-and-quote-stress-shocks.md).
 
 ## Limits
 

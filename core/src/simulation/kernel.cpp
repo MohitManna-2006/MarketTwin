@@ -62,15 +62,15 @@ private:
     }
     const auto& config = *scenario_->config;
     for (std::size_t index = 0; index < config.shocks.size(); ++index) {
-      const auto& shock = config.shocks.at(index);
-      if (const auto* jump = std::get_if<FundamentalJump>(&shock)) {
-        schedule(jump->at, ShockTransition{.shock = index, .phase = ShockPhase::Instant});
-      } else if (const auto* withdrawal = std::get_if<LiquidityWithdrawal>(&shock)) {
-        schedule_interval(index, withdrawal->start, withdrawal->end);
-      } else {
-        const auto& regime = std::get<VolatilityRegime>(shock);
-        schedule_interval(index, regime.start, regime.end);
-      }
+      std::visit(
+          [&](const auto& shock) {
+            if constexpr (requires { shock.at; }) {
+              schedule(shock.at, ShockTransition{.shock = index, .phase = ShockPhase::Instant});
+            } else {
+              schedule_interval(index, shock.start, shock.end);
+            }
+          },
+          config.shocks.at(index));
     }
     schedule(config.fundamental.update_interval, FundamentalTick{});
     if (config.sampling) {
@@ -172,16 +172,37 @@ private:
     auto& live = scenario();
     const auto& shock = live.config->shocks.at(transition.shock);
     const bool begin = transition.phase == ShockPhase::Begin;
-    if (const auto* jump = std::get_if<FundamentalJump>(&shock)) {
-      live.fundamental.jump(jump->delta_milliticks);
-    } else if (const auto* withdrawal = std::get_if<LiquidityWithdrawal>(&shock)) {
-      for (const auto agent : withdrawal->agents) {
-        live.population.set_quote_size(agent, begin ? withdrawal->quote_size_ppm : kPpm);
+    struct Apply {
+      Scenario* live;
+      bool begin;
+      void operator()(const FundamentalJump& jump) const {
+        live->fundamental.jump(jump.delta_milliticks);
       }
-    } else {
-      const auto& regime = std::get<VolatilityRegime>(shock);
-      live.fundamental.set_volatility_ppm(begin ? regime.volatility_ppm : kPpm);
-    }
+      void operator()(const LiquidityWithdrawal& withdrawal) const {
+        for (const auto agent : withdrawal.agents) {
+          live->population.set_quote_size(agent, begin ? withdrawal.quote_size_ppm : kPpm);
+        }
+      }
+      void operator()(const VolatilityRegime& regime) const {
+        live->fundamental.set_volatility_ppm(begin ? regime.volatility_ppm : kPpm);
+      }
+      void operator()(const OrderFlowImbalance& imbalance) const {
+        for (const auto agent : imbalance.agents) {
+          live->population.set_order_flow(agent, begin ? &imbalance : nullptr);
+        }
+      }
+      void operator()(const LatencyDegradation& degradation) const {
+        for (const auto agent : degradation.agents) {
+          live->population.set_added_latency(agent, begin ? &degradation : nullptr);
+        }
+      }
+      void operator()(const QuoteWithdrawalStress& stress) const {
+        for (const auto agent : stress.agents) {
+          live->population.withdraw_quotes(agent);
+        }
+      }
+    };
+    std::visit(Apply{.live = &live, .begin = begin}, shock);
     ++live.shock_transitions;
     recorder_.outcome(event, {}, "ScenarioShock",
                       codec::shock_transition(transition.shock, transition.phase, shock).dump());

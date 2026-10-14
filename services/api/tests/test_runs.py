@@ -27,7 +27,7 @@ def test_health_names_the_engine_and_the_service_limits(client: TestClient) -> N
     health = get(client, "/health")
     assert health["status"] == "ok"
     assert health["engine_version"] == "0.4.0"
-    assert health["counts"]["scenarios"] == 6
+    assert health["counts"]["scenarios"] == 9
     assert health["limits"]["max_horizon_ns"] == 24 * 3600 * SECOND
 
 
@@ -38,6 +38,9 @@ def test_scenarios_are_the_shipped_configs_and_nothing_else(client: TestClient) 
         "fundamental_shock",
         "liquidity_shock",
         "volatility_shock",
+        "order_flow_shock",
+        "latency_shock",
+        "quote_stress_shock",
         "baseline_accounting",
         "phase1b_demo",
     ]
@@ -50,6 +53,9 @@ def test_scenarios_are_the_shipped_configs_and_nothing_else(client: TestClient) 
         "Noise": 4,
     }
     assert by_key["liquidity_shock"]["shocks"] == ["LiquidityWithdrawal"]
+    assert by_key["order_flow_shock"]["shocks"] == ["OrderFlowImbalance"]
+    assert by_key["latency_shock"]["shocks"] == ["LatencyDegradation"]
+    assert by_key["quote_stress_shock"]["shocks"] == ["QuoteWithdrawalStress"]
     assert by_key["phase1b_demo"]["kind"] == "scripted"
     detail = get(client, "/scenarios/fundamental_shock")
     assert detail["config"] == load_config("fundamental_shock")
@@ -73,6 +79,9 @@ def test_the_field_catalogue_describes_exactly_the_native_policy_parameters(
         "FundamentalJump",
         "LiquidityWithdrawal",
         "VolatilityRegime",
+        "OrderFlowImbalance",
+        "LatencyDegradation",
+        "QuoteWithdrawalStress",
     ]
     distribution = next(f for f in catalogue["wakeup"] if f["name"] == "distribution")
     assert distribution["options"] == ["Fixed", "Exponential"]

@@ -98,10 +98,13 @@ void Population::wake(AgentSlot slot) {
   flush(agent);
 
   const auto& wakeup = agent.config->wakeup;
-  const auto delay =
-      wakeup.distribution == WakeupDistribution::Fixed
-          ? wakeup.interval.value()
-          : std::max<std::uint64_t>(agent.wakeup_rng.exponential(wakeup.interval.value()), 1);
+  // An order-flow imbalance scales the rate; validation bounds it to keep this in range.
+  const auto interval = std::max<std::uint64_t>(
+      static_cast<std::uint64_t>(UInt128{wakeup.interval.value()} * kPpm / agent.arrival_rate_ppm),
+      1);
+  const auto delay = wakeup.distribution == WakeupDistribution::Fixed
+                         ? interval
+                         : std::max<std::uint64_t>(agent.wakeup_rng.exponential(interval), 1);
   static_cast<void>(scheduler_->schedule_after(SimTime{delay}, AgentWakeup{.slot = slot}));
 }
 
@@ -149,7 +152,8 @@ void Population::publish(const MarketDataUpdate& update) {
   for (AgentSlot slot = 0; slot < agents_.size(); ++slot) {
     auto& agent = agents_.at(slot);
     const auto time =
-        fifo(agent.market_channel, scheduler_->now(), agent.config->latency.market_data.value());
+        fifo(agent.market_channel, scheduler_->now(),
+             agent.config->latency.market_data.value() + agent.added_market_data.value());
     static_cast<void>(
         scheduler_->schedule(time, MarketDataDelivery{.slot = slot, .update = update}));
   }
@@ -157,7 +161,7 @@ void Population::publish(const MarketDataUpdate& update) {
 
 SimTime Population::order_arrival(Agent& agent) {
   const auto& latency = agent.config->latency;
-  auto delay = latency.order_entry.value();
+  auto delay = latency.order_entry.value() + agent.added_order_entry.value();
   if (latency.order_entry_jitter != SimTime{}) {
     delay += agent.latency_rng.uniform_below(latency.order_entry_jitter.value() + 1);
   }
@@ -165,7 +169,8 @@ SimTime Population::order_arrival(Agent& agent) {
 }
 
 SimTime Population::report_delivery(Agent& agent) const {
-  return fifo(agent.report_channel, scheduler_->now(), agent.config->latency.report.value());
+  return fifo(agent.report_channel, scheduler_->now(),
+              agent.config->latency.report.value() + agent.added_report.value());
 }
 
 void Population::record_fill(AgentId id, Side side, Quantity quantity) {
@@ -320,6 +325,46 @@ bool Population::send(Agent& agent, const CancelIntent& intent) {
 void Population::set_quote_size(AgentId id, std::uint64_t quote_size_ppm) {
   if (const auto slot = slot_of(id)) {
     agents_.at(*slot).controls.quote_size_ppm = quote_size_ppm;
+  }
+}
+
+void Population::set_order_flow(AgentId id, const OrderFlowImbalance* imbalance) {
+  if (const auto slot = slot_of(id)) {
+    auto& agent = agents_.at(*slot);
+    agent.arrival_rate_ppm = imbalance != nullptr ? imbalance->arrival_rate_ppm : kPpm;
+    agent.controls.buy_probability_ppm =
+        imbalance != nullptr ? std::optional{imbalance->buy_probability_ppm} : std::nullopt;
+    agent.controls.market_order_ppm =
+        imbalance != nullptr ? std::optional{imbalance->market_order_ppm} : std::nullopt;
+  }
+}
+
+void Population::set_added_latency(AgentId id, const LatencyDegradation* degradation) {
+  if (const auto slot = slot_of(id)) {
+    auto& agent = agents_.at(*slot);
+    agent.added_order_entry = degradation != nullptr ? degradation->added_order_entry : SimTime{};
+    agent.added_report = degradation != nullptr ? degradation->added_report : SimTime{};
+    agent.added_market_data = degradation != nullptr ? degradation->added_market_data : SimTime{};
+  }
+}
+
+void Population::withdraw_quotes(AgentId id) {
+  const auto slot = slot_of(id);
+  if (!slot) {
+    return;
+  }
+  auto& agent = agents_.at(*slot);
+  // send() marks each order, so collect the IDs first; the order list does not change.
+  std::vector<OrderId> working;
+  for (const auto& order : agent.orders) {
+    if (!order.cancel_requested) {
+      working.push_back(order.id);
+    }
+  }
+  for (const auto order : working) {
+    if (!send(agent, CancelIntent{.order_id = order})) {
+      ++agent.activity.intents_dropped;
+    }
   }
 }
 

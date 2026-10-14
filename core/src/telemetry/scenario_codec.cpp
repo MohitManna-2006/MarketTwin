@@ -135,34 +135,87 @@ AgentConfig read_agent(const Json& value) {
   };
 }
 
-Json shock(const Shock& value) {
-  if (const auto* jump = std::get_if<FundamentalJump>(&value)) {
+Json ids(const std::vector<AgentId>& agents) {
+  auto output = Json::array();
+  for (const auto id : agents) {
+    output.push_back(id.value());
+  }
+  return output;
+}
+
+std::vector<AgentId> read_ids(const Json& value) {
+  if (!value.is_array()) {
+    invalid("shock agents must be an array");
+  }
+  std::vector<AgentId> result;
+  for (const auto& id : value) {
+    result.emplace_back(unsigned_integer(id));
+  }
+  return result;
+}
+
+struct ShockWriter {
+  Json operator()(const FundamentalJump& jump) const {
     return {
         {"kind", "FundamentalJump"},
-        {"at_ns", jump->at.value()},
-        {"delta_milliticks", jump->delta_milliticks},
+        {"at_ns", jump.at.value()},
+        {"delta_milliticks", jump.delta_milliticks},
     };
   }
-  if (const auto* withdrawal = std::get_if<LiquidityWithdrawal>(&value)) {
-    auto agents = Json::array();
-    for (const auto id : withdrawal->agents) {
-      agents.push_back(id.value());
-    }
+  Json operator()(const LiquidityWithdrawal& withdrawal) const {
     return {
         {"kind", "LiquidityWithdrawal"},
-        {"start_ns", withdrawal->start.value()},
-        {"end_ns", withdrawal->end.value()},
-        {"agents", agents},
-        {"quote_size_ppm", withdrawal->quote_size_ppm},
+        {"start_ns", withdrawal.start.value()},
+        {"end_ns", withdrawal.end.value()},
+        {"agents", ids(withdrawal.agents)},
+        {"quote_size_ppm", withdrawal.quote_size_ppm},
     };
   }
-  const auto& regime = std::get<VolatilityRegime>(value);
-  return {
-      {"kind", "VolatilityRegime"},
-      {"start_ns", regime.start.value()},
-      {"end_ns", regime.end.value()},
-      {"volatility_ppm", regime.volatility_ppm},
-  };
+  Json operator()(const VolatilityRegime& regime) const {
+    return {
+        {"kind", "VolatilityRegime"},
+        {"start_ns", regime.start.value()},
+        {"end_ns", regime.end.value()},
+        {"volatility_ppm", regime.volatility_ppm},
+    };
+  }
+  Json operator()(const OrderFlowImbalance& imbalance) const {
+    return {
+        {"kind", "OrderFlowImbalance"},
+        {"start_ns", imbalance.start.value()},
+        {"end_ns", imbalance.end.value()},
+        {"agents", ids(imbalance.agents)},
+        {"buy_probability_ppm", imbalance.buy_probability_ppm},
+        {"market_order_ppm", imbalance.market_order_ppm},
+        {"arrival_rate_ppm", imbalance.arrival_rate_ppm},
+    };
+  }
+  Json operator()(const LatencyDegradation& degradation) const {
+    return {
+        {"kind", "LatencyDegradation"},
+        {"start_ns", degradation.start.value()},
+        {"end_ns", degradation.end.value()},
+        {"agents", ids(degradation.agents)},
+        {"added_order_entry_ns", degradation.added_order_entry.value()},
+        {"added_report_ns", degradation.added_report.value()},
+        {"added_market_data_ns", degradation.added_market_data.value()},
+    };
+  }
+  Json operator()(const QuoteWithdrawalStress& stress) const {
+    return {
+        {"kind", "QuoteWithdrawalStress"},
+        {"at_ns", stress.at.value()},
+        {"agents", ids(stress.agents)},
+    };
+  }
+};
+
+Json shock(const Shock& value) {
+  return std::visit(ShockWriter{}, value);
+}
+
+SimTime time(const Json& value, const char* field) {
+  return SimTime{unsigned_integer(value.at(field))};
 }
 
 Shock read_shock(const Json& value) {
@@ -173,32 +226,70 @@ Shock read_shock(const Json& value) {
   if (kind == "FundamentalJump") {
     fields(value, {"kind", "at_ns", "delta_milliticks"});
     return FundamentalJump{
-        .at = SimTime{unsigned_integer(value.at("at_ns"))},
+        .at = time(value, "at_ns"),
         .delta_milliticks = signed_integer(value.at("delta_milliticks")),
     };
   }
   if (kind == "LiquidityWithdrawal") {
     fields(value, {"kind", "start_ns", "end_ns", "agents", "quote_size_ppm"});
-    LiquidityWithdrawal result{
-        .start = SimTime{unsigned_integer(value.at("start_ns"))},
-        .end = SimTime{unsigned_integer(value.at("end_ns"))},
-        .agents = {},
+    return LiquidityWithdrawal{
+        .start = time(value, "start_ns"),
+        .end = time(value, "end_ns"),
+        .agents = read_ids(value.at("agents")),
         .quote_size_ppm = unsigned_integer(value.at("quote_size_ppm")),
     };
-    if (!value.at("agents").is_array()) {
-      invalid("shock agents must be an array");
-    }
-    for (const auto& id : value.at("agents")) {
-      result.agents.emplace_back(unsigned_integer(id));
-    }
-    return result;
   }
   if (kind == "VolatilityRegime") {
     fields(value, {"kind", "start_ns", "end_ns", "volatility_ppm"});
     return VolatilityRegime{
-        .start = SimTime{unsigned_integer(value.at("start_ns"))},
-        .end = SimTime{unsigned_integer(value.at("end_ns"))},
+        .start = time(value, "start_ns"),
+        .end = time(value, "end_ns"),
         .volatility_ppm = unsigned_integer(value.at("volatility_ppm")),
+    };
+  }
+  if (kind == "OrderFlowImbalance") {
+    fields(value, {
+                      "kind",
+                      "start_ns",
+                      "end_ns",
+                      "agents",
+                      "buy_probability_ppm",
+                      "market_order_ppm",
+                      "arrival_rate_ppm",
+                  });
+    return OrderFlowImbalance{
+        .start = time(value, "start_ns"),
+        .end = time(value, "end_ns"),
+        .agents = read_ids(value.at("agents")),
+        .buy_probability_ppm = unsigned_integer(value.at("buy_probability_ppm")),
+        .market_order_ppm = unsigned_integer(value.at("market_order_ppm")),
+        .arrival_rate_ppm = unsigned_integer(value.at("arrival_rate_ppm")),
+    };
+  }
+  if (kind == "LatencyDegradation") {
+    fields(value, {
+                      "kind",
+                      "start_ns",
+                      "end_ns",
+                      "agents",
+                      "added_order_entry_ns",
+                      "added_report_ns",
+                      "added_market_data_ns",
+                  });
+    return LatencyDegradation{
+        .start = time(value, "start_ns"),
+        .end = time(value, "end_ns"),
+        .agents = read_ids(value.at("agents")),
+        .added_order_entry = time(value, "added_order_entry_ns"),
+        .added_report = time(value, "added_report_ns"),
+        .added_market_data = time(value, "added_market_data_ns"),
+    };
+  }
+  if (kind == "QuoteWithdrawalStress") {
+    fields(value, {"kind", "at_ns", "agents"});
+    return QuoteWithdrawalStress{
+        .at = time(value, "at_ns"),
+        .agents = read_ids(value.at("agents")),
     };
   }
   invalid("unknown shock kind: " + kind);

@@ -5,6 +5,7 @@
 #include "markettwin/common/math.hpp"
 #include "markettwin/common/rng.hpp"
 
+#include <optional>
 #include <span>
 #include <variant>
 #include <vector>
@@ -56,6 +57,9 @@ struct AgentLimits {
 // Scenario-imposed adjustments. Shocks change these; policies must honor them.
 struct AgentControls {
   std::uint64_t quote_size_ppm = kPpm;
+  // Order-flow overrides for noise agents; absent means the agent's own parameters.
+  std::optional<std::uint64_t> buy_probability_ppm;
+  std::optional<std::uint64_t> market_order_ppm;
   bool operator==(const AgentControls&) const = default;
 };
 

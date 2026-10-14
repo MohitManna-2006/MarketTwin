@@ -32,6 +32,7 @@ import {
   isValidName,
   removeAgent,
   setAccounting,
+  shockAgentChoice,
   setIn,
   type Path,
 } from "@/lib/config/draft";
@@ -625,7 +626,6 @@ function ShockEditor({
 }) {
   const scenario = draft.scenario;
   if (!scenario) return null;
-  const makers = scenario.agents.filter((agent) => agent.policy.kind.endsWith("MarketMaker"));
   return (
     <FormSection
       title="Shocks"
@@ -674,6 +674,10 @@ function ShockEditor({
         <ul className="flex flex-col gap-2">
           {scenario.shocks.map((shock, index) => {
             const spec = fields.shocks.find((item) => item.kind === shock.kind);
+            const choice = shockAgentChoice(shock.kind);
+            const eligible = choice
+              ? scenario.agents.filter((agent) => choice.eligible(agent.policy.kind))
+              : [];
             return (
               <li key={index} className="border border-line-subtle">
                 <div className="flex h-6 items-center gap-2 border-b border-line-subtle bg-surface-1 pr-1 pl-2">
@@ -704,21 +708,21 @@ function ShockEditor({
                     errors={errors}
                     onChange={(name, value) => edit(["scenario", "shocks", index, name], value)}
                   />
-                  {shock.agents ? (
+                  {choice && shock.agents ? (
                     <fieldset>
-                      <legend className="label mb-1 text-fg-3">Market makers withdrawn</legend>
+                      <legend className="label mb-1 text-fg-3">{choice.legend}</legend>
                       <div className="flex flex-wrap gap-x-3 gap-y-1">
-                        {makers.map((maker) => (
+                        {eligible.map((agent) => (
                           <Checkbox
-                            key={maker.id}
-                            label={`Agent ${maker.id}`}
-                            checked={shock.agents?.includes(maker.id) ?? false}
+                            key={agent.id}
+                            label={`Agent ${agent.id}`}
+                            checked={shock.agents?.includes(agent.id) ?? false}
                             onChange={(checked) =>
                               edit(
                                 ["scenario", "shocks", index, "agents"],
                                 checked
-                                  ? [...(shock.agents ?? []), maker.id].sort((a, b) => a - b)
-                                  : (shock.agents ?? []).filter((id) => id !== maker.id),
+                                  ? [...(shock.agents ?? []), agent.id].sort((a, b) => a - b)
+                                  : (shock.agents ?? []).filter((id) => id !== agent.id),
                               )
                             }
                           />

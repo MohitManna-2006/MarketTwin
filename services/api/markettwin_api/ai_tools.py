@@ -107,7 +107,7 @@ class ResearchTools:
 
     def _list_scenarios(self, investigation_id: str, args: Empty) -> Json:
         return {
-            "scenarios": [scenario.summary() for scenario in self.research.scenarios.list()][:8]
+            "scenarios": [scenario.summary() for scenario in self.research.scenarios.list()][:12]
         }
 
     def _inspect_scenario(self, investigation_id: str, args: ScenarioArg) -> Json:

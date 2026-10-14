@@ -18,6 +18,8 @@ constexpr std::size_t kMaxShocks = 1'024;
 constexpr std::size_t kMaxWindow = 4'096;
 constexpr std::size_t kMaxQuoteLevels = 32;
 constexpr std::uint64_t kMaxVolatilityPpm = 100 * kPpm;
+constexpr std::uint64_t kMinArrivalRatePpm = kPpm / 100;
+constexpr std::uint64_t kMaxArrivalRatePpm = 100 * kPpm;
 
 void require(bool condition, const char* message) {
   if (!condition) {
@@ -121,48 +123,121 @@ void require_disjoint(std::vector<Interval>& intervals, const char* message) {
   }
 }
 
-void check_shocks(const ScenarioConfig& scenario) {
-  require(scenario.shocks.size() <= kMaxShocks, "too many shocks");
-  std::vector<Interval> regimes;
-  std::vector<std::pair<AgentId, Interval>> withdrawals;
-  for (const auto& shock : scenario.shocks) {
-    if (const auto* jump = std::get_if<FundamentalJump>(&shock)) {
-      require(jump->at.value() <= kMaxHorizon && jump->delta_milliticks != 0 &&
-                  jump->delta_milliticks >= -to_signed(kMaxMilliticks) &&
-                  jump->delta_milliticks <= to_signed(kMaxMilliticks),
-              "fundamental jump must be nonzero and within 1e12 milliticks");
-    } else if (const auto* withdrawal = std::get_if<LiquidityWithdrawal>(&shock)) {
-      check_interval(withdrawal->start, withdrawal->end);
-      require(withdrawal->quote_size_ppm <= kPpm && !withdrawal->agents.empty(),
-              "liquidity withdrawal needs agents and a quote size of at most 1e6 ppm");
-      for (const auto id : withdrawal->agents) {
-        const auto found = std::ranges::find(scenario.agents, id, &AgentConfig::id);
-        require(found != scenario.agents.end() &&
-                    (std::holds_alternative<MarketMakerParams>(found->policy) ||
-                     std::holds_alternative<InventoryMarketMakerParams>(found->policy)),
-                "liquidity withdrawal may only name market-maker agents");
-        withdrawals.emplace_back(id, Interval{.start = withdrawal->start, .end = withdrawal->end});
-      }
-    } else {
-      const auto& regime = std::get<VolatilityRegime>(shock);
-      check_interval(regime.start, regime.end);
-      require(regime.volatility_ppm <= kMaxVolatilityPpm, "volatility regime exceeds 100x");
-      regimes.push_back({.start = regime.start, .end = regime.end});
+using AgentIntervals = std::vector<std::pair<AgentId, Interval>>;
+
+bool is_maker(const PolicyConfig& policy) {
+  return std::holds_alternative<MarketMakerParams>(policy) ||
+         std::holds_alternative<InventoryMarketMakerParams>(policy);
+}
+
+// Every named agent exists and passes `allowed`; with an interval, each is recorded for
+// the per-agent overlap check of its shock kind.
+template <typename Allowed>
+void check_agents(const ScenarioConfig& scenario, const std::vector<AgentId>& agents,
+                  Allowed allowed, const char* message, AgentIntervals* intervals = nullptr,
+                  Interval interval = {}) {
+  require(!agents.empty(), message);
+  std::set<AgentId> seen;
+  for (const auto id : agents) {
+    const auto found = std::ranges::find(scenario.agents, id, &AgentConfig::id);
+    require(found != scenario.agents.end() && allowed(found->policy) && seen.insert(id).second,
+            message);
+    if (intervals != nullptr) {
+      intervals->emplace_back(id, interval);
     }
   }
-  // Overlap would need a combination rule; require the config to be unambiguous instead.
-  require_disjoint(regimes, "volatility regimes must not overlap");
-  std::ranges::sort(withdrawals, {}, [](const auto& item) { return item.first; });
-  for (auto first = withdrawals.begin(); first != withdrawals.end();) {
-    const auto last = std::find_if(first, withdrawals.end(),
+}
+
+void require_disjoint_per_agent(AgentIntervals& items, const char* message) {
+  std::ranges::sort(items, {}, [](const auto& item) { return item.first; });
+  for (auto first = items.begin(); first != items.end();) {
+    const auto last = std::find_if(first, items.end(),
                                    [&](const auto& item) { return item.first != first->first; });
     std::vector<Interval> intervals;
     for (auto item = first; item != last; ++item) {
       intervals.push_back(item->second);
     }
-    require_disjoint(intervals, "liquidity withdrawals must not overlap for one agent");
+    require_disjoint(intervals, message);
     first = last;
   }
+}
+
+// Overlap would need a combination rule; each check requires the config to be
+// unambiguous instead.
+struct ShockChecker {
+  explicit ShockChecker(const ScenarioConfig& config) : scenario(&config) {}
+
+  const ScenarioConfig* scenario;
+  std::vector<Interval> regimes;
+  AgentIntervals withdrawals;
+  AgentIntervals imbalances;
+  AgentIntervals degradations;
+
+  void operator()(const FundamentalJump& jump) const {
+    require(jump.at.value() <= kMaxHorizon && jump.delta_milliticks != 0 &&
+                jump.delta_milliticks >= -to_signed(kMaxMilliticks) &&
+                jump.delta_milliticks <= to_signed(kMaxMilliticks),
+            "fundamental jump must be nonzero and within 1e12 milliticks");
+  }
+  void operator()(const LiquidityWithdrawal& withdrawal) {
+    check_interval(withdrawal.start, withdrawal.end);
+    require(withdrawal.quote_size_ppm <= kPpm,
+            "liquidity withdrawal quote size must be at most 1e6 ppm");
+    check_agents(*scenario, withdrawal.agents, is_maker,
+                 "liquidity withdrawal must name distinct market-maker agents", &withdrawals,
+                 {.start = withdrawal.start, .end = withdrawal.end});
+  }
+  void operator()(const VolatilityRegime& regime) {
+    check_interval(regime.start, regime.end);
+    require(regime.volatility_ppm <= kMaxVolatilityPpm, "volatility regime exceeds 100x");
+    regimes.push_back({.start = regime.start, .end = regime.end});
+  }
+  void operator()(const OrderFlowImbalance& imbalance) {
+    check_interval(imbalance.start, imbalance.end);
+    require(imbalance.buy_probability_ppm <= kPpm && imbalance.market_order_ppm <= kPpm,
+            "order-flow imbalance probabilities must not exceed 1e6 ppm");
+    require(imbalance.arrival_rate_ppm >= kMinArrivalRatePpm &&
+                imbalance.arrival_rate_ppm <= kMaxArrivalRatePpm,
+            "order-flow imbalance arrival rate must be 0.01x to 100x");
+    check_agents(
+        *scenario, imbalance.agents,
+        [](const PolicyConfig& policy) { return std::holds_alternative<NoiseParams>(policy); },
+        "order-flow imbalance must name distinct noise agents", &imbalances,
+        {.start = imbalance.start, .end = imbalance.end});
+  }
+  void operator()(const LatencyDegradation& degradation) {
+    check_interval(degradation.start, degradation.end);
+    const auto order_entry = degradation.added_order_entry.value();
+    const auto report = degradation.added_report.value();
+    const auto market_data = degradation.added_market_data.value();
+    require(order_entry <= kMaxDuration && report <= kMaxDuration && market_data <= kMaxDuration &&
+                (order_entry != 0 || report != 0 || market_data != 0),
+            "latency degradation must add 1 ns to 1e15 ns on at least one path");
+    check_agents(*scenario, degradation.agents, [](const PolicyConfig& /*policy*/) { return true; },
+                 "latency degradation must name distinct scenario agents", &degradations,
+                 {.start = degradation.start, .end = degradation.end});
+  }
+  void operator()(const QuoteWithdrawalStress& stress) const {
+    require(stress.at.value() <= kMaxHorizon, "quote withdrawal stress time exceeds 1e18 ns");
+    check_agents(
+        *scenario, stress.agents, [](const PolicyConfig& /*policy*/) { return true; },
+        "quote withdrawal stress must name distinct scenario agents");
+  }
+};
+
+void check_shocks(const ScenarioConfig& scenario) {
+  require(scenario.shocks.size() <= kMaxShocks, "too many shocks");
+  ShockChecker checker{scenario};
+  for (const auto& shock : scenario.shocks) {
+    std::visit(checker, shock);
+  }
+  require_disjoint(checker.regimes, "volatility regimes must not overlap");
+  require_disjoint_per_agent(checker.withdrawals,
+                             "liquidity withdrawals must not overlap for one agent");
+  require_disjoint_per_agent(checker.imbalances,
+                             "order-flow imbalances must not overlap for one agent");
+  require_disjoint_per_agent(checker.degradations,
+                             "latency degradations must not overlap for one agent");
 }
 
 } // namespace

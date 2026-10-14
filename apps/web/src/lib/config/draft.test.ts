@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import type { AgentConfig, RunConfig } from "@/lib/api/types";
 
-import { addAgent, isValidName, removeAgent, setAccounting, setIn } from "./draft";
+import {
+  addAgent,
+  defaultShock,
+  isValidName,
+  removeAgent,
+  setAccounting,
+  setIn,
+  shockAgentChoice,
+} from "./draft";
 
 const maker = (id: number): AgentConfig => ({
   id,
@@ -91,6 +99,39 @@ describe("editing a run config", () => {
     expect(after.scenario?.agents.map((agent) => agent.id)).toEqual([1]);
     expect(after.scenario?.shocks[0]?.agents).toEqual([1]);
     expect(after.accounting?.accounts).toEqual([]);
+  });
+
+  it("defaults each shock to agents it may name and the fields the engine requires", () => {
+    const draft = config();
+    const noise: AgentConfig = {
+      ...maker(3),
+      policy: {
+        kind: "Noise",
+        buy_probability_ppm: 500_000,
+        market_order_ppm: 300_000,
+        min_quantity: 1,
+        max_quantity: 20,
+        limit_offset_ticks: 5,
+        max_resting_orders: 4,
+      },
+    };
+    const withNoise = setIn(draft, ["scenario", "agents"], [maker(1), maker(2), noise]);
+    expect(defaultShock("OrderFlowImbalance", withNoise)).toMatchObject({
+      agents: [3],
+      arrival_rate_ppm: 2_000_000,
+    });
+    expect(defaultShock("LatencyDegradation", withNoise)).toMatchObject({
+      agents: [1, 2],
+      added_order_entry_ns: 50_000_000,
+    });
+    expect(defaultShock("QuoteWithdrawalStress", withNoise)).toEqual({
+      kind: "QuoteWithdrawalStress",
+      at_ns: 1_800_000_000_000,
+      agents: [1, 2],
+    });
+    expect(shockAgentChoice("OrderFlowImbalance")?.eligible("MarketMaker")).toBe(false);
+    expect(shockAgentChoice("LatencyDegradation")?.eligible("Momentum")).toBe(true);
+    expect(shockAgentChoice("VolatilityRegime")).toBeNull();
   });
 
   it("moves between config schema 2 and 3 with the accounting section", () => {

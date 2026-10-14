@@ -1,0 +1,36 @@
+MarketTwin experiment latency_shock_makers
+  engine        0.4.0, experiment schema 1, metrics schema 1
+  base config   latency-shock (sha256 f7e7fcca5eac)
+  design        100 seeds x 2 variants = 200 runs, paired by seed
+  runs          baseline_maker           100 completed, 0 failed
+  runs          inventory_maker          100 completed, 0 failed
+  comparison    inventory_maker minus baseline_maker for agent 3, 100 paired seeds
+
+  metric                              unit         pairs   baseline mean  candidate mean      mean diff    median diff        sd diff  95% t interval of mean diff     candidate is
+  subject.total_pnl                   minor          100     -129928.870      -79202.220      50726.650      57824.000      76448.240  [35557.660, 65895.640]          higher
+  subject.realized_pnl                minor          100     -120332.560      -72225.210      48107.350      46635.500      73869.583  [33450.022, 62764.678]          higher
+  subject.unrealized_pnl              minor          100       -9596.310       -6977.010       2619.300       1181.500      11482.550  [340.913, 4897.687]             higher
+  subject.fees_paid                   minor          100           0.000           0.000          0.000          0.000          0.000  [0.000, 0.000]                  identical
+  subject.max_drawdown                minor          100      166188.220       94125.450     -72062.770     -73084.500      68912.968  [-85736.598, -58388.942]        lower
+  subject.maker_spread_capture        minor          100      102678.840      100249.600      -2429.240      -2130.500       8376.567  [-4091.333, -767.147]           lower
+  subject.final_abs_position          shares         100        1174.440        1008.360       -166.080       -117.000        675.886  [-300.191, -31.969]             lower
+  subject.max_abs_position            shares         100        2000.000        1700.760       -299.240        -33.000        418.428  [-382.265, -216.215]            lower
+  subject.mean_abs_position           millishares    100     1074335.080      219913.330    -854421.750    -840692.500     149649.965  [-884115.550, -824727.950]      lower
+  subject.traded_quantity             shares         100       50992.780       52737.660       1744.880       2020.500       4072.518  [936.804, 2552.956]             higher
+  subject.fill_rate                   ppm            100      132793.760      120671.110     -12122.650     -11124.000       9417.661  [-13991.318, -10253.982]        lower
+  market.trade_count                  trades         100        8225.420        8057.310       -168.110       -152.500        161.534  [-200.162, -136.058]            lower
+  market.volume                       shares         100      138708.190      134469.540      -4238.650      -5096.000       7490.100  [-5724.848, -2752.452]          lower
+  market.mean_spread                  milliticks     100        3295.340        3158.500       -136.840       -137.000         34.385  [-143.663, -130.017]            lower
+  market.mean_relative_spread         millibps       100        2197.280        2106.060        -91.220        -92.000         22.926  [-95.769, -86.671]              lower
+  market.mean_bid_depth               millishares    100      915755.210      953576.630      37821.420      21864.500      53249.708  [27255.522, 48387.318]          higher
+  market.mean_ask_depth               millishares    100      930422.520      957774.280      27351.760      17838.000      44972.730  [18428.194, 36275.326]          higher
+  market.midpoint_return_volatility   ppb            100       54357.920       55922.800       1564.880       1585.500       1282.728  [1310.359, 1819.401]            higher
+  market.two_sided_time               ppm            100      999376.520     1000000.000        623.480          0.000       1801.615  [266.000, 980.960]              higher
+
+  Differences are candidate minus baseline on the same seed. Money is in minor units and
+  every statistic is shown to three decimals of its unit. 'higher' or 'lower' means the
+  95% Student t interval of the mean paired difference excludes zero; 'inconclusive'
+  means it does not. Bootstrap intervals and medians are in experiment.json.
+  These intervals describe variation across seeds of one stylized simulated market.
+  They are not evidence that a strategy is realistic or profitable, and 19 metrics are
+  tested with no multiplicity correction.

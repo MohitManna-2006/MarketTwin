@@ -447,7 +447,13 @@ export interface AgentConfig {
 }
 
 export interface ShockConfig {
-  kind: "FundamentalJump" | "LiquidityWithdrawal" | "VolatilityRegime";
+  kind:
+    | "FundamentalJump"
+    | "LiquidityWithdrawal"
+    | "VolatilityRegime"
+    | "OrderFlowImbalance"
+    | "LatencyDegradation"
+    | "QuoteWithdrawalStress";
   at_ns?: number;
   delta_milliticks?: number;
   start_ns?: number;
@@ -455,6 +461,12 @@ export interface ShockConfig {
   agents?: number[];
   quote_size_ppm?: number;
   volatility_ppm?: number;
+  buy_probability_ppm?: number;
+  market_order_ppm?: number;
+  arrival_rate_ppm?: number;
+  added_order_entry_ns?: number;
+  added_report_ns?: number;
+  added_market_data_ns?: number;
 }
 
 export interface ScenarioConfig {

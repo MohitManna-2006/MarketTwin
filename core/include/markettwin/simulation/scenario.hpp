@@ -72,7 +72,43 @@ struct VolatilityRegime {
   std::uint64_t volatility_ppm = kPpm;
   bool operator==(const VolatilityRegime&) const = default;
 };
-using Shock = std::variant<FundamentalJump, LiquidityWithdrawal, VolatilityRegime>;
+// Shifts the listed noise agents' order flow over [start, end): the probability that an
+// order buys, the share of orders sent at market, and the arrival rate as ppm of each
+// agent's configured wakeup rate. A changed rate applies from the agent's next scheduled
+// wakeup, so the wakeup already queued when the shock begins or ends keeps its time.
+struct OrderFlowImbalance {
+  SimTime start;
+  SimTime end;
+  std::vector<AgentId> agents;
+  std::uint64_t buy_probability_ppm = 500'000;
+  std::uint64_t market_order_ppm = 300'000;
+  std::uint64_t arrival_rate_ppm = kPpm;
+  bool operator==(const OrderFlowImbalance&) const = default;
+};
+// Adds delay to each path of the listed agents over [start, end). Every path stays
+// first-in first-out, so when the degradation ends a message never overtakes one sent
+// while it was in force.
+struct LatencyDegradation {
+  SimTime start;
+  SimTime end;
+  std::vector<AgentId> agents;
+  SimTime added_order_entry{0};
+  SimTime added_report{0};
+  SimTime added_market_data{0};
+  bool operator==(const LatencyDegradation&) const = default;
+};
+// At one instant, each listed agent, in list order, asks to cancel every working order it
+// has not already asked to cancel, oldest first. The cancels travel through the agent's own
+// order-entry latency, jitter, and message budget, so they reach the exchange interleaved
+// with everything else in flight. Policies are not changed: an agent requotes when its
+// own logic next decides to.
+struct QuoteWithdrawalStress {
+  SimTime at;
+  std::vector<AgentId> agents;
+  bool operator==(const QuoteWithdrawalStress&) const = default;
+};
+using Shock = std::variant<FundamentalJump, LiquidityWithdrawal, VolatilityRegime,
+                           OrderFlowImbalance, LatencyDegradation, QuoteWithdrawalStress>;
 
 struct ScenarioConfig {
   PriceTicks reference_price{15'000};

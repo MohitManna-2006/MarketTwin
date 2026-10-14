@@ -363,6 +363,164 @@ TEST(ScenarioRunTest, VolatilityRegimeScalesFundamentalStepsOnlyInsideItsWindow)
   EXPECT_EQ(run.summary.trade_count, 0U);
 }
 
+TEST(ScenarioRunTest, OrderFlowImbalanceShiftsTheNamedNoiseTradersOnlyInsideItsWindow) {
+  auto config = test::scenario_fixture();
+  config.limits.horizon = SimTime{120 * kSecond};
+  test::scenario(config).shocks = {
+      OrderFlowImbalance{
+          .start = SimTime{40 * kSecond},
+          .end = SimTime{80 * kSecond},
+          .agents = {AgentId{5}, AgentId{6}},
+          .buy_probability_ppm = 950'000,
+          .market_order_ppm = kPpm,
+          .arrival_rate_ppm = 3 * kPpm,
+      },
+  };
+  const auto run = test::capture(config);
+  const auto shocks = test::CaptureSink::of_kind(run.records.trace, "ScenarioShock");
+  ASSERT_EQ(shocks.size(), 2U);
+  EXPECT_EQ(shocks.at(0).at("payload").at("shock").at("kind"), "OrderFlowImbalance");
+
+  struct Window {
+    std::uint64_t orders = 0;
+    std::uint64_t buys = 0;
+    std::uint64_t market = 0;
+  };
+  // A wakeup queued before a transition keeps its time, so leave two mean intervals of
+  // slack after each one.
+  std::array<Window, 3> windows{};
+  for (const auto& order : test::CaptureSink::of_kind(run.records.commands, "OrderArrival")) {
+    const auto actor = order.at("actor_id");
+    const auto time = time_of(order);
+    if ((actor != 5 && actor != 6) || (time >= 37 * kSecond && time < 43 * kSecond) ||
+        (time >= 77 * kSecond && time < 83 * kSecond)) {
+      continue;
+    }
+    auto& window = windows.at((time >= 40 * kSecond ? 1U : 0U) + (time >= 80 * kSecond ? 1U : 0U));
+    ++window.orders;
+    window.buys += order.at("payload").at("side") == "Buy" ? 1U : 0U;
+    window.market += order.at("payload").at("type") == "Market" ? 1U : 0U;
+  }
+  const auto& before = windows.at(0);
+  const auto& during = windows.at(1);
+  const auto& after = windows.at(2);
+  // Every order inside is a market order and nearly every one buys.
+  EXPECT_EQ(during.market, during.orders);
+  EXPECT_GT(during.buys * 100, during.orders * 85);
+  EXPECT_LT(before.buys * 100, before.orders * 75);
+  EXPECT_LT(after.buys * 100, after.orders * 75);
+  EXPECT_LT(after.market, after.orders);
+  // Three times the rate over a window of 34 s against 37 s before it.
+  EXPECT_GT(during.orders, 2 * before.orders);
+  EXPECT_GT(during.orders, 2 * after.orders);
+  // Only the named agents change pace; the value trader wakes exactly as without it.
+  auto calm = config;
+  test::scenario(calm).shocks.clear();
+  EXPECT_EQ(test::scenario(run.summary).agents.at(2).wakeups,
+            test::scenario(test::capture(calm).summary).agents.at(2).wakeups);
+}
+
+TEST(ScenarioRunTest, LatencyDegradationDelaysOrdersInsideItsWindowAndKeepsThemInOrder) {
+  auto config = test::scenario_fixture();
+  auto& noise = test::scenario(config).agents.at(4); // agent 5: one wakeup a second
+  noise.wakeup.distribution = WakeupDistribution::Fixed;
+  test::scenario(config).shocks = {
+      LatencyDegradation{
+          .start = SimTime{20 * kSecond},
+          .end = SimTime{25 * kSecond},
+          .agents = {AgentId{5}},
+          .added_order_entry = SimTime{2'500 * kMillisecond},
+          .added_report = SimTime{10 * kMillisecond},
+          .added_market_data = SimTime{10 * kMillisecond},
+      },
+  };
+  const auto run = test::capture(config);
+
+  // Wakeups at 20 s to 24 s send at 2.5 s plus the configured 1 ms. Those at 25 s and
+  // 26 s are back to 1 ms but wait behind the message sent at 24 s, due at 26.501 s.
+  std::uint64_t previous = 0;
+  std::uint64_t delayed = 0;
+  for (const auto& line : run.records.commands) {
+    const auto record = Json::parse(line);
+    if (record.at("kind") == "Header" || record.at("actor_id") != 5) {
+      continue;
+    }
+    const auto time = time_of(record);
+    EXPECT_GE(time, previous); // first in, first out on the order path
+    previous = time;
+    const bool held = time > 20 * kSecond && time < 27 * kSecond;
+    EXPECT_EQ(time % kSecond, held ? 501 * kMillisecond : kMillisecond) << time;
+    delayed += held ? 1U : 0U;
+  }
+  EXPECT_GE(delayed, 5U);
+}
+
+TEST(ScenarioRunTest, QuoteWithdrawalStressCancelsEveryWorkingQuoteAtOnceAndMakersRequote) {
+  auto config = test::scenario_fixture();
+  const auto calm = test::capture(config);
+  test::scenario(config).shocks = {
+      QuoteWithdrawalStress{.at = SimTime{30 * kSecond}, .agents = {AgentId{1}, AgentId{2}}},
+  };
+  const auto run = test::capture(config);
+  const auto shocks = test::CaptureSink::of_kind(run.records.trace, "ScenarioShock");
+  ASSERT_EQ(shocks.size(), 1U);
+  EXPECT_EQ(shocks.at(0).at("payload").at("phase"), "Instant");
+  EXPECT_EQ(test::scenario(run.summary).shock_transitions, 1U);
+
+  // Each maker works two levels a side. Its cancels arrive one order-entry latency after
+  // the shock, which no maker wakeup (every 500 ms from 0) coincides with.
+  const auto burst = [](const test::CapturedRun& captured) {
+    std::uint64_t count = 0;
+    for (const auto& cancel :
+         test::CaptureSink::of_kind(captured.records.commands, "CancelArrival")) {
+      const auto actor = cancel.at("actor_id");
+      count +=
+          (actor == 1 || actor == 2) && time_of(cancel) == (30 * kSecond) + kMillisecond ? 1U : 0U;
+    }
+    return count;
+  };
+  EXPECT_EQ(burst(calm), 0U);
+  EXPECT_GE(burst(run), 6U);
+  EXPECT_LE(burst(run), 8U);
+
+  // The makers requote at their next wakeup, so the book is two-sided again a second later.
+  for (const auto& snapshot : test::CaptureSink::of_kind(run.records.trace, "BookSnapshot")) {
+    if (time_of(snapshot) == 31 * kSecond) {
+      EXPECT_FALSE(snapshot.at("payload").at("bids").empty());
+      EXPECT_FALSE(snapshot.at("payload").at("asks").empty());
+    }
+  }
+}
+
+TEST(ScenarioRunTest, RunsWithOrderFlowLatencyAndQuoteStressShocksReplayExactly) {
+  const test::TempDirectory directory;
+  auto config = test::scenario_fixture();
+  test::scenario(config).shocks = {
+      OrderFlowImbalance{
+          .start = SimTime{10 * kSecond},
+          .end = SimTime{30 * kSecond},
+          .agents = {AgentId{6}},
+          .buy_probability_ppm = 100'000,
+          .market_order_ppm = 800'000,
+          .arrival_rate_ppm = 2 * kPpm,
+      },
+      LatencyDegradation{
+          .start = SimTime{15 * kSecond},
+          .end = SimTime{45 * kSecond},
+          .agents = {AgentId{1}, AgentId{3}},
+          .added_order_entry = SimTime{20 * kMillisecond},
+          .added_report = SimTime{5 * kMillisecond},
+          .added_market_data = SimTime{50 * kMillisecond},
+      },
+      QuoteWithdrawalStress{.at = SimTime{20 * kSecond}, .agents = {AgentId{2}, AgentId{1}}},
+  };
+  const auto summary = Simulation{config, directory.run()}.run();
+  EXPECT_EQ(test::scenario(summary).shock_transitions, 5U);
+  const auto replay = verify_replay(directory.run());
+  ASSERT_TRUE(replay.verified) << replay_result_json(replay);
+  EXPECT_EQ(replay.summary, summary);
+}
+
 TEST(ScenarioRunTest, ReplayRegeneratesEveryAgentDecisionAndFlagsTheFirstDivergence) {
   const test::TempDirectory directory;
   auto config = test::scenario_fixture();
@@ -459,9 +617,8 @@ TEST(ScenarioRunTest, BaselineHourIsATwoSidedActiveMarketAndMatchesItsGoldenSumm
 TEST(ScenarioRunTest, ShippedShockScenariosLoadRunAndApplyTheirShocks) {
   const std::filesystem::path source{MARKETTWIN_SOURCE_DIR};
   const std::map<std::string, std::uint64_t> transitions{
-      {"fundamental_shock", 1},
-      {"liquidity_shock", 1},
-      {"volatility_shock", 1},
+      {"fundamental_shock", 1}, {"liquidity_shock", 1}, {"volatility_shock", 1},
+      {"order_flow_shock", 1},  {"latency_shock", 1},   {"quote_stress_shock", 1},
   };
   for (const auto& [name, expected] : transitions) {
     auto config = load_config(source / "configs" / (name + ".json"));

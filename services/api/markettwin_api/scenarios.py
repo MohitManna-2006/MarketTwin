@@ -60,6 +60,26 @@ _CATALOGUE: tuple[tuple[str, str, str, str], ...] = (
         "The baseline with fundamental step volatility quadrupled from minute 20 to minute 40.",
     ),
     (
+        "order_flow_shock",
+        "Order-flow imbalance",
+        "scenario",
+        "The baseline with the four noise traders buying 80% of the time, sending 60% market "
+        "orders, at twice their rate from minute 20 to minute 30.",
+    ),
+    (
+        "latency_shock",
+        "Latency degradation",
+        "scenario",
+        "The baseline with the three makers' orders and cancels slowed by 50 ms, reports by "
+        "20 ms, and market data by 50 ms from minute 20 to minute 30.",
+    ),
+    (
+        "quote_stress_shock",
+        "Quote withdrawal stress",
+        "scenario",
+        "The baseline with all three makers canceling every working quote at minute 30.",
+    ),
+    (
         "baseline_accounting",
         "Baseline with fees and credit limits",
         "scenario",

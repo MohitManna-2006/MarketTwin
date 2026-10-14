@@ -43,6 +43,12 @@ A single run stays deterministic and logically single-threaded. Independent runs
 
 ## Current status
 
+**Phase 5A — the remaining shock families.** Order-flow imbalance, latency degradation,
+and quote-withdrawal stress join the fundamental jump, liquidity withdrawal, and
+volatility regime. Each has a reference config, appears in the scenario editor, replays
+byte for byte, and leaves every existing config and golden digest unchanged. See
+[ADR 0010](docs/adr/0010-order-flow-latency-and-quote-stress-shocks.md).
+
 **Phase 4B — live market data.** The API holds one upstream Alpaca stream (IEX, the
 provider's test stream, or a local fabricated mock), normalizes every trade and L1 quote
 in C++ with the Phase 4A conversions, and fans it out to the **Live Markets** workspace
@@ -75,7 +81,7 @@ Implemented now:
 - Trading policies: baseline market maker, inventory-aware market maker, momentum, value, and noise
 - A delivered-observation boundary: per-agent order-entry, report, and market-data latency, with per-agent position, order-size, open-order, and message limits
 - xoshiro256\*\* random streams per consumer with integer-only samplers, so a seed gives the same run on every toolchain
-- A mean-reverting synthetic fundamental value and three shocks: fundamental jump, liquidity withdrawal, and volatility regime
+- A mean-reverting synthetic fundamental value and six shocks: fundamental jump, liquidity withdrawal, volatility regime, order-flow imbalance, latency degradation, and quote-withdrawal stress
 - A per-agent ledger in integer minor units: cash, signed position, average-cost basis, realized and unrealized P&L, fees and rebates through a fee sink, with checked arithmetic and exact conservation of cash and shares
 - Mark-to-market at the midpoint, else the last trade, else the scenario reference, with the source recorded; equity, peak, and drawdown on the sampling schedule
 - Market statistics: spread, relative spread, top-of-book and N-level depth, volume, VWAP, fill rates, return volatility, exact time in each book state, rejections and cancels, and maker spread capture
@@ -91,7 +97,6 @@ Implemented now:
 Not implemented:
 
 - A cash check at the exchange: the credit limit is applied to an agent's intents, and a fill is never rejected for lack of cash
-- Order-flow imbalance, latency degradation, and quote-withdrawal shocks
 - Parquet artifacts, effective-spread and adverse-selection metrics, Sharpe ratios, and parallel execution of the cells of one experiment
 - PostgreSQL, Redis, WebSocket progress, authentication, or any hosted deployment: the service is local and single-user
 - Progress or cancellation inside a single run, and as-of series for VWAP, volatility, and time in each book state: the engine reports those only for a whole run
@@ -127,11 +132,15 @@ The scenarios are stylized. Prices come from the interaction of the configured a
 | `configs/fundamental_shock.json` | The baseline with the fundamental dropping 150 ticks at 30 minutes |
 | `configs/liquidity_shock.json` | The baseline with both baseline makers withdrawn from minute 20 to minute 30 |
 | `configs/volatility_shock.json` | The baseline with fundamental volatility quadrupled from minute 20 to minute 40 |
+| `configs/order_flow_shock.json` | The baseline with the four noise traders buying 80% of the time, 60% at market, at twice their rate from minute 20 to minute 30 |
+| `configs/latency_shock.json` | The baseline with the three makers' orders slowed by 50 ms, reports by 20 ms, and market data by 50 ms from minute 20 to minute 30 |
+| `configs/quote_stress_shock.json` | The baseline with all three makers canceling every working quote at minute 30 |
 | `configs/baseline_accounting.json` | The baseline with a 30 ppm taker fee, a 20 ppm maker rebate, opening cash, and a zero credit limit on the three makers |
 | `configs/phase1b_demo.json` | A scripted run with no agents: every order, cancel, snapshot, and stop comes from the config |
 | `configs/experiments/maker_comparison.json` | An experiment, not a run: baseline versus inventory-aware maker over 200 seeds of the baseline |
+| `configs/experiments/latency_shock_makers.json` | The same comparison over 100 seeds of the latency shock; report in `docs/experiments/phase5a-latency-shock/` |
 
-The baseline and the three shock configs share a seed, so until its shock begins each variant is the same market as the baseline.
+The baseline and the six shock configs share a seed, so until its shock begins each variant is the same market as the baseline.
 
 A scenario config (`schema_version` 2) is a scripted config plus a `scenario` object: a public reference price, the fundamental process, optional periodic depth sampling, the agents, and the shocks. Each agent has an ID registered with the exchange, a wakeup schedule (fixed interval or exponential), three latencies, hard limits, and a policy with its parameters. All values are integers: prices in ticks, sub-tick values in milliticks, times in nanoseconds, and fractions in parts per million. Malformed or out-of-range configs fail before the run starts.
 
@@ -143,7 +152,7 @@ The summary's `scenario` object reports, per agent, wakeups, orders and cancels 
 
 Golden summaries for the scripted demo and the baseline scenario are pinned in `core/tests/replay/golden/` and hold across Apple Clang and GCC builds.
 
-[ADR 0002](docs/adr/0002-kernel-trace-and-replay.md) specifies ordering, stop conditions, the record format, digests, and replay failure codes. [ADR 0003](docs/adr/0003-agents-rng-latency-and-scenarios.md) specifies the agents, what they can observe, latency, random streams, the fundamental process, and shocks. [ADR 0004](docs/adr/0004-ledger-marks-metrics-and-experiments.md) specifies the ledger, marks, market statistics, the accounting stream, and experiments.
+[ADR 0002](docs/adr/0002-kernel-trace-and-replay.md) specifies ordering, stop conditions, the record format, digests, and replay failure codes. [ADR 0003](docs/adr/0003-agents-rng-latency-and-scenarios.md) specifies the agents, what they can observe, latency, random streams, the fundamental process, and shocks; [ADR 0010](docs/adr/0010-order-flow-latency-and-quote-stress-shocks.md) adds the Phase 5A shocks. [ADR 0004](docs/adr/0004-ledger-marks-metrics-and-experiments.md) specifies the ledger, marks, market statistics, the accounting stream, and experiments.
 
 ## Accounting and metrics
 
@@ -570,7 +579,7 @@ Useful CMake options:
 
 ## Phases
 
-Status follows [`architecture.md`](architecture.md) section 20. Phases 1A through 3A, 4A, and 4B are implemented; Phase 3B is in progress. See [Phase 3B setup and evaluation](docs/phase3b-ai-research.md) and [ADR 0006](docs/adr/0006-supervised-ai-research.md).
+Status follows [`architecture.md`](architecture.md) section 20. Phases 1A through 3A, 4A, 4B, and 5A are implemented; Phase 3B is in progress. See [Phase 3B setup and evaluation](docs/phase3b-ai-research.md) and [ADR 0006](docs/adr/0006-supervised-ai-research.md).
 
 | Phase | Scope | State |
 | --- | --- | --- |
@@ -583,6 +592,7 @@ Status follows [`architecture.md`](architecture.md) section 20. Phases 1A throug
 | 3B | Supervised AI research workflow and institutional workspace | In progress |
 | 4A | Historical equity ingestion and deterministic observed-market replay | Implemented; live provider access unverified |
 | 4B | Live L1 market data, bounded fan-out, and recordings into historical sessions | Implemented against the mock stream; Alpaca IEX/test streams unverified |
+| 5A | Order-flow imbalance, latency degradation, and quote-withdrawal stress shocks | Implemented and locally verified |
 
 ## License
 

@@ -468,6 +468,11 @@ Phase 2B adds schema 3 for configs that set fees, opening cash, or credit limits
 `configs/baseline.json` is the reference one-hour market, with `fundamental_shock.json`,
 `liquidity_shock.json`, and `volatility_shock.json` as single-shock variants of it.
 
+Phase 5A ([ADR 0010](docs/adr/0010-order-flow-latency-and-quote-stress-shocks.md)) adds the
+remaining three families as `OrderFlowImbalance`, `LatencyDegradation`, and
+`QuoteWithdrawalStress`, with `order_flow_shock.json`, `latency_shock.json`, and
+`quote_stress_shock.json` as their reference variants.
+
 ## 10. Accounting, mark-to-market, and risk
 
 - Every trade transfers shares and cash between counterparties at the same trade price and quantity.
@@ -986,6 +991,21 @@ artifact, provider, licensing, and compatibility decisions.
 
 [ADR 0008](docs/adr/0008-live-market-data.md) fixes the gateway, clock, ordering, protocol,
 recording, and access-control decisions.
+
+### Phase 5A: Remaining shock families
+
+- Add order-flow imbalance (noise agents' side, order type, and arrival rate over an
+  interval), latency degradation (added delay on each agent path over an interval, FIFO
+  preserved), and quote-withdrawal stress (an instant cancel burst through each agent's
+  own latency and budget).
+- Keep every existing config, digest, and golden summary unchanged; validate
+  eligibility, bounds, and per-agent overlap in the core.
+- Ship a reference config per shock and a paired maker comparison under the latency shock.
+- Exit: each shock is logged at every transition, replays byte for byte, and is
+  available in the scenario editor and the API catalogue.
+
+[ADR 0009](docs/adr/0009-phase-5-scope.md) records the choice of this phase and
+[ADR 0010](docs/adr/0010-order-flow-latency-and-quote-stress-shocks.md) its decisions.
 
 ### Later stretch work
 

@@ -6,8 +6,11 @@ namespace markettwin {
 
 void NoiseAgent::on_timer(const AgentObservation& observation, AgentActions& actions) {
   auto& rng = actions.rng();
-  const auto side = rng.bernoulli_ppm(params_.buy_probability_ppm) ? Side::Buy : Side::Sell;
-  const bool market = rng.bernoulli_ppm(params_.market_order_ppm);
+  const auto& controls = observation.controls;
+  const auto buy_ppm = controls.buy_probability_ppm.value_or(params_.buy_probability_ppm);
+  const auto side = rng.bernoulli_ppm(buy_ppm) ? Side::Buy : Side::Sell;
+  const bool market =
+      rng.bernoulli_ppm(controls.market_order_ppm.value_or(params_.market_order_ppm));
   const auto drawn = static_cast<std::uint64_t>(rng.uniform_between(
       to_signed(params_.min_quantity.value()), to_signed(params_.max_quantity.value())));
   const auto range = to_signed(params_.limit_offset_ticks);

@@ -256,8 +256,60 @@ class VolatilityRegimeShock(Strict):
     )
 
 
+class OrderFlowImbalanceShock(Strict):
+    kind: Literal["OrderFlowImbalance"]
+    start_ns: StrictInt = _field("ns", "Start of the interval (inclusive)", ge=0, le=MAX_HORIZON_NS)
+    end_ns: StrictInt = _field("ns", "End of the interval (exclusive)", ge=1, le=MAX_HORIZON_NS)
+    agents: list[Annotated[StrictInt, Field(ge=1, le=MAX_API_AGENT_ID)]] = _field(
+        "ids", "Noise traders whose order flow is shifted", min_length=1
+    )
+    buy_probability_ppm: StrictInt = _field(
+        "ppm", "Probability that an order buys, replacing the agent's own", ge=0, le=PPM
+    )
+    market_order_ppm: StrictInt = _field(
+        "ppm", "Share of orders sent at market, replacing the agent's own", ge=0, le=PPM
+    )
+    arrival_rate_ppm: StrictInt = _field(
+        "ppm",
+        "Arrival rate as a share of the agent's own; 2e6 doubles it",
+        ge=PPM // 100,
+        le=100 * PPM,
+    )
+
+
+class LatencyDegradationShock(Strict):
+    kind: Literal["LatencyDegradation"]
+    start_ns: StrictInt = _field("ns", "Start of the interval (inclusive)", ge=0, le=MAX_HORIZON_NS)
+    end_ns: StrictInt = _field("ns", "End of the interval (exclusive)", ge=1, le=MAX_HORIZON_NS)
+    agents: list[Annotated[StrictInt, Field(ge=1, le=MAX_API_AGENT_ID)]] = _field(
+        "ids", "Agents whose delays are raised", min_length=1
+    )
+    added_order_entry_ns: StrictInt = _field(
+        "ns", "Delay added to orders and cancels", ge=0, le=MAX_DURATION_NS
+    )
+    added_report_ns: StrictInt = _field(
+        "ns", "Delay added to order reports and fills", ge=0, le=MAX_DURATION_NS
+    )
+    added_market_data_ns: StrictInt = _field(
+        "ns", "Delay added to top-of-book updates", ge=0, le=MAX_DURATION_NS
+    )
+
+
+class QuoteWithdrawalStressShock(Strict):
+    kind: Literal["QuoteWithdrawalStress"]
+    at_ns: StrictInt = _field("ns", "Instant of the cancel surge", ge=0, le=MAX_HORIZON_NS)
+    agents: list[Annotated[StrictInt, Field(ge=1, le=MAX_API_AGENT_ID)]] = _field(
+        "ids", "Agents that cancel every working order", min_length=1
+    )
+
+
 ShockModel = Annotated[
-    FundamentalJumpShock | LiquidityWithdrawalShock | VolatilityRegimeShock,
+    FundamentalJumpShock
+    | LiquidityWithdrawalShock
+    | VolatilityRegimeShock
+    | OrderFlowImbalanceShock
+    | LatencyDegradationShock
+    | QuoteWithdrawalStressShock,
     Field(discriminator="kind"),
 ]
 
@@ -265,12 +317,21 @@ SHOCK_MODELS: dict[str, type[Strict]] = {
     "FundamentalJump": FundamentalJumpShock,
     "LiquidityWithdrawal": LiquidityWithdrawalShock,
     "VolatilityRegime": VolatilityRegimeShock,
+    "OrderFlowImbalance": OrderFlowImbalanceShock,
+    "LatencyDegradation": LatencyDegradationShock,
+    "QuoteWithdrawalStress": QuoteWithdrawalStressShock,
 }
 
 SHOCK_DESCRIPTIONS: dict[str, str] = {
     "FundamentalJump": "Shifts the latent value and its anchor at one instant.",
     "LiquidityWithdrawal": "Scales named market makers' quote sizes over [start, end).",
     "VolatilityRegime": "Scales the fundamental's step volatility over [start, end).",
+    "OrderFlowImbalance": "Shifts named noise traders' side, order type, and arrival rate "
+    "over [start, end).",
+    "LatencyDegradation": "Adds delay to named agents' order, report, and market-data paths "
+    "over [start, end).",
+    "QuoteWithdrawalStress": "Named agents cancel every working order at one instant, through "
+    "their own latency.",
 }
 
 

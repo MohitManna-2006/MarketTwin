@@ -19,6 +19,23 @@ RunConfig with_shocks() {
           .quote_size_ppm = 250'000,
       },
       VolatilityRegime{.start = SimTime{5}, .end = SimTime{50}, .volatility_ppm = 3'000'000},
+      OrderFlowImbalance{
+          .start = SimTime{10},
+          .end = SimTime{40},
+          .agents = {AgentId{5}, AgentId{6}},
+          .buy_probability_ppm = 800'000,
+          .market_order_ppm = 600'000,
+          .arrival_rate_ppm = 2'000'000,
+      },
+      LatencyDegradation{
+          .start = SimTime{15},
+          .end = SimTime{35},
+          .agents = {AgentId{3}, AgentId{4}},
+          .added_order_entry = SimTime{5},
+          .added_report = SimTime{0},
+          .added_market_data = SimTime{7},
+      },
+      QuoteWithdrawalStress{.at = SimTime{25}, .agents = {AgentId{1}, AgentId{6}}},
   };
   return config;
 }
@@ -74,6 +91,9 @@ TEST(ScenarioConfigTest, RejectsMalformedScenarioJson) {
   reject([](Json& value) { value.at("agents").at(0).at("limits").at("max_position") = "many"; });
   reject([](Json& value) { value.at("shocks").at(0).at("kind") = "Earthquake"; });
   reject([](Json& value) { value.at("shocks").at(1).at("agents") = 1; });
+  reject([](Json& value) { value.at("shocks").at(3).erase("arrival_rate_ppm"); });
+  reject([](Json& value) { value.at("shocks").at(4).at("added_report_ns") = -1; });
+  reject([](Json& value) { value.at("shocks").at(5).at("agents") = Json::array({"one"}); });
   reject([](Json& value) { value.at("agents") = Json::object(); });
 }
 
@@ -160,6 +180,49 @@ TEST(ScenarioConfigTest, RejectsOutOfRangeScenarioValuesForNativeCallersToo) {
     test::scenario(config).shocks.emplace_back(
         VolatilityRegime{.start = SimTime{49}, .end = SimTime{60}, .volatility_ppm = kPpm});
   });
+  const auto imbalance = [](RunConfig& config) -> OrderFlowImbalance& {
+    return std::get<OrderFlowImbalance>(test::scenario(config).shocks.at(3));
+  };
+  const auto degradation = [](RunConfig& config) -> LatencyDegradation& {
+    return std::get<LatencyDegradation>(test::scenario(config).shocks.at(4));
+  };
+  const auto stress = [](RunConfig& config) -> QuoteWithdrawalStress& {
+    return std::get<QuoteWithdrawalStress>(test::scenario(config).shocks.at(5));
+  };
+  reject([&](RunConfig& config) { imbalance(config).agents = {AgentId{1}}; }); // a maker
+  reject([&](RunConfig& config) { imbalance(config).agents = {}; });
+  reject([&](RunConfig& config) { imbalance(config).agents = {AgentId{5}, AgentId{5}}; });
+  reject([&](RunConfig& config) { imbalance(config).buy_probability_ppm = 1'000'001; });
+  reject([&](RunConfig& config) { imbalance(config).market_order_ppm = 1'000'001; });
+  reject([&](RunConfig& config) { imbalance(config).arrival_rate_ppm = 9'999; });
+  reject([&](RunConfig& config) { imbalance(config).arrival_rate_ppm = 100'000'001; });
+  reject([&](RunConfig& config) { imbalance(config).end = SimTime{10}; });
+  reject([](RunConfig& config) {
+    test::scenario(config).shocks.emplace_back(OrderFlowImbalance{
+        .start = SimTime{39},
+        .end = SimTime{45},
+        .agents = {AgentId{6}},
+    });
+  });
+  reject([&](RunConfig& config) {
+    degradation(config).added_order_entry = SimTime{0};
+    degradation(config).added_market_data = SimTime{0};
+  });
+  reject([&](RunConfig& config) {
+    degradation(config).added_report = SimTime{2'000'000'000'000'000};
+  });
+  reject([&](RunConfig& config) { degradation(config).agents = {AgentId{99}}; });
+  reject([](RunConfig& config) {
+    test::scenario(config).shocks.emplace_back(LatencyDegradation{
+        .start = SimTime{0},
+        .end = SimTime{16},
+        .agents = {AgentId{4}},
+        .added_order_entry = SimTime{1},
+    });
+  });
+  reject([&](RunConfig& config) { stress(config).agents = {}; });
+  reject([&](RunConfig& config) { stress(config).agents = {AgentId{1}, AgentId{1}}; });
+  reject([&](RunConfig& config) { stress(config).at = SimTime{2'000'000'000'000'000'000}; });
   // Scripted orders may not enter the agents' order-ID space.
   reject([](RunConfig& config) {
     config.commands = {test::at(0, test::order(1ULL << 32U, Side::Buy))};
@@ -176,6 +239,20 @@ TEST(ScenarioConfigTest, AdjacentShockIntervalsAndDisjointAgentsAreAccepted) {
   });
   test::scenario(config).shocks.emplace_back(
       VolatilityRegime{.start = SimTime{50}, .end = SimTime{60}, .volatility_ppm = kPpm});
+  test::scenario(config).shocks.emplace_back(OrderFlowImbalance{
+      .start = SimTime{40},
+      .end = SimTime{50},
+      .agents = {AgentId{5}},
+  });
+  test::scenario(config).shocks.emplace_back(LatencyDegradation{
+      .start = SimTime{0},
+      .end = SimTime{15},
+      .agents = {AgentId{3}},
+      .added_report = SimTime{1},
+  });
+  // Instants may repeat; they have no extent to overlap.
+  test::scenario(config).shocks.emplace_back(
+      QuoteWithdrawalStress{.at = SimTime{25}, .agents = {AgentId{1}}});
   EXPECT_NO_THROW(validate_config(config));
 }
 

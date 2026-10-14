@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "experiment_id": "latency_shock_makers",
+  "base_config": "../latency_shock.json",
+  "horizon_ns": null,
+  "seeds": {
+    "first": 1,
+    "count": 100
+  },
+  "variants": [
+    {
+      "name": "baseline_maker",
+      "policy_overrides": [
+        {
+          "agent_id": 3,
+          "policy": {
+            "kind": "MarketMaker",
+            "half_spread_ticks": 2,
+            "quote_size": 100,
+            "levels": 3,
+            "level_spacing_ticks": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "inventory_maker",
+      "policy_overrides": [
+        {
+          "agent_id": 3,
+          "policy": {
+            "kind": "InventoryMarketMaker",
+            "half_spread_ticks": 2,
+            "quote_size": 100,
+            "levels": 3,
+            "level_spacing_ticks": 1,
+            "risk_aversion_ppm": 20,
+            "volatility_alpha_ppm": 50000,
+            "volatility_floor_milliticks": 500,
+            "max_skew_ticks": 2
+          }
+        }
+      ]
+    }
+  ],
+  "comparison": {
+    "baseline": "baseline_maker",
+    "candidate": "inventory_maker",
+    "subject_agent_id": 3
+  },
+  "bootstrap": {
+    "resamples": 10000,
+    "seed": 20261010
+  },
+  "artifacts": "None",
+  "limits": {
+    "max_runs": 200,
+    "max_output_bytes": 0
+  }
+}

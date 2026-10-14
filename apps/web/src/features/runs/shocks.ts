@@ -5,6 +5,9 @@ const KIND: Record<string, string> = {
   FundamentalJump: "Fundamental jump",
   LiquidityWithdrawal: "Liquidity withdrawal",
   VolatilityRegime: "Volatility regime",
+  OrderFlowImbalance: "Order-flow imbalance",
+  LatencyDegradation: "Latency degradation",
+  QuoteWithdrawalStress: "Quote withdrawal stress",
 };
 
 export function shockLabel(kind: string): string {

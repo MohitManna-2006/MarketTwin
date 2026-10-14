@@ -1,7 +1,9 @@
 # ADR 0009: Phase 5 scope
 
 **Date:** 2026-10-13  
-**Status:** Proposed. Not accepted until the owner chooses an option.
+**Status:** Accepted on 2026-10-14. Option A is Phase 5A
+([ADR 0010](0010-order-flow-latency-and-quote-stress-shocks.md)). Option B's methodology
+ADR is next.
 
 ## Context
 

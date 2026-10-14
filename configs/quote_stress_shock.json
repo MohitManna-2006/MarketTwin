@@ -1,0 +1,371 @@
+{
+  "schema_version": 2,
+  "run_id": "quote-stress-shock",
+  "seed": 42,
+  "tick_size_minor": 1,
+  "exchange": {
+    "symbol": 1,
+    "agents": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "max_order_quantity": 1000000,
+    "max_active_orders": 100000,
+    "max_accepted_orders": 5000000,
+    "max_trades": 5000000,
+    "max_snapshot_depth": 1000
+  },
+  "horizon_ns": 3600000000000,
+  "max_events": 20000000,
+  "max_queue": 100000,
+  "max_trace_bytes": 1073741824,
+  "commands": [],
+  "scenario": {
+    "reference_price_ticks": 15000,
+    "fundamental": {
+      "initial_milliticks": 15000000,
+      "update_interval_ns": 1000000000,
+      "volatility_milliticks": 1000,
+      "mean_reversion_ppm": 200
+    },
+    "sampling": {
+      "interval_ns": 1000000000,
+      "depth": 5
+    },
+    "agents": [
+      {
+        "id": 1,
+        "wakeup": {
+          "first_ns": 0,
+          "interval_ns": 500000000,
+          "distribution": "Fixed"
+        },
+        "latency": {
+          "order_entry_ns": 200000,
+          "order_entry_jitter_ns": 50000,
+          "report_ns": 100000,
+          "market_data_ns": 100000
+        },
+        "limits": {
+          "max_position": 2000,
+          "max_order_quantity": 200,
+          "max_open_orders": 16,
+          "max_messages": 1000000
+        },
+        "policy": {
+          "kind": "MarketMaker",
+          "half_spread_ticks": 2,
+          "quote_size": 100,
+          "levels": 3,
+          "level_spacing_ticks": 1
+        }
+      },
+      {
+        "id": 2,
+        "wakeup": {
+          "first_ns": 100000000,
+          "interval_ns": 750000000,
+          "distribution": "Fixed"
+        },
+        "latency": {
+          "order_entry_ns": 200000,
+          "order_entry_jitter_ns": 50000,
+          "report_ns": 100000,
+          "market_data_ns": 100000
+        },
+        "limits": {
+          "max_position": 2000,
+          "max_order_quantity": 200,
+          "max_open_orders": 16,
+          "max_messages": 1000000
+        },
+        "policy": {
+          "kind": "MarketMaker",
+          "half_spread_ticks": 3,
+          "quote_size": 150,
+          "levels": 3,
+          "level_spacing_ticks": 2
+        }
+      },
+      {
+        "id": 3,
+        "wakeup": {
+          "first_ns": 250000000,
+          "interval_ns": 500000000,
+          "distribution": "Fixed"
+        },
+        "latency": {
+          "order_entry_ns": 200000,
+          "order_entry_jitter_ns": 50000,
+          "report_ns": 100000,
+          "market_data_ns": 100000
+        },
+        "limits": {
+          "max_position": 2000,
+          "max_order_quantity": 200,
+          "max_open_orders": 16,
+          "max_messages": 1000000
+        },
+        "policy": {
+          "kind": "InventoryMarketMaker",
+          "half_spread_ticks": 2,
+          "quote_size": 100,
+          "levels": 3,
+          "level_spacing_ticks": 1,
+          "risk_aversion_ppm": 20,
+          "volatility_alpha_ppm": 50000,
+          "volatility_floor_milliticks": 500,
+          "max_skew_ticks": 2
+        }
+      },
+      {
+        "id": 4,
+        "wakeup": {
+          "first_ns": 1000000000,
+          "interval_ns": 2000000000,
+          "distribution": "Exponential"
+        },
+        "latency": {
+          "order_entry_ns": 1000000,
+          "order_entry_jitter_ns": 200000,
+          "report_ns": 500000,
+          "market_data_ns": 500000
+        },
+        "limits": {
+          "max_position": 20000,
+          "max_order_quantity": 200,
+          "max_open_orders": 8,
+          "max_messages": 100000
+        },
+        "policy": {
+          "kind": "Value",
+          "estimate_noise_milliticks": 3000,
+          "threshold_milliticks": 2000,
+          "order_size": 20,
+          "slippage_ticks": 1
+        }
+      },
+      {
+        "id": 5,
+        "wakeup": {
+          "first_ns": 2000000000,
+          "interval_ns": 2000000000,
+          "distribution": "Exponential"
+        },
+        "latency": {
+          "order_entry_ns": 1000000,
+          "order_entry_jitter_ns": 200000,
+          "report_ns": 500000,
+          "market_data_ns": 500000
+        },
+        "limits": {
+          "max_position": 20000,
+          "max_order_quantity": 200,
+          "max_open_orders": 8,
+          "max_messages": 100000
+        },
+        "policy": {
+          "kind": "Value",
+          "estimate_noise_milliticks": 3000,
+          "threshold_milliticks": 2000,
+          "order_size": 20,
+          "slippage_ticks": 1
+        }
+      },
+      {
+        "id": 6,
+        "wakeup": {
+          "first_ns": 1000000000,
+          "interval_ns": 1000000000,
+          "distribution": "Fixed"
+        },
+        "latency": {
+          "order_entry_ns": 1000000,
+          "order_entry_jitter_ns": 200000,
+          "report_ns": 500000,
+          "market_data_ns": 500000
+        },
+        "limits": {
+          "max_position": 300,
+          "max_order_quantity": 50,
+          "max_open_orders": 8,
+          "max_messages": 100000
+        },
+        "policy": {
+          "kind": "Momentum",
+          "short_window": 5,
+          "long_window": 30,
+          "threshold_milliticks": 1500,
+          "order_size": 15,
+          "slippage_ticks": 1,
+          "cooldown_ns": 10000000000
+        }
+      },
+      {
+        "id": 7,
+        "wakeup": {
+          "first_ns": 1500000000,
+          "interval_ns": 1000000000,
+          "distribution": "Fixed"
+        },
+        "latency": {
+          "order_entry_ns": 1000000,
+          "order_entry_jitter_ns": 200000,
+          "report_ns": 500000,
+          "market_data_ns": 500000
+        },
+        "limits": {
+          "max_position": 300,
+          "max_order_quantity": 50,
+          "max_open_orders": 8,
+          "max_messages": 100000
+        },
+        "policy": {
+          "kind": "Momentum",
+          "short_window": 5,
+          "long_window": 30,
+          "threshold_milliticks": 1500,
+          "order_size": 15,
+          "slippage_ticks": 1,
+          "cooldown_ns": 10000000000
+        }
+      },
+      {
+        "id": 8,
+        "wakeup": {
+          "first_ns": 500000000,
+          "interval_ns": 2000000000,
+          "distribution": "Exponential"
+        },
+        "latency": {
+          "order_entry_ns": 2000000,
+          "order_entry_jitter_ns": 500000,
+          "report_ns": 1000000,
+          "market_data_ns": 1000000
+        },
+        "limits": {
+          "max_position": 5000,
+          "max_order_quantity": 50,
+          "max_open_orders": 8,
+          "max_messages": 100000
+        },
+        "policy": {
+          "kind": "Noise",
+          "buy_probability_ppm": 500000,
+          "market_order_ppm": 350000,
+          "min_quantity": 1,
+          "max_quantity": 30,
+          "limit_offset_ticks": 4,
+          "max_resting_orders": 4
+        }
+      },
+      {
+        "id": 9,
+        "wakeup": {
+          "first_ns": 1000000000,
+          "interval_ns": 2000000000,
+          "distribution": "Exponential"
+        },
+        "latency": {
+          "order_entry_ns": 2000000,
+          "order_entry_jitter_ns": 500000,
+          "report_ns": 1000000,
+          "market_data_ns": 1000000
+        },
+        "limits": {
+          "max_position": 5000,
+          "max_order_quantity": 50,
+          "max_open_orders": 8,
+          "max_messages": 100000
+        },
+        "policy": {
+          "kind": "Noise",
+          "buy_probability_ppm": 500000,
+          "market_order_ppm": 350000,
+          "min_quantity": 1,
+          "max_quantity": 30,
+          "limit_offset_ticks": 4,
+          "max_resting_orders": 4
+        }
+      },
+      {
+        "id": 10,
+        "wakeup": {
+          "first_ns": 1500000000,
+          "interval_ns": 2000000000,
+          "distribution": "Exponential"
+        },
+        "latency": {
+          "order_entry_ns": 2000000,
+          "order_entry_jitter_ns": 500000,
+          "report_ns": 1000000,
+          "market_data_ns": 1000000
+        },
+        "limits": {
+          "max_position": 5000,
+          "max_order_quantity": 50,
+          "max_open_orders": 8,
+          "max_messages": 100000
+        },
+        "policy": {
+          "kind": "Noise",
+          "buy_probability_ppm": 500000,
+          "market_order_ppm": 350000,
+          "min_quantity": 1,
+          "max_quantity": 30,
+          "limit_offset_ticks": 4,
+          "max_resting_orders": 4
+        }
+      },
+      {
+        "id": 11,
+        "wakeup": {
+          "first_ns": 2000000000,
+          "interval_ns": 2000000000,
+          "distribution": "Exponential"
+        },
+        "latency": {
+          "order_entry_ns": 2000000,
+          "order_entry_jitter_ns": 500000,
+          "report_ns": 1000000,
+          "market_data_ns": 1000000
+        },
+        "limits": {
+          "max_position": 5000,
+          "max_order_quantity": 50,
+          "max_open_orders": 8,
+          "max_messages": 100000
+        },
+        "policy": {
+          "kind": "Noise",
+          "buy_probability_ppm": 500000,
+          "market_order_ppm": 350000,
+          "min_quantity": 1,
+          "max_quantity": 30,
+          "limit_offset_ticks": 4,
+          "max_resting_orders": 4
+        }
+      }
+    ],
+    "shocks": [
+      {
+        "kind": "QuoteWithdrawalStress",
+        "at_ns": 1800000000000,
+        "agents": [
+          1,
+          2,
+          3
+        ]
+      }
+    ]
+  }
+}

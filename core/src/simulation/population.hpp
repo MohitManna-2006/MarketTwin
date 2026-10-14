@@ -29,6 +29,11 @@ public:
   void route(const CancelResult& result);
 
   void set_quote_size(AgentId id, std::uint64_t quote_size_ppm);
+  // Null restores the agent's own order flow or latency.
+  void set_order_flow(AgentId id, const OrderFlowImbalance* imbalance);
+  void set_added_latency(AgentId id, const LatencyDegradation* degradation);
+  // Requests a cancel of every working order the agent has not already asked to cancel.
+  void withdraw_quotes(AgentId id);
   [[nodiscard]] std::vector<AgentActivity> activity() const;
   // Final state of every stream, four per agent in slot order.
   [[nodiscard]] std::vector<Rng::State> rng_states() const;
@@ -57,6 +62,10 @@ private:
     std::uint64_t cash_refusals = 0;
     std::uint64_t orders_issued = 0;
     std::uint64_t messages = 0;
+    std::uint64_t arrival_rate_ppm = kPpm;
+    SimTime added_order_entry; // set by a latency degradation
+    SimTime added_report;
+    SimTime added_market_data;
     SimTime order_channel; // latest delivery time already scheduled on each path
     SimTime report_channel;
     SimTime market_channel;
