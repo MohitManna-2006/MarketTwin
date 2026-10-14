@@ -43,6 +43,13 @@ A single run stays deterministic and logically single-threaded. Independent runs
 
 ## Current status
 
+**Phase 4B — live market data.** The API holds one upstream Alpaca stream (IEX, the
+provider's test stream, or a local fabricated mock), normalizes every trade and L1 quote
+in C++ with the Phase 4A conversions, and fans it out to the **Live Markets** workspace
+over a bounded WebSocket protocol that announces every loss. A recording keeps every
+provider frame verbatim and becomes an ordinary verified historical session per symbol.
+Live observations never enter the synthetic exchange; there is no order entry.
+
 **Phase 4A — observed historical equity data.** Fabricated offline L1 fixtures and
 authorized Alpaca IEX/SIP records can be retained, normalized by C++ into exact
 micro-dollar/UTC-nanosecond records, quality checked, replayed, verified, and inspected
@@ -279,6 +286,30 @@ are untracked. See [ADR 0007](docs/adr/0007-observed-historical-market-data.md) 
 ordering, schemas, licensing, and limitations. The reproducible fabricated-data
 performance smoke is recorded in
 [`docs/benchmarks/phase4a-historical.md`](docs/benchmarks/phase4a-historical.md).
+
+## Live market data
+
+The offline path uses the fabricated mock stream and needs no credentials:
+
+```bash
+cd services/api
+uv run python -m markettwin_api.live_mock --port 8765 &
+MARKETTWIN_LIVE_FEED=mock MARKETTWIN_LIVE_MOCK_URL=ws://127.0.0.1:8765/v2/mock \
+  uv run python -m markettwin_api
+```
+
+Open **Live Markets**, choose **Mock**, and **Connect feed**. **Record** captures the
+stream; **Stop recording** finalizes it into one historical session per symbol, listed in
+**Historical** with its data label. With the Alpaca credentials above, choose **IEX** or
+**Test** instead. Most Alpaca plans allow one stream connection, so the feed only starts
+when asked (`MARKETTWIN_LIVE_AUTOSTART` is off) and the watchlist is capped at
+`MARKETTWIN_LIVE_MAX_SYMBOLS` (30).
+
+Live routes are under `/api/v1/live`: status, health, symbols, snapshot, feed start/stop,
+recordings, and the `/stream` WebSocket. Controls are accepted from this machine or with
+`MARKETTWIN_LIVE_CONTROL_TOKEN`. Captures live below the workspace's `live/` directory and
+are untracked. See [ADR 0008](docs/adr/0008-live-market-data.md) for the gateway states,
+clocks, ordering, bounds, protocol, and limitations.
 
 ## Native exchange API
 
@@ -539,7 +570,7 @@ Useful CMake options:
 
 ## Phases
 
-Status follows [`architecture.md`](architecture.md) section 20. Phases 1A through 3A are implemented; Phase 3B is in progress. See [Phase 3B setup and evaluation](docs/phase3b-ai-research.md) and [ADR 0006](docs/adr/0006-supervised-ai-research.md).
+Status follows [`architecture.md`](architecture.md) section 20. Phases 1A through 3A, 4A, and 4B are implemented; Phase 3B is in progress. See [Phase 3B setup and evaluation](docs/phase3b-ai-research.md) and [ADR 0006](docs/adr/0006-supervised-ai-research.md).
 
 | Phase | Scope | State |
 | --- | --- | --- |
@@ -551,6 +582,7 @@ Status follows [`architecture.md`](architecture.md) section 20. Phases 1A throug
 | 3A | pybind11, API, worker, research terminal, replay inspection | Implemented and locally verified |
 | 3B | Supervised AI research workflow and institutional workspace | In progress |
 | 4A | Historical equity ingestion and deterministic observed-market replay | Implemented; live provider access unverified |
+| 4B | Live L1 market data, bounded fan-out, and recordings into historical sessions | Implemented against the mock stream; Alpaca IEX/test streams unverified |
 
 ## License
 

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <iterator>
 #include <nlohmann/json.hpp>
+#include <sstream>
 #include <string>
 #include <string_view>
 
@@ -57,13 +58,15 @@ int execute(int argc, char* const* argv) {
   if (argc == 8 && std::string_view{argv[1]} == "historical-import" &&
       std::string_view{argv[2]} == "--input" && std::string_view{argv[4]} == "--metadata" &&
       std::string_view{argv[6]} == "--output") {
-    std::ifstream metadata{argv[5]};
+    const std::ifstream metadata{argv[5]};
     if (!metadata) {
       throw markettwin::RunError{"IoError", "cannot read historical metadata"};
     }
-    const std::string text{std::istreambuf_iterator<char>{metadata},
-                           std::istreambuf_iterator<char>{}};
-    std::cout << markettwin::historical::import_jsonl(argv[3], argv[7], text) << '\n';
+    // Read through rdbuf rather than istreambuf_iterator: GCC 13 at -O3 reports a false
+    // -Wnull-dereference inside the inlined iterator.
+    std::ostringstream text;
+    text << metadata.rdbuf();
+    std::cout << markettwin::historical::import_jsonl(argv[3], argv[7], text.str()) << '\n';
     return 0;
   }
   if (argc == 4 && std::string_view{argv[1]} == "historical-verify" &&

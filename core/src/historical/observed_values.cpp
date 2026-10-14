@@ -22,20 +22,19 @@ bool all_digits(std::string_view text) noexcept {
   });
 }
 
-std::int64_t integer(std::string_view text, std::string_view field) {
+std::int64_t integer(std::string_view text, const std::string& field) {
   std::int64_t number = 0;
-  const auto* const last = text.data() + text.size();
-  const auto [end, error] = std::from_chars(text.data(), last, number);
-  if (error != std::errc{} || end != last) {
-    invalid("invalid or overflowing " + std::string{field});
+  const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), number);
+  if (error != std::errc{} || end != text.data() + text.size()) {
+    invalid("invalid or overflowing " + field);
   }
   return number;
 }
 
 } // namespace
 
-std::int64_t parse_price_micro_usd(std::string_view text, std::string_view field, bool allow_zero) {
-  const std::string name{field};
+std::int64_t parse_price_micro_usd(std::string_view text, const std::string& name,
+                                   bool allow_zero) {
   if (text.empty() || text.front() == '-' || text.front() == '+') {
     invalid("invalid price: " + name);
   }
@@ -45,14 +44,14 @@ std::int64_t parse_price_micro_usd(std::string_view text, std::string_view field
        point + 1 == text.size())) {
     invalid("price exceeds six decimal places: " + name);
   }
-  const auto whole = integer(text.substr(0, point), field);
+  const auto whole = integer(text.substr(0, point), name);
   if (whole > std::numeric_limits<std::int64_t>::max() / kPriceScale) {
     invalid("price overflow: " + name);
   }
   std::int64_t fractional = 0;
   if (point != std::string_view::npos) {
     const auto decimals = text.substr(point + 1);
-    fractional = integer(decimals, field);
+    fractional = integer(decimals, name);
     for (std::size_t index = decimals.size(); index < 6; ++index) {
       fractional *= 10;
     }

@@ -351,7 +351,7 @@ std::string import_jsonl(
       if (previous_timestamp) {
         const auto elapsed = item.timestamp - *previous_timestamp;
         auto* const state = std::ranges::find_if(
-            state_time, [&](const auto& item) { return item.first == quote_state; });
+            state_time, [&](const auto& entry) { return entry.first == quote_state; });
         if (state != state_time.end()) {
           state->second += static_cast<std::uint64_t>(elapsed);
         }

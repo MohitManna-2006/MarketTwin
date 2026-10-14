@@ -2,6 +2,7 @@
 #define MARKETTWIN_SRC_HISTORICAL_OBSERVED_VALUES_HPP
 
 #include <cstdint>
+#include <string>
 #include <string_view>
 
 // Checked conversions shared by every observed-market path: the Phase 4A historical
@@ -13,9 +14,9 @@ namespace markettwin::historical::detail {
 inline constexpr std::int64_t kPriceScale = 1'000'000;
 
 // Unsigned decimal text to exact millionths of a US dollar. At most six fractional
-// digits; no sign, exponent, or whitespace; overflow is rejected. `field` names the
+// digits; no sign, exponent, or whitespace; overflow is rejected. `name` names the
 // source field in the error.
-[[nodiscard]] std::int64_t parse_price_micro_usd(std::string_view text, std::string_view field,
+[[nodiscard]] std::int64_t parse_price_micro_usd(std::string_view text, const std::string& name,
                                                  bool allow_zero);
 
 struct UtcTimestamp {

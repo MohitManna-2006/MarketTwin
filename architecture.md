@@ -970,6 +970,23 @@ interval, and when the API does not answer it shows nothing in its place.
 [ADR 0007](docs/adr/0007-observed-historical-market-data.md) fixes the schema, ordering,
 artifact, provider, licensing, and compatibility decisions.
 
+### Phase 4B: Live market data
+
+- Hold one upstream Alpaca stock stream (IEX, the provider's test stream, or a loopback
+  fabricated mock) in an explicit gateway state machine with bounded reconnection, a
+  per-user connection lock, and a symbol ceiling. Credentials remain backend-only.
+- Normalize live trades and L1 quotes in C++ with the Phase 4A price and timestamp
+  conversions, one native call per batch, keeping source, receipt, and processing clocks
+  separate and classifying out-of-order and duplicate records instead of reordering them.
+- Fan out to browsers over a versioned WebSocket protocol with bounded queues; every loss
+  is counted and announced, followed by a snapshot.
+- Record provider frames verbatim with lifecycle events and finalize each capture into
+  ordinary verified Phase 4A sessions.
+- Order entry, paper execution, hypothetical fills, SIP, and L2 remain out of scope.
+
+[ADR 0008](docs/adr/0008-live-market-data.md) fixes the gateway, clock, ordering, protocol,
+recording, and access-control decisions.
+
 ### Later stretch work
 
 - Optional C++ optimized order book variants and profiled allocation improvements.

@@ -17,26 +17,39 @@ constexpr std::int64_t kSecond = 1'000'000'000;
 
 Json trade(const std::string& time, const std::string& price, std::int64_t quantity,
            std::int64_t identifier = 1) {
-  return {{"T", "t"},   {"S", "AAPL"},   {"i", identifier}, {"x", "V"},
-          {"p", price}, {"s", quantity}, {"t", time},       {"c", Json::array({"@", "I"})},
-          {"z", "C"}};
+  return {
+      {"T", "t"},   {"S", "AAPL"},   {"i", identifier}, {"x", "V"},
+      {"p", price}, {"s", quantity}, {"t", time},       {"c", Json::array({"@", "I"})},
+      {"z", "C"},
+  };
 }
 
 Json quote(const std::string& time, const std::string& bid, std::int64_t bid_size,
            const std::string& ask, std::int64_t ask_size) {
-  return {{"T", "q"},  {"S", "AAPL"}, {"bx", "V"},      {"bp", bid}, {"bs", bid_size},
-          {"ax", "V"}, {"ap", ask},   {"as", ask_size}, {"t", time}, {"c", Json::array({"R"})},
-          {"z", "C"}};
+  return {
+      {"T", "q"},  {"S", "AAPL"}, {"bx", "V"},      {"bp", bid}, {"bs", bid_size},
+      {"ax", "V"}, {"ap", ask},   {"as", ask_size}, {"t", time}, {"c", Json::array({"R"})},
+      {"z", "C"},
+  };
 }
 
 // One frame per call, received `monotonic` nanoseconds into the test.
 Json batch(const std::vector<Json>& messages, std::int64_t monotonic = 0, std::uint64_t frame = 1) {
-  return {{"now_wall_ns", std::to_string(kWall + monotonic)},
-          {"now_monotonic_ns", monotonic},
-          {"frames", Json::array({{{"frame", frame},
-                                   {"receipt_wall_ns", std::to_string(kWall + monotonic)},
-                                   {"receipt_monotonic_ns", monotonic},
-                                   {"messages", messages}}})}};
+  return {
+      {"now_wall_ns", std::to_string(kWall + monotonic)},
+      {"now_monotonic_ns", monotonic},
+      {
+          "frames",
+          Json::array({
+              {
+                  {"frame", frame},
+                  {"receipt_wall_ns", std::to_string(kWall + monotonic)},
+                  {"receipt_monotonic_ns", monotonic},
+                  {"messages", messages},
+              },
+          }),
+      },
+  };
 }
 
 Json run(live::LiveNormalizer& normalizer, const std::vector<Json>& messages,
@@ -94,9 +107,11 @@ TEST(LiveNormalizerTest, NormalizesAQuoteAndDerivesSpreadAndMidpoint) {
 TEST(LiveNormalizerTest, KeepsFixedPointExactWhereBinaryFloatingPointWouldNot) {
   live::LiveNormalizer normalizer{kConfig};
   const auto result =
-      run(normalizer, {trade("2024-03-11T13:30:00Z", "0.1", 1, 1),
-                       trade("2024-03-11T13:30:01Z", "1234567.000001", 1, 2),
-                       trade("2024-03-11T13:30:02Z", "9223372036854.775807", 1, 3)});
+      run(normalizer, {
+                          trade("2024-03-11T13:30:00Z", "0.1", 1, 1),
+                          trade("2024-03-11T13:30:01Z", "1234567.000001", 1, 2),
+                          trade("2024-03-11T13:30:02Z", "9223372036854.775807", 1, 3),
+                      });
   EXPECT_EQ(result.at("events").at(0).at("price_micro_usd"), 100'000);
   EXPECT_EQ(result.at("events").at(1).at("price_micro_usd"), 1'234'567'000'001);
   EXPECT_EQ(result.at("events").at(2).at("price_micro_usd"), 9'223'372'036'854'775'807);
@@ -105,11 +120,11 @@ TEST(LiveNormalizerTest, KeepsFixedPointExactWhereBinaryFloatingPointWouldNot) {
 TEST(LiveNormalizerTest, RejectsInvalidPricesSizesAndTimestampsWithReasons) {
   live::LiveNormalizer normalizer{kConfig};
   auto numeric = trade("2024-03-11T13:30:00Z", "1", 1);
-  numeric["p"] = 126.55;
+  numeric.at("p") = 126.55;
   auto fractional = trade("2024-03-11T13:30:00Z", "1", 1);
-  fractional["s"] = 0.5;
+  fractional.at("s") = 0.5;
   auto lowercase = trade("2024-03-11T13:30:00Z", "1", 1);
-  lowercase["S"] = "aapl";
+  lowercase.at("S") = "aapl";
   const std::vector<Json> messages = {
       numeric,
       trade("2024-03-11T13:30:00Z", "1.0000001", 1),
@@ -224,8 +239,11 @@ TEST(LiveNormalizerTest, OutOfOrderAndDuplicateRecordsAreFlaggedAndDoNotReplaceS
   live::LiveNormalizer normalizer{kConfig};
   const auto newest = trade("2024-03-11T13:30:05Z", "10.05", 1, 5);
   run(normalizer, {newest});
-  const auto result = run(normalizer, {trade("2024-03-11T13:30:04Z", "10.04", 1, 4), newest,
-                                       quote("2024-03-11T13:30:01Z", "10.00", 1, "10.02", 1)});
+  const auto result = run(normalizer, {
+                                          trade("2024-03-11T13:30:04Z", "10.04", 1, 4),
+                                          newest,
+                                          quote("2024-03-11T13:30:01Z", "10.00", 1, "10.02", 1),
+                                      });
   ASSERT_EQ(result.at("events").size(), 3U);
   EXPECT_EQ(result.at("events").at(0).at("classification"), "out_of_order");
   EXPECT_FALSE(result.at("events").at(0).at("applied").get<bool>());
@@ -290,7 +308,7 @@ TEST(LiveNormalizerTest, AMalformedBatchIsRefusedWithoutChangingState) {
   EXPECT_THROW(normalizer.process_batch("not json"), RunError);
   EXPECT_THROW(normalizer.process_batch(R"({"frames":[]})"), RunError);
   auto broken = batch({trade("2024-03-11T13:30:01Z", "2", 1, 2)});
-  broken["frames"].push_back(Json{{"frame", 2}});
+  broken.at("frames").push_back(Json{{"frame", 2}});
   EXPECT_THROW(normalizer.process_batch(broken.dump()), RunError);
   EXPECT_EQ(normalizer.snapshot(kWall, 0), before);
   EXPECT_THROW(live::LiveNormalizer{R"({"provider":"alpaca"})"}, RunError);
@@ -300,7 +318,7 @@ TEST(LiveNormalizerTest, AMalformedBatchIsRefusedWithoutChangingState) {
 TEST(LiveNormalizerTest, InstrumentCapacityIsBoundedAndSymbolsCanBeReleased) {
   live::LiveNormalizer normalizer{R"({"provider":"alpaca","feed":"iex","max_symbols":1})"};
   auto other = trade("2024-03-11T13:30:00Z", "1", 1);
-  other["S"] = "MSFT";
+  other.at("S") = "MSFT";
   const auto result = run(normalizer, {trade("2024-03-11T13:30:00Z", "1", 1), other});
   EXPECT_EQ(result.at("events").size(), 1U);
   EXPECT_EQ(result.at("rejects").at(0).at("reason"), "instrument capacity exceeded");
