@@ -7,6 +7,9 @@ import { queryOptions } from "@tanstack/react-query";
 import { get } from "./client";
 import type {
   AgentSeries,
+  Calibration,
+  CalibrationReportView,
+  CalibrationSpecSummary,
   EventPage,
   ExperimentDetail,
   ExperimentList,
@@ -37,6 +40,40 @@ const FOREVER = Number.POSITIVE_INFINITY;
 export const WINDOW_SIZE = 512;
 
 const active = (status: string | undefined) => status === "pending" || status === "running";
+
+export const calibrationSpecsQuery = () =>
+  queryOptions({
+    queryKey: ["calibrations", "specs"],
+    queryFn: ({ signal }) =>
+      get<{ specs: CalibrationSpecSummary[] }>("/calibrations/specs", undefined, signal),
+    staleTime: 60_000,
+  });
+
+export const calibrationsQuery = (limit = 100) =>
+  queryOptions({
+    queryKey: ["calibrations", "list", limit],
+    queryFn: ({ signal }) =>
+      get<{ calibrations: Calibration[]; count: number }>("/calibrations", { limit }, signal),
+    refetchInterval: (query) =>
+      query.state.data?.calibrations.some((item) => active(item.status)) ? 1_000 : 10_000,
+  });
+
+export const calibrationQuery = (calibrationId: string) =>
+  queryOptions({
+    queryKey: ["calibrations", calibrationId],
+    queryFn: ({ signal }) => get<Calibration>(`/calibrations/${calibrationId}`, undefined, signal),
+    refetchInterval: (query) => (active(query.state.data?.status) ? 1_000 : false),
+  });
+
+// A finished calibration's artifact is immutable.
+export const calibrationReportQuery = (calibrationId: string, enabled: boolean) =>
+  queryOptions({
+    queryKey: ["calibrations", calibrationId, "report"],
+    queryFn: ({ signal }) =>
+      get<CalibrationReportView>(`/calibrations/${calibrationId}/report`, undefined, signal),
+    enabled,
+    staleTime: FOREVER,
+  });
 
 export const historicalProvidersQuery = () =>
   queryOptions({

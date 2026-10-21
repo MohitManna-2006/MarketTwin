@@ -5,6 +5,7 @@
 #   unit/telemetry/    market statistics from exchange outputs
 #   unit/experiment/   integer statistics and confidence intervals
 #   unit/historical/   observed-market import, validation, and playback
+#   unit/calibration/  the common L1 projection, stylized facts, targets, and scores
 #   unit/live/         live trade and quote normalization and per-instrument state
 #   unit/simulation/   scheduler, clock, kernel, scenario config, and fundamental
 #   integration/       cross-subsystem runs once those subsystems exist
@@ -26,6 +27,7 @@ add_executable(
   unit/accounting/valuation_test.cpp
   unit/telemetry/metrics_test.cpp
   unit/experiment/statistics_test.cpp
+  unit/calibration/calibration_test.cpp
   integration/accounting_run_test.cpp
   integration/experiment_test.cpp
   unit/simulation/fundamental_test.cpp
@@ -98,3 +100,9 @@ add_test(NAME markettwin_cli.experiment_run_and_replay
     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/experiment-smoke
     -P ${CMAKE_CURRENT_SOURCE_DIR}/integration/experiment_smoke.cmake)
 set_tests_properties(markettwin_cli.experiment_run_and_replay PROPERTIES TIMEOUT 300)
+
+add_test(NAME markettwin_cli.calibration_facts
+  COMMAND markettwin calibration-facts --config ${PROJECT_SOURCE_DIR}/configs/baseline.json)
+set_tests_properties(
+  markettwin_cli.calibration_facts PROPERTIES PASS_REGULAR_EXPRESSION "\"spread_cents_p50\":[0-9]+" TIMEOUT 300
+)

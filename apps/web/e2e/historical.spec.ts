@@ -7,7 +7,8 @@ test("imports and replays the offline historical fixture", async ({ page }) => {
   await expect(page.getByText(/Imports never enter the synthetic exchange/)).toBeVisible();
 
   await page.getByRole("button", { name: "Import observations" }).click();
-  const row = page.getByRole("row").filter({ hasText: "AAPL" });
+  // Other specs share the workspace and may have imported windowed AAPL sessions.
+  const row = page.getByRole("row").filter({ hasText: "bundled offline fixture" });
   await expect(row.getByText("Completed")).toBeVisible();
   await row.click();
 

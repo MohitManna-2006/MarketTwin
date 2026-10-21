@@ -31,6 +31,7 @@ add_library(markettwin_core
   src/simulation/simulation.cpp
   src/experiment/statistics.cpp
   src/experiment/experiment.cpp
+  src/calibration/calibration.cpp
   src/exchange/order_book.cpp
   src/exchange/matching_engine.cpp
 )

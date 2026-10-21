@@ -139,6 +139,26 @@ CREATE TABLE IF NOT EXISTS live_recordings (
   error_message TEXT
 );
 CREATE INDEX IF NOT EXISTS live_recordings_created ON live_recordings(created_at DESC);
+CREATE TABLE IF NOT EXISTS calibrations (
+  id TEXT PRIMARY KEY,
+  request_key TEXT NOT NULL UNIQUE,
+  spec_key TEXT NOT NULL,
+  spec_digest TEXT NOT NULL,
+  title TEXT NOT NULL,
+  symbol TEXT NOT NULL,
+  feed TEXT NOT NULL,
+  observation_kind TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  started_at TEXT,
+  finished_at TEXT,
+  sessions_json TEXT NOT NULL,
+  progress_json TEXT,
+  headline_json TEXT,
+  error_code TEXT,
+  error_message TEXT
+);
+CREATE INDEX IF NOT EXISTS calibrations_created ON calibrations(created_at DESC);
 """
 
 _JSON_COLUMNS = (
@@ -154,6 +174,8 @@ _JSON_COLUMNS = (
     "detail_json",
     "evidence_json",
     "manifest_json",
+    "sessions_json",
+    "progress_json",
 )
 
 ACTIVE = ("pending", "running")
@@ -215,6 +237,32 @@ class Registry:
             return result.rowcount == 1
 
     # ---- live recordings ------------------------------------------------------------------
+
+    def calibration(self, calibration_id: str) -> Row | None:
+        return self._one("SELECT * FROM calibrations WHERE id = ?", (calibration_id,))
+
+    def calibration_by_key(self, request_key: str) -> Row | None:
+        return self._one("SELECT * FROM calibrations WHERE request_key = ?", (request_key,))
+
+    def calibrations(self, limit: int, offset: int) -> list[Row]:
+        return self._many(
+            "SELECT * FROM calibrations ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        )
+
+    def insert_calibration(self, values: Row) -> None:
+        self._insert("calibrations", values)
+
+    def update_calibration(self, calibration_id: str, **values: Any) -> None:
+        self._update("calibrations", calibration_id, values)
+
+    def retire_failed_calibration_key(self, request_key: str) -> None:
+        with self._cursor() as cursor:
+            cursor.execute(
+                "UPDATE calibrations SET request_key = id || ':' || request_key "
+                "WHERE request_key = ? AND status = 'failed'",
+                (request_key,),
+            )
 
     def insert_live_recording(self, values: Row) -> None:
         self._insert("live_recordings", values)
@@ -491,7 +539,14 @@ class Registry:
                 "WHERE status IN ('pending', 'running')",
                 (stamp,),
             ).rowcount
-        return int(runs) + int(experiments) + int(historical)
+            calibrations = cursor.execute(
+                "UPDATE calibrations SET status = 'failed', finished_at = ?, "
+                "error_code = 'WorkerInterrupted', "
+                "error_message = 'the API process stopped during this calibration' "
+                "WHERE status IN ('pending', 'running')",
+                (stamp,),
+            ).rowcount
+        return int(runs) + int(experiments) + int(historical) + int(calibrations)
 
 
 def _encode(key: str, value: Any) -> Any:

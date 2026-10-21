@@ -73,6 +73,32 @@ def verify_historical(session_directory: str | PathLike[str]) -> JsonObject:
     return json.loads(_native.verify_historical(fspath(session_directory)))
 
 
+def calibration_observed_facts(
+    session_directory: str | PathLike[str], start_ns: int, end_ns: int
+) -> JsonObject:
+    """Stylized facts of a verified historical session inside [start_ns, end_ns)."""
+    return json.loads(
+        _native.calibration_observed_facts(fspath(session_directory), start_ns, end_ns)
+    )
+
+
+def calibration_synthetic_facts(config: JsonObject | str) -> JsonObject:
+    """Run a config in memory and measure the same stylized facts on its L1 projection."""
+    return json.loads(_native.calibration_synthetic_facts(_text(config)))
+
+
+def calibration_targets(facts: list[JsonObject]) -> JsonObject:
+    """Mean, deviation, and floored scale of each fact across sessions."""
+    return json.loads(_native.calibration_targets(json.dumps(facts)))
+
+
+def calibration_score(target: JsonObject, scale: JsonObject, facts: list[JsonObject]) -> JsonObject:
+    """Distances and group-weighted score of one candidate's per-seed facts."""
+    return json.loads(
+        _native.calibration_score(json.dumps(target), json.dumps(scale), json.dumps(facts))
+    )
+
+
 class LiveNormalizer:
     """Native normalizer and per-instrument state of one live feed.
 

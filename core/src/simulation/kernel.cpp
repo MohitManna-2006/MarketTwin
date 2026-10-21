@@ -25,9 +25,10 @@ struct Scenario {
 
 class Run {
 public:
-  Run(const RunConfig& config, RecordSink& sink)
-      : config_(&config), scheduler_(config.limits), exchange_(config.exchange),
-        recorder_(config, sink), accountant_(config, sink, recorder_.config_digest()) {
+  Run(const RunConfig& config, RecordSink& sink, MarketObserver* observer)
+      : config_(&config), observer_(observer), scheduler_(config.limits),
+        exchange_(config.exchange), recorder_(config, sink),
+        accountant_(config, sink, recorder_.config_digest()) {
     if (config.scenario) {
       scenario_ = std::make_unique<Scenario>(config, *config.scenario, scheduler_);
     }
@@ -113,6 +114,9 @@ private:
     accountant_.on_order(event.timestamp, before, report);
     const auto after = top();
     accountant_.on_book(event.timestamp, after);
+    if (observer_ != nullptr) {
+      observer_->on_market(event.timestamp, report.trades, after);
+    }
     if (scenario_) {
       scenario_->population.route(report);
       publish(event.timestamp, report.trades, after);
@@ -127,6 +131,9 @@ private:
     accountant_.on_cancel(result);
     const auto after = top();
     accountant_.on_book(event.timestamp, after);
+    if (observer_ != nullptr) {
+      observer_->on_market(event.timestamp, {}, after);
+    }
     if (scenario_) {
       scenario_->population.route(result);
       publish(event.timestamp, {}, after);
@@ -264,6 +271,7 @@ private:
   }
 
   const RunConfig* config_;
+  MarketObserver* observer_;
   Scheduler scheduler_;
   MatchingEngine exchange_;
   Recorder recorder_;
@@ -274,9 +282,9 @@ private:
 
 } // namespace
 
-RunSummary run_kernel(const RunConfig& config, RecordSink& sink) {
+RunSummary run_kernel(const RunConfig& config, RecordSink& sink, MarketObserver* observer) {
   validate_config(config);
-  return Run{config, sink}.execute();
+  return Run{config, sink, observer}.execute();
 }
 
 } // namespace markettwin

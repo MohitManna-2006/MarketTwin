@@ -453,6 +453,9 @@ arrive with the Phase 2B ledger (section 10.1).
 - Synthetic price distribution may not match real stocks; disclose this prominently.
 - A successful result is comparative strategy behavior under an explicit simulated model, not proof of real-world profitability.
 - At least one experiment should test sensitivity to parameter choices and random seeds.
+- Phase 5B ([ADR 0011](docs/adr/0011-calibration-methodology.md)) fits parameters to a fixed
+  list of observed IEX stylized facts and tests the fit out of sample. A passing fit is a
+  statement about those facts, that symbol, venue, and dates only.
 - Show failed/null results and confidence intervals, not only the best-performing path.
 
 ### 9.5 Phase 2A resolved scenarios
@@ -1007,11 +1010,28 @@ recording, and access-control decisions.
 [ADR 0009](docs/adr/0009-phase-5-scope.md) records the choice of this phase and
 [ADR 0010](docs/adr/0010-order-flow-latency-and-quote-stress-shocks.md) its decisions.
 
+### Phase 5B: Calibration against observed sessions
+
+- Reduce synthetic runs and observed Phase 4A sessions to one L1 projection and measure
+  twelve stylized facts on both with one native function, in integer arithmetic.
+- Fit a bounded grid of noise-trader, maker, and fundamental parameters to AAPL IEX
+  sessions (10:30 to 11:30 ET, ten most recent full sessions split 6/2/2) with a seeded
+  two-stage search; select on validation sessions and test once on the most recent ones.
+- Pre-register acceptance (beat the baseline on test and stay within two scales on at
+  least 9 of 12 facts) and publish a null result as prominently as a pass.
+- Keep observed data out of the synthetic exchange; a calibrated config is an ordinary run
+  config, and every existing schema, digest, and golden summary is unchanged.
+- Latency is not calibrated: L1 data does not identify it.
+
+[ADR 0011](docs/adr/0011-calibration-methodology.md) fixes the data, facts, score, search,
+acceptance, claims, and artifacts.
+
 ### Later stretch work
 
 - Optional C++ optimized order book variants and profiled allocation improvements.
 - Multiple synthetic symbols with explicit event-order semantics.
-- More realistic latency/agent calibration after a separately approved methodology.
+- Latency calibration, which needs data that identifies participant latency (Phase 5B
+  calibrates agent and fundamental parameters only).
 - Advanced visualization, hosted deployments, and user access control.
 
 ## 21. Agent collaboration and execution protocol

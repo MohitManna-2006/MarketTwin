@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "title": "Fabricated AAPL sessions, pipeline smoke test",
+  "symbol": "AAPL",
+  "feed": "fabricated_l1",
+  "window": {
+    "start_local": "10:30",
+    "end_local": "11:30",
+    "timezone": "America/New_York"
+  },
+  "base_config": "baseline.json",
+  "split": {
+    "train": 6,
+    "validation": 2,
+    "test": 2
+  },
+  "search": {
+    "seed": 7,
+    "stage1_candidates": 4,
+    "stage1_seeds": 2,
+    "stage2_top": 2,
+    "stage2_seeds": 2,
+    "test_seeds": 2,
+    "stage1_seed_base": 1000000,
+    "stage2_seed_base": 2000000,
+    "test_seed_base": 3000000
+  },
+  "grid": {
+    "noise_interval_ns": [
+      250000000,
+      500000000,
+      1000000000,
+      2000000000,
+      4000000000,
+      8000000000
+    ],
+    "noise_market_order_ppm": [
+      100000,
+      200000,
+      350000,
+      500000,
+      700000
+    ],
+    "noise_max_quantity": [
+      5,
+      10,
+      20,
+      30,
+      50
+    ],
+    "noise_limit_offset_ticks": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "maker_interval_ns": [
+      100000000,
+      250000000,
+      500000000,
+      1000000000,
+      2000000000
+    ],
+    "maker_half_spread_ticks": [
+      1,
+      2,
+      3,
+      4,
+      6
+    ],
+    "maker_quote_size": [
+      25,
+      50,
+      100,
+      200
+    ],
+    "maker_level_spacing_ticks": [
+      1,
+      2,
+      3
+    ],
+    "fundamental_volatility_milliticks": [
+      250,
+      500,
+      1000,
+      2000,
+      4000
+    ]
+  }
+}

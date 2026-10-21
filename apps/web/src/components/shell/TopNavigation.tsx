@@ -21,6 +21,7 @@ const SECTIONS = [
   { to: "/simulations", label: "Simulations", match: ["/simulations", "/runs"] },
   { to: "/experiments", label: "Experiments" },
   { to: "/historical", label: "Historical" },
+  { to: "/calibration", label: "Calibration" },
   { to: "/live", label: "Live Markets" },
   { to: "/ai-research", label: "AI Research" },
   { to: "/replay", label: "Replay" },
@@ -63,7 +64,7 @@ export function TopNavigation() {
                 (section.match?.some((prefix) => window.location.pathname.startsWith(prefix)) ??
                   false);
               return cx(
-                "transition-hover label flex items-center px-3.5",
+                "transition-hover label flex shrink-0 items-center px-3.5 whitespace-nowrap",
                 active
                   ? "text-fg shadow-[inset_0_-2px_0_var(--accent-primary)]"
                   : "text-fg-3 hover:text-fg-2",
@@ -96,7 +97,7 @@ export function TopNavigation() {
             </span>
           </span>
         </Tooltip>
-        <span className="label hidden items-baseline gap-1.5 text-fg-3 lg:flex">
+        <span className="label hidden items-baseline gap-1.5 text-fg-3 2xl:flex">
           Workspace
           <span className="num text-sm font-medium tracking-normal text-fg-2 normal-case">
             {data?.workspace ?? "—"}

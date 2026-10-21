@@ -10,6 +10,7 @@
 // of each live instrument. It is still driven by coarse calls, one per batch of provider
 // frames, never one per record.
 
+#include "markettwin/calibration/calibration.hpp"
 #include "markettwin/common/hash.hpp"
 #include "markettwin/common/run_error.hpp"
 #include "markettwin/common/version.hpp"
@@ -179,6 +180,7 @@ py::dict build_info() {
   info["historical_normalization_version"] =
       markettwin::historical::kHistoricalNormalizationVersion;
   info["live_schema"] = markettwin::live::kLiveSchema;
+  info["calibration_schema"] = markettwin::calibration::kCalibrationSchema;
   info["max_experiment_runs"] = markettwin::kMaxExperimentRuns;
   return info;
 }
@@ -243,6 +245,38 @@ PYBIND11_MODULE(_native, module) {
            py::arg("symbols_json"), "Forget every instrument not named in this JSON array.")
       .def_property_readonly("last_batch_elapsed_ns",
                              &markettwin::live::LiveNormalizer::last_batch_elapsed_ns);
+
+  module.def(
+      "calibration_observed_facts",
+      [](const std::string& session, std::int64_t start_ns, std::int64_t end_ns) {
+        const py::gil_scoped_release release;
+        return markettwin::calibration::observed_facts_json(session, start_ns, end_ns);
+      },
+      py::arg("session_directory"), py::arg("start_ns"), py::arg("end_ns"),
+      "Stylized facts of a historical session's events inside [start_ns, end_ns), as JSON.");
+  module.def(
+      "calibration_synthetic_facts",
+      [](const std::string& config_text) {
+        const py::gil_scoped_release release;
+        return markettwin::calibration::synthetic_facts_json(config_text);
+      },
+      py::arg("config_text"),
+      "Run a config in memory and return the stylized facts of its L1 projection, as JSON.");
+  module.def(
+      "calibration_targets",
+      [](const std::string& facts_array) {
+        const py::gil_scoped_release release;
+        return markettwin::calibration::targets_from_facts_json(facts_array);
+      },
+      py::arg("facts_array_json"), "Mean and floored scale of each fact across sessions.");
+  module.def(
+      "calibration_score",
+      [](const std::string& target, const std::string& scale, const std::string& facts_array) {
+        const py::gil_scoped_release release;
+        return markettwin::calibration::score_from_json(target, scale, facts_array);
+      },
+      py::arg("target_json"), py::arg("scale_json"), py::arg("facts_array_json"),
+      "Score one candidate's per-seed facts against target means and scales, as JSON.");
 
   module.def("canonicalize_experiment", &canonicalize_experiment, py::arg("config_text"),
              py::arg("base_directory") = std::string{},

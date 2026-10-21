@@ -2,8 +2,8 @@
 
 **Date:** 2026-10-13  
 **Status:** Accepted on 2026-10-14. Option A is Phase 5A
-([ADR 0010](0010-order-flow-latency-and-quote-stress-shocks.md)). Option B's methodology
-ADR is next.
+([ADR 0010](0010-order-flow-latency-and-quote-stress-shocks.md)). Option B is Phase 5B
+([ADR 0011](0011-calibration-methodology.md), accepted 2026-10-20).
 
 ## Context
 

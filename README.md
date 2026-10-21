@@ -43,6 +43,15 @@ A single run stays deterministic and logically single-threaded. Independent runs
 
 ## Current status
 
+**Phase 5B — calibration against observed sessions.** A pre-registered search fits
+noise-trader, maker, and fundamental parameters so that twelve stylized facts of synthetic
+runs (spread quantiles, trade arrival, return autocorrelation and volatility, quote state)
+approach the same facts on observed AAPL IEX sessions, then tests the fit once on the most
+recent sessions. Both sides go through one C++ L1 projection, and every fact and score is
+an integer computed in the core. A null result is published as prominently as a pass. The
+pipeline is verified offline on fabricated sessions; the real AAPL run needs Alpaca
+credentials. See [ADR 0011](docs/adr/0011-calibration-methodology.md).
+
 **Phase 5A — the remaining shock families.** Order-flow imbalance, latency degradation,
 and quote-withdrawal stress join the fundamental jump, liquidity withdrawal, and
 volatility regime. Each has a reference config, appears in the scenario editor, replays
@@ -152,7 +161,7 @@ The summary's `scenario` object reports, per agent, wakeups, orders and cancels 
 
 Golden summaries for the scripted demo and the baseline scenario are pinned in `core/tests/replay/golden/` and hold across Apple Clang and GCC builds.
 
-[ADR 0002](docs/adr/0002-kernel-trace-and-replay.md) specifies ordering, stop conditions, the record format, digests, and replay failure codes. [ADR 0003](docs/adr/0003-agents-rng-latency-and-scenarios.md) specifies the agents, what they can observe, latency, random streams, the fundamental process, and shocks; [ADR 0010](docs/adr/0010-order-flow-latency-and-quote-stress-shocks.md) adds the Phase 5A shocks. [ADR 0004](docs/adr/0004-ledger-marks-metrics-and-experiments.md) specifies the ledger, marks, market statistics, the accounting stream, and experiments.
+[ADR 0002](docs/adr/0002-kernel-trace-and-replay.md) specifies ordering, stop conditions, the record format, digests, and replay failure codes. [ADR 0003](docs/adr/0003-agents-rng-latency-and-scenarios.md) specifies the agents, what they can observe, latency, random streams, the fundamental process, and shocks; [ADR 0010](docs/adr/0010-order-flow-latency-and-quote-stress-shocks.md) adds the Phase 5A shocks, and [ADR 0011](docs/adr/0011-calibration-methodology.md) the Phase 5B calibration. [ADR 0004](docs/adr/0004-ledger-marks-metrics-and-experiments.md) specifies the ledger, marks, market statistics, the accounting stream, and experiments.
 
 ## Accounting and metrics
 
@@ -295,6 +304,35 @@ are untracked. See [ADR 0007](docs/adr/0007-observed-historical-market-data.md) 
 ordering, schemas, licensing, and limitations. The reproducible fabricated-data
 performance smoke is recorded in
 [`docs/benchmarks/phase4a-historical.md`](docs/benchmarks/phase4a-historical.md).
+
+## Calibration
+
+Offline, against fabricated sessions: open **Calibration**, **Import fabricated sessions**,
+then **Run calibration**. Every screen labels the result `FABRICATED TEST DATA`.
+
+Against observed AAPL IEX data (free on Alpaca's basic plan), with the Alpaca credentials
+above:
+
+```bash
+cd services/api
+uv run python scripts/calibrate_aapl.py --confirm-free-iex \
+  --export ../../docs/experiments/phase5b-calibration
+```
+
+The script takes the ten most recent full regular sessions from Alpaca's trading calendar,
+imports each 10:30–11:30 ET window through the Phase 4A path, runs the committed spec
+[`configs/calibration/aapl_iex.json`](configs/calibration/aapl_iex.json) (257 candidates on
+10 seeds, the best 10 on 50 fresh seeds, the selected one and the baseline on 100 test
+seeds), verifies the artifact, and copies the aggregate report, per-session facts, spec,
+and selected config to `--export`. Raw observed records stay in the untracked workspace.
+The search is about 3,300 one-hour runs, roughly ten minutes on an 8-core laptop; on
+macOS prefix the command with `caffeinate -i` so the machine does not sleep mid-run.
+
+`markettwin calibration-facts --config RUN.json` prints the facts of one synthetic run, and
+`--session DIR --start NS --end NS` those of a historical session. Calibration routes are
+under `/api/v1/calibrations`: specs, create, list, status, report, candidates by stage,
+selected config, verification, and the fabricated fixture sessions. Artifacts live below
+the workspace's `calibrations/` directory.
 
 ## Live market data
 
@@ -579,7 +617,7 @@ Useful CMake options:
 
 ## Phases
 
-Status follows [`architecture.md`](architecture.md) section 20. Phases 1A through 3A, 4A, 4B, and 5A are implemented; Phase 3B is in progress. See [Phase 3B setup and evaluation](docs/phase3b-ai-research.md) and [ADR 0006](docs/adr/0006-supervised-ai-research.md).
+Status follows [`architecture.md`](architecture.md) section 20. Phases 1A through 3A, 4A, 4B, 5A, and 5B are implemented; Phase 3B is in progress. See [Phase 3B setup and evaluation](docs/phase3b-ai-research.md) and [ADR 0006](docs/adr/0006-supervised-ai-research.md).
 
 | Phase | Scope | State |
 | --- | --- | --- |
@@ -593,6 +631,7 @@ Status follows [`architecture.md`](architecture.md) section 20. Phases 1A throug
 | 4A | Historical equity ingestion and deterministic observed-market replay | Implemented; live provider access unverified |
 | 4B | Live L1 market data, bounded fan-out, and recordings into historical sessions | Implemented against the mock stream; Alpaca IEX/test streams unverified |
 | 5A | Order-flow imbalance, latency degradation, and quote-withdrawal stress shocks | Implemented and locally verified |
+| 5B | Calibration of synthetic parameters to observed IEX stylized facts | Implemented and verified on fabricated sessions; the AAPL IEX run awaits credentials |
 
 ## License
 

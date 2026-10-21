@@ -1,3 +1,4 @@
+#include "markettwin/calibration/calibration.hpp"
 #include "markettwin/common/run_error.hpp"
 #include "markettwin/common/version.hpp"
 #include "markettwin/experiment/experiment.hpp"
@@ -10,6 +11,7 @@
 #include <iostream>
 #include <iterator>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -22,7 +24,34 @@ void print_usage(std::ostream& output) {
          << "       markettwin experiment --config EXPERIMENT.json --output NEW_DIRECTORY\n";
   output << "       markettwin historical-import --input RAW.jsonl --metadata META.json --output "
             "NEW_DIRECTORY\n"
-         << "       markettwin historical-verify --input SESSION_DIRECTORY\n";
+         << "       markettwin historical-verify --input SESSION_DIRECTORY\n"
+         << "       markettwin calibration-facts --config CONFIG.json\n"
+         << "       markettwin calibration-facts --session SESSION_DIRECTORY --start UTC_NS --end "
+            "UTC_NS\n";
+}
+
+// The calibration subcommands, or nothing when the arguments name another command.
+std::optional<int> calibration_command(int argc, char* const* argv) {
+  if (argc == 4 && std::string_view{argv[1]} == "calibration-facts" &&
+      std::string_view{argv[2]} == "--config") {
+    const std::ifstream config{argv[3]};
+    if (!config) {
+      throw markettwin::RunError{"IoError", "cannot read run config"};
+    }
+    std::ostringstream text;
+    text << config.rdbuf();
+    std::cout << markettwin::calibration::synthetic_facts_json(text.str()) << '\n';
+    return 0;
+  }
+  if (argc == 8 && std::string_view{argv[1]} == "calibration-facts" &&
+      std::string_view{argv[2]} == "--session" && std::string_view{argv[4]} == "--start" &&
+      std::string_view{argv[6]} == "--end") {
+    std::cout << markettwin::calibration::observed_facts_json(argv[3], std::stoll(argv[5]),
+                                                              std::stoll(argv[7]))
+              << '\n';
+    return 0;
+  }
+  return std::nullopt;
 }
 
 int execute(int argc, char* const* argv) {
@@ -74,6 +103,9 @@ int execute(int argc, char* const* argv) {
     const auto result = markettwin::historical::verify(argv[3]);
     std::cout << result << '\n';
     return nlohmann::json::parse(result).value("verified", false) ? 0 : 1;
+  }
+  if (const auto status = calibration_command(argc, argv)) {
+    return *status;
   }
   print_usage(std::cerr);
   return 2;

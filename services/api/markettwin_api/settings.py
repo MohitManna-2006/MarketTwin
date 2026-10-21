@@ -45,6 +45,9 @@ class Settings:
     alpaca_key_id: str = field(default="", repr=False)
     alpaca_secret_key: str = field(default="", repr=False)
     historical_max_pages: int = 20
+    # ---- calibration (Phase 5B) ---------------------------------------------------------
+    # Threads one calibration runs candidate seeds on; each run is one native call.
+    calibration_workers: int = field(default_factory=lambda: max(1, (os.cpu_count() or 2) - 1))
     # ---- live market data (Phase 4B) ----------------------------------------------------
     # The feed a start request without one selects: "test", "iex", or "mock".
     live_feed: str = "iex"
@@ -108,6 +111,14 @@ class Settings:
     def live_dir(self) -> Path:
         return self.workspace / "live"
 
+    @property
+    def calibrations_dir(self) -> Path:
+        return self.workspace / "calibrations"
+
+    @property
+    def calibration_specs_dir(self) -> Path:
+        return self.scenarios_dir / "calibration"
+
 
 def load_settings() -> Settings:
     defaults = Settings()
@@ -142,6 +153,9 @@ def load_settings() -> Settings:
         alpaca_key_id=os.environ.get("ALPACA_API_KEY_ID", ""),
         alpaca_secret_key=os.environ.get("ALPACA_API_SECRET_KEY", ""),
         historical_max_pages=int(os.environ.get("MARKETTWIN_HISTORICAL_MAX_PAGES", "20")),
+        calibration_workers=int(
+            os.environ.get("MARKETTWIN_CALIBRATION_WORKERS", defaults.calibration_workers)
+        ),
         live_feed=os.environ.get("MARKETTWIN_LIVE_FEED", defaults.live_feed).strip().lower(),
         live_autostart=os.environ.get("MARKETTWIN_LIVE_AUTOSTART", "").strip().lower()
         in ("1", "true", "yes", "on"),

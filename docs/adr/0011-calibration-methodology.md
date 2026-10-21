@@ -1,8 +1,10 @@
 # ADR 0011: Calibration methodology against observed sessions
 
 **Date:** 2026-10-20  
-**Status:** Proposed for Phase 5B. No calibration code is written until the owner
-accepts this record ([ADR 0009](0009-phase-5-scope.md), option B).
+**Status:** Accepted for Phase 5B on 2026-10-20 ([ADR 0009](0009-phase-5-scope.md),
+option B). The owner chose AAPL, the ten most recent complete regular sessions, no paid
+data, committed aggregate results, and the acceptance bar below. The decisions taken on
+acceptance are in [Owner decisions](#owner-decisions).
 
 ## Question
 
@@ -38,20 +40,27 @@ synthetic runs of candidate configs ─────┘                          
   through the Phase 4A path with the existing entitlement and cost gate. IEX is one venue:
   every observed fact is labelled `OBSERVED IEX DATA`, single venue, and is not a
   consolidated-market fact. SIP is out of scope until its entitlement is verified.
-- **Symbol.** One symbol for Phase 5B, chosen by the owner before import. A second symbol
+- **Symbol.** One symbol for Phase 5B: AAPL. A second symbol
   may be used only as an extra out-of-symbol test, never in fitting.
 - **Window.** One hour per trading day, 10:30 to 11:30 America/New_York, converted to an
   explicit UTC interval per date. This matches the synthetic horizon of one hour and avoids
   the open and close. Half days and days with a halt in the window are excluded before any
   statistic is computed, and the exclusion is recorded.
-- **Sessions.** Ten consecutive regular trading days, split chronologically and fixed
-  before the first candidate is scored: days 1 to 6 **train**, days 7 and 8
-  **validation**, days 9 and 10 **test**.
-- **Quality gate.** A session is admitted only if its Phase 4A verification passes and its
-  quality report shows two-sided L1 quotes for at least 90% of the window. Rejected
-  sessions are recorded with the reason and are not replaced by later dates.
+- **Sessions.** The ten most recent full regular trading days (16:00 close) before the
+  import date, taken from Alpaca's trading calendar, split chronologically and fixed before
+  the first candidate is scored: days 1 to 6 **train**, days 7 and 8 **validation**, days 9
+  and 10 **test**, so the test days are the most recent.
+- **Quality gate.** A session is admitted only if its Phase 4A verification passes, its
+  quotes are two-sided for at least 90% of the measured window, every scored fact is
+  defined, and it has no quote gap over five minutes (the Phase 4A gap marker, used as the
+  halt check). Rejected sessions are recorded with the reason and are not replaced by
+  other dates. The calibration fails, rather than fitting on less, unless at least 4 train,
+  1 validation, and 1 test session remain.
+- **Cost.** The `iex` feed only, which Alpaca's free plan includes. The calibration tooling
+  never requests SIP.
 - **Licensing.** Raw and normalized observed data stay in the untracked workspace (ADR
-  0007). See open question 3 for aggregate statistics.
+  0007). The per-session aggregate facts, the report, and the selected config may be
+  committed, like `docs/experiments/`.
 
 ## Making the two families comparable
 
@@ -61,7 +70,12 @@ Facts are therefore computed on one common projection, by one native function:
 - **Synthetic projection.** From a run's trace, emit an L1 record whenever the best bid or
   best ask price or size changes, and a trade record for each trade, both stamped with the
   exchange's simulated time. Depth beyond level 1 is discarded.
-- **Observed projection.** The canonical Phase 4A events, unchanged.
+- **Observed projection.** The canonical Phase 4A events inside the window. A quote that
+  repeats the previous best bid, best ask, and both sizes is not an L1 change and is
+  dropped, so both projections count the same thing.
+- **Measured window.** Trade and arrival facts use the full window. Time-weighted facts
+  start at the first L1 record in the window, because the state before it is unknown for
+  an observed session; no duration is invented.
 - **Prices.** Synthetic ticks are cents (`tick_size_minor` 1). Observed prices are
   micro-dollars and are converted to cents only for tick-denominated spread; relative
   spread uses each side's own units divided by its own midpoint.
@@ -82,10 +96,10 @@ the artifact, and an undefined fact is reported as undefined, never filled in.
 | Arrival | `interarrival_cv` | Coefficient of variation of trade inter-arrival times (burstiness; 1 for Poisson) |
 | Arrival | `empty_minute_share` | Share of the 60 one-minute buckets with no trade |
 | Returns | `trade_return_lag1_autocorr` | Lag-1 autocorrelation of consecutive trade-price changes (bid-ask bounce) |
-| Returns | `midpoint_vol_1m_bps` | Sample standard deviation of 1-minute midpoint log returns, midpoint sampled at minute boundaries only when two-sided, in basis points, not annualized |
+| Returns | `midpoint_vol_1m_bps` | Sample standard deviation of 1-minute simple midpoint returns, the midpoint sampled at minute boundaries and a return taken only between two adjacent two-sided boundaries, in basis points, not annualized |
 | Quote state | `two_sided_share` | Share of window time with both sides present |
 | Quote state | `l1_updates_per_minute` | L1 change records / window minutes |
-| Quote state | `l1_mean_duration_ms` | Mean time between L1 change records |
+| Quote state | `l1_median_duration_ms` | Median time between consecutive L1 change records (the mean would only restate the update rate) |
 
 Locked and crossed time is reported for observed sessions but is not scored: the synthetic
 book cannot lock or cross, and IEX quotes are one venue's book.
@@ -100,8 +114,9 @@ book cannot lock or cross, and IEX quotes are one venue's book.
   `d_f = (V_f - T_f) / S_f`.
 - The score is the root mean square of `d_f` with each of the four groups weighted equally
   and facts weighted equally within a group. The weights are fixed here and not tuned.
-- A candidate is **invalid** if any seed fails, produces fewer than 30 trades, or is
-  two-sided for less than 50% of the window (section 14.3). Invalid candidates are kept in
+- A candidate is **invalid** if any seed fails, produces fewer than 30 trades, is
+  two-sided for less than 50% of the window (section 14.3), or leaves a scored fact
+  undefined. Invalid candidates are kept in
   the artifact and excluded from selection; seeds are never dropped to rescue a candidate.
 
 ## Parameters
@@ -110,7 +125,7 @@ Searched, each over a bounded integer grid declared in the calibration spec:
 
 | Agent group | Parameters |
 | --- | --- |
-| Noise (all four share values) | mean wakeup interval, `market_order_ppm`, `max_quantity`, `limit_offset_ticks` |
+| Noise (all four share values) | mean wakeup interval, `market_order_ppm`, `max_quantity` (within the agents' existing 50-share order limit), `limit_offset_ticks` |
 | Makers (all three share values) | wakeup interval, `half_spread_ticks`, `quote_size`, `level_spacing_ticks` |
 | Fundamental | `volatility_milliticks` |
 
@@ -175,31 +190,40 @@ A new `calibration` family under `workspace/calibrations/<calibration-id>/`, wri
 Verification re-hashes the files, recomputes observed facts from the referenced sessions,
 and re-runs a sample of candidate seeds to the same facts.
 
-## Implementation outline (after acceptance)
+## Implementation
 
-1. Native: synthetic L1 projection, the stylized-fact function over both projections, and
-   the score, with unit tests on hand-built streams and a cross-check that the observed
-   projection's facts agree with Phase 4A metrics where they overlap.
-2. Native CLI `calibrate-score` and a binding call that score one candidate's runs.
-3. Python: calibration spec model, search orchestration as a durable background job,
-   artifact writer, verification, and read-only API endpoints.
-4. Terminal: a read-only calibration report view and the labels above in the run views.
-5. CI exercises the full pipeline on the fabricated fixture sessions, labelled
-   `FABRICATED`; no CI step contacts Alpaca.
-6. The owner runs the real calibration with their credentials; the stored report is the
+1. Native (`core/include/markettwin/calibration/calibration.hpp`): the synthetic L1
+   projection through a read-only `MarketObserver` on the kernel, the observed projection
+   of a Phase 4A session, the facts, the targets, and the score. Unit tests check every
+   fact on hand-built tapes and that observing a run leaves its trace, book, and metrics
+   digests unchanged.
+2. `markettwin calibration-facts` prints the facts of a run config or of a session window;
+   the binding exposes the facts, targets, and score as coarse JSON calls.
+3. Python (`services/api/markettwin_api/calibration_*.py`): the spec model, the seeded
+   draw, the quality gate, the staged search on a thread pool as a durable background job,
+   the artifact writer, verification, and `/api/v1/calibrations`.
+4. Terminal: **Calibration** lists fits and shows each report with its label, every
+   distance, the sessions and gate results, the scores, and the selected parameters.
+5. CI runs the pipeline end to end on ten fabricated sessions with the smaller
+   `configs/calibration/fixture_smoke.json`, labelled `FABRICATED`; no CI step contacts
+   Alpaca.
+6. The owner runs `services/api/scripts/calibrate_aapl.py`; its exported report is the
    Phase 5B evidence, pass or null.
+
+The absolute scale floors, in stored units, are 0.1 cent for spread quantiles, 0.1 bp for
+relative spread and volatility, 1 per minute for trade and L1 rates, 0.01 for the
+coefficient of variation and the autocorrelation, 1 percentage point for empty minutes,
+0.1 percentage point for two-sided time, and 1 ms for the median L1 duration.
 
 Calibration is not exposed as an AI execution tool in Phase 5B. AI tools may read and cite
 a finished calibration report under the claim rules above.
 
-## Open questions for the owner
+## Owner decisions
 
-1. Which symbol, and which ten trading days (default: the ten most recent complete regular
-   sessions before import)?
-2. Confirmation that the IEX historical import is within your Alpaca entitlement and cost
-   expectations for ten one-hour windows.
-3. May aggregate facts and the selected config be committed to Git (like
-   `docs/experiments/`), or must the whole calibration artifact stay in the untracked
-   workspace under Alpaca's terms?
-4. Are the acceptance thresholds above (beat baseline on test, `|d_f| <= 2` on 9 of 12
-   facts) the right bar?
+Recorded on acceptance, 2026-10-20:
+
+1. Symbol AAPL; the ten most recent complete regular sessions before the import.
+2. No paid data: the IEX feed on Alpaca's free plan only.
+3. Aggregate facts, the report, and the selected config may be committed to Git. Raw and
+   normalized observed records stay in the untracked workspace.
+4. The acceptance thresholds above are the bar.

@@ -523,3 +523,154 @@ export interface ExperimentConfig {
   artifacts: "None" | "All";
   limits: { max_runs: number; max_output_bytes: number };
 }
+
+// ---- calibration (Phase 5B, ADR 0011) ----------------------------------------------------
+
+export type CalibrationObservation = "OBSERVED IEX DATA" | "FABRICATED TEST DATA";
+/** Fact values are integers in the unit the report states for each fact. */
+export type FactValues = Record<string, number | null>;
+
+export interface CalibrationSpecSummary {
+  key: string;
+  title: string;
+  symbol: string;
+  feed: string;
+  window: { start_local: string; end_local: string; timezone: string };
+  split: { train: number; validation: number; test: number };
+  search: Record<string, number>;
+  grid: Record<string, number[]>;
+  grid_size: number;
+  sessions_required: number;
+  spec_sha256: string;
+  deviations_from_adr: string[];
+  problems: string[];
+}
+
+export interface CalibrationSessionRef {
+  session_id: string;
+  day: string;
+  role: "train" | "validation" | "test";
+}
+
+export interface Calibration {
+  id: string;
+  spec_key: string;
+  spec_digest: string;
+  title: string;
+  symbol: string;
+  feed: string;
+  observation_kind: CalibrationObservation;
+  status: "pending" | "running" | "completed" | "failed";
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  sessions: CalibrationSessionRef[];
+  progress: { phase: string; completed: number; total: number } | null;
+  headline: {
+    outcome: "fit_holds" | "null_result";
+    label: string;
+    selected: { candidate: number; parameters: Record<string, number> | null } | null;
+    test_score_ppm: number | null;
+    baseline_test_score_ppm: number | null;
+    facts_within: number;
+  } | null;
+  error_code: string | null;
+  error_message: string | null;
+}
+
+export interface CalibrationTargets {
+  sessions: number;
+  reference_price_cents: number | null;
+  mean: FactValues;
+  deviation: FactValues;
+  scale: FactValues;
+}
+
+export interface CalibrationFactScore {
+  mean: number | null;
+  deviation: number | null;
+  distance_ppm: number | null;
+}
+
+export interface CalibrationScore {
+  valid: boolean;
+  invalid_reason: string | null;
+  seeds: number;
+  facts: Record<string, CalibrationFactScore> | null;
+  score_ppm: number | null;
+}
+
+export interface CalibrationReport {
+  calibration_id: string;
+  title: string;
+  symbol: string;
+  feed: string;
+  observation_kind: CalibrationObservation;
+  window: { start_local: string; end_local: string; timezone: string };
+  outcome: "fit_holds" | "null_result";
+  label: string;
+  null_reasons: string[];
+  claim: string;
+  not_claimed: string[];
+  acceptance: {
+    distance_ppm_limit: number;
+    facts_required: number;
+    facts_within: number;
+    beats_baseline: boolean;
+  };
+  deviations_from_adr: string[];
+  sessions: {
+    session_id: string;
+    day: string;
+    role: string;
+    admitted: boolean;
+    rejection_reasons: string[];
+  }[];
+  targets: { train: CalibrationTargets; validation: CalibrationTargets; test: CalibrationTargets };
+  reference_price_cents: number;
+  stage1: {
+    candidates: number;
+    valid: number;
+    invalid: number;
+    fit_ppm_quantiles: Record<string, number | null>;
+    fit_ppm: [number, number][];
+    baseline_fit: CalibrationScore;
+    finalists: number[];
+  };
+  stage2: {
+    candidate: number;
+    parameters: Record<string, number> | null;
+    fit: CalibrationScore;
+    validation: CalibrationScore;
+  }[];
+  selected: { candidate: number; parameters: Record<string, number> | null } | null;
+  test: { selected: CalibrationScore | null; baseline: CalibrationScore | null };
+  sensitivity: Record<
+    string,
+    {
+      stage1_median_fit_by_value: { value: number; candidates: number; median_fit_ppm: number }[];
+      stage2_validation: {
+        candidate: number;
+        value: number | null;
+        validation_ppm: number | null;
+      }[];
+    }
+  >;
+  seeds: Record<string, number[]>;
+}
+
+export interface CalibrationReportView {
+  calibration: Calibration;
+  report: CalibrationReport;
+  spec: Record<string, unknown>;
+  units: Record<string, string>;
+  groups: Record<string, string>;
+  observed: {
+    session_id: string;
+    day: string;
+    role: string;
+    admitted: boolean;
+    rejection_reasons: string[];
+    facts: { facts: FactValues };
+  }[];
+}

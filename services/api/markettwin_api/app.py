@@ -19,6 +19,8 @@ from markettwin_api import API_VERSION, models, views
 from markettwin_api.ai_routes import router as ai_router
 from markettwin_api.ai_service import AIResearch
 from markettwin_api.artifacts import RUN_FILES, ArtifactError, RunStore
+from markettwin_api.calibration_routes import router as calibration_router
+from markettwin_api.calibration_service import CalibrationResearch
 from markettwin_api.historical_routes import router as historical_router
 from markettwin_api.historical_service import HistoricalResearch
 from markettwin_api.live_routes import router as live_router
@@ -79,6 +81,7 @@ def health(research: ResearchDep) -> Any:
             "historical": build["historical_schema"],
             "historical_normalization": build["historical_normalization_version"],
             "live": build["live_schema"],
+            "calibration": build["calibration_schema"],
         },
         "active_jobs": research.outstanding_jobs,
         "max_concurrent_jobs": settings.max_concurrent_jobs,
@@ -388,6 +391,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.research = Research(resolved)
         app.state.ai = AIResearch(app.state.research)
         app.state.historical = HistoricalResearch(app.state.research)
+        app.state.calibration = CalibrationResearch(app.state.research, app.state.historical)
         # The live hub is isolated from the rest of the service: it owns its own tasks,
         # and a feed that cannot start leaves every other route working.
         app.state.live = LiveService(app.state.research, app.state.historical)
@@ -396,6 +400,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             yield
         finally:
             await app.state.live.close()
+            app.state.calibration.close()
             app.state.ai.close()
             app.state.research.close()
 
@@ -449,5 +454,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(router)
     app.include_router(ai_router)
     app.include_router(historical_router)
+    app.include_router(calibration_router)
     app.include_router(live_router)
     return app
