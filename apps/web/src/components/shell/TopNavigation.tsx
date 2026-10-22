@@ -19,6 +19,7 @@ import { Wordmark } from "./Wordmark";
 const SECTIONS = [
   { to: "/", label: "Overview", end: true },
   { to: "/simulations", label: "Simulations", match: ["/simulations", "/runs"] },
+  { to: "/desks/new", label: "AI Desk", match: ["/desks"] },
   { to: "/experiments", label: "Experiments" },
   { to: "/historical", label: "Historical" },
   { to: "/calibration", label: "Calibration" },

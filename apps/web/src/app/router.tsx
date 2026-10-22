@@ -18,8 +18,8 @@ function NotFound() {
             </Button>
           }
         >
-          The terminal has Overview, Simulations, Experiments, Historical, Calibration, Live
-          Markets, AI Research, and Replay.
+          The terminal has Overview, Simulations, AI Desk, Experiments, Historical, Calibration,
+          Live Markets, AI Research, and Replay.
         </EmptyState>
       </div>
     </Page>
@@ -77,7 +77,25 @@ export function createRouter() {
                   .ReplayInspectorPage,
               }),
             },
+            {
+              path: "timeline",
+              lazy: async () => ({
+                Component: (await import("@/features/timelines/TimelinePage")).TimelinePage,
+              }),
+            },
+            {
+              path: "desk",
+              lazy: async () => ({
+                Component: (await import("@/features/desk/DeskPage")).DeskPage,
+              }),
+            },
           ],
+        },
+        {
+          path: "desks/new",
+          lazy: async () => ({
+            Component: (await import("@/features/desk/NewDeskPage")).NewDeskPage,
+          }),
         },
         {
           path: "experiments",

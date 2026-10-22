@@ -10,6 +10,8 @@ import type {
   Calibration,
   CalibrationReportView,
   CalibrationSpecSummary,
+  DeskDecisions,
+  DivergenceView,
   EventPage,
   ExperimentDetail,
   ExperimentList,
@@ -24,6 +26,7 @@ import type {
   HistoricalSample,
   HistoricalSession,
   LedgerPage,
+  LedgerView,
   MarketSeries,
   PairedValuesDocument,
   ReplayView,
@@ -33,6 +36,7 @@ import type {
   SampleWindow,
   ScenarioDetail,
   ScenarioSummary,
+  Timeline,
   TradePage,
 } from "./types";
 
@@ -359,4 +363,42 @@ export const pairedValuesQuery = (experimentId: string, enabled: boolean) =>
       ).document,
     staleTime: FOREVER,
     enabled,
+  });
+
+// ---- Phase 6: timeline forks and the AI desk (ADR 0012) --------------------------------
+
+export const timelineQuery = (runId: string) =>
+  queryOptions({
+    queryKey: ["runs", runId, "timeline"],
+    queryFn: ({ signal }) => get<Timeline>(`/runs/${runId}/timeline`, undefined, signal),
+    refetchInterval: (query) =>
+      query.state.data?.nodes.some((node) => active(node.status)) ? 800 : 10_000,
+  });
+
+// A verified fork report never changes.
+export const divergenceQuery = (runId: string, enabled: boolean) =>
+  queryOptions({
+    queryKey: ["runs", runId, "divergence"],
+    queryFn: ({ signal }) => get<DivergenceView>(`/runs/${runId}/divergence`, undefined, signal),
+    enabled,
+    staleTime: FOREVER,
+  });
+
+export const decisionsQuery = (runId: string, enabled: boolean) =>
+  queryOptions({
+    queryKey: ["runs", runId, "decisions"],
+    queryFn: ({ signal }) => get<DeskDecisions>(`/runs/${runId}/decisions`, undefined, signal),
+    enabled,
+    staleTime: FOREVER,
+  });
+
+export const decisionLedgerQuery = (runId: string, enabled: boolean) =>
+  queryOptions({
+    queryKey: ["runs", runId, "decision-ledger"],
+    queryFn: ({ signal }) => get<LedgerView>(`/runs/${runId}/decision-ledger`, undefined, signal),
+    enabled,
+    refetchInterval: (query) => {
+      const status = query.state.data?.ledger?.status;
+      return status === "pending" || status === "running" ? 800 : false;
+    },
   });

@@ -340,6 +340,9 @@ class Timelines:
             for position, item in enumerate(items):
                 end = items[position + 1]["at_ns"] if position + 1 < len(items) else None
                 changed = previous is not None and not _same(previous, item["directive"])
+                # A decision at the horizon has no interval left to be worth anything.
+                final = item["at_ns"] >= run["horizon_ns"]
+                status = "at_horizon" if final else "pending" if changed else "unchanged"
                 entries.append(
                     {
                         "agent_id": agent,
@@ -348,9 +351,9 @@ class Timelines:
                         "end_ns": end,
                         "from": previous,
                         "to": item["directive"],
-                        "status": "pending" if changed else "unchanged",
+                        "status": status,
                         "fork_run_id": None,
-                        "value_minor": None if changed else 0,
+                        "value_minor": None if status == "pending" else 0,
                         "error": None,
                     }
                 )

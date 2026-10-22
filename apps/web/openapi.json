@@ -3473,6 +3473,400 @@
         }
       }
     },
+    "/api/v1/runs/{run_id}/forks": {
+      "post": {
+        "tags": [
+          "Timelines"
+        ],
+        "summary": "Create Fork",
+        "operationId": "create_fork_api_v1_runs__run_id__forks_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Fork Api V1 Runs  Run Id  Forks Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{run_id}/timeline": {
+      "get": {
+        "tags": [
+          "Timelines"
+        ],
+        "summary": "Timeline",
+        "operationId": "timeline_api_v1_runs__run_id__timeline_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Timeline Api V1 Runs  Run Id  Timeline Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{run_id}/divergence": {
+      "get": {
+        "tags": [
+          "Timelines"
+        ],
+        "summary": "Divergence",
+        "operationId": "divergence_api_v1_runs__run_id__divergence_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Divergence Api V1 Runs  Run Id  Divergence Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{run_id}/decisions": {
+      "get": {
+        "tags": [
+          "Timelines"
+        ],
+        "summary": "Decisions",
+        "operationId": "decisions_api_v1_runs__run_id__decisions_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Decisions Api V1 Runs  Run Id  Decisions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{run_id}/decision-ledger": {
+      "get": {
+        "tags": [
+          "Timelines"
+        ],
+        "summary": "Ledger",
+        "operationId": "ledger_api_v1_runs__run_id__decision_ledger_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Ledger Api V1 Runs  Run Id  Decision Ledger Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Timelines"
+        ],
+        "summary": "Start Ledger",
+        "operationId": "start_ledger_api_v1_runs__run_id__decision_ledger_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Start Ledger Api V1 Runs  Run Id  Decision Ledger Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{run_id}/repeat": {
+      "post": {
+        "tags": [
+          "Timelines"
+        ],
+        "summary": "Repeat",
+        "operationId": "repeat_api_v1_runs__run_id__repeat_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RepeatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Repeat Api V1 Runs  Run Id  Repeat Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/desks/estimate": {
+      "post": {
+        "tags": [
+          "Timelines"
+        ],
+        "summary": "Estimate",
+        "operationId": "estimate_api_v1_desks_estimate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Estimate Api V1 Desks Estimate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/desks": {
+      "post": {
+        "tags": [
+          "Timelines"
+        ],
+        "summary": "Create Desk",
+        "operationId": "create_desk_api_v1_desks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Desk Api V1 Desks Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/live/status": {
       "get": {
         "tags": [
@@ -4628,6 +5022,204 @@
         ],
         "title": "DatasetsView"
       },
+      "DeskRequest": {
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]{1,64}$",
+            "title": "Scenario"
+          },
+          "agent_id": {
+            "type": "integer",
+            "maximum": 1048575.0,
+            "minimum": 1.0,
+            "title": "Agent Id"
+          },
+          "seed": {
+            "type": "integer",
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Seed",
+            "default": 42
+          },
+          "horizon_ns": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1e+18,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizon Ns"
+          },
+          "mandate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "pattern": "^[ -~\\n]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mandate"
+          },
+          "decision_interval_ns": {
+            "type": "integer",
+            "maximum": 1000000000000000.0,
+            "minimum": 1000000.0,
+            "title": "Decision Interval Ns",
+            "default": 60000000000
+          },
+          "max_half_spread_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 1.0,
+            "title": "Max Half Spread Ticks",
+            "default": 20
+          },
+          "max_skew_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 0.0,
+            "title": "Max Skew Ticks",
+            "default": 10
+          },
+          "initial": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DirectiveModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "model",
+              "fixture"
+            ],
+            "title": "Source",
+            "default": "fixture"
+          },
+          "approved_calls": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Calls"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario",
+          "agent_id"
+        ],
+        "title": "DeskRequest"
+      },
+      "DirectiveModel": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "quote",
+              "pause",
+              "reduce"
+            ],
+            "title": "Mode"
+          },
+          "half_spread_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 1.0,
+            "title": "Half Spread Ticks",
+            "description": "Distance of each quote",
+            "unit": "ticks"
+          },
+          "skew_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": -1000000000.0,
+            "title": "Skew Ticks",
+            "description": "Shift of both quotes; positive is higher",
+            "unit": "ticks"
+          },
+          "quote_size": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Quote Size",
+            "description": "Size of each quote",
+            "unit": "shares"
+          },
+          "levels": {
+            "type": "integer",
+            "maximum": 32.0,
+            "minimum": 1.0,
+            "title": "Levels",
+            "description": "Quotes per side",
+            "unit": "levels"
+          },
+          "max_position": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Max Position",
+            "description": "The desk's own position cap",
+            "unit": "shares"
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 280,
+            "pattern": "^[ -~]*$",
+            "title": "Rationale"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mode",
+          "half_spread_ticks",
+          "skew_ticks",
+          "quote_size",
+          "levels",
+          "max_position",
+          "rationale"
+        ],
+        "title": "DirectiveModel",
+        "description": "One AI desk decision (ADR 0012). The core checks it against the desk's bounds."
+      },
+      "DirectiveOverrideModel": {
+        "properties": {
+          "agent_id": {
+            "type": "integer",
+            "maximum": 1048575.0,
+            "minimum": 1.0,
+            "title": "Agent Id"
+          },
+          "directive": {
+            "$ref": "#/components/schemas/DirectiveModel"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "agent_id",
+          "directive"
+        ],
+        "title": "DirectiveOverrideModel"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -5639,6 +6231,154 @@
         ],
         "title": "FieldSpec"
       },
+      "ForkRequest": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "at_ns": {
+            "type": "integer",
+            "maximum": 1e+18,
+            "minimum": 0.0,
+            "title": "At Ns"
+          },
+          "add_shocks": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/FundamentalJumpShock"
+                },
+                {
+                  "$ref": "#/components/schemas/LiquidityWithdrawalShock"
+                },
+                {
+                  "$ref": "#/components/schemas/VolatilityRegimeShock"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderFlowImbalanceShock"
+                },
+                {
+                  "$ref": "#/components/schemas/LatencyDegradationShock"
+                },
+                {
+                  "$ref": "#/components/schemas/QuoteWithdrawalStressShock"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "kind",
+                "mapping": {
+                  "FundamentalJump": "#/components/schemas/FundamentalJumpShock",
+                  "LatencyDegradation": "#/components/schemas/LatencyDegradationShock",
+                  "LiquidityWithdrawal": "#/components/schemas/LiquidityWithdrawalShock",
+                  "OrderFlowImbalance": "#/components/schemas/OrderFlowImbalanceShock",
+                  "QuoteWithdrawalStress": "#/components/schemas/QuoteWithdrawalStressShock",
+                  "VolatilityRegime": "#/components/schemas/VolatilityRegimeShock"
+                }
+              }
+            },
+            "type": "array",
+            "maxItems": 64,
+            "title": "Add Shocks"
+          },
+          "remove_shocks": {
+            "items": {
+              "type": "integer",
+              "maximum": 1023.0,
+              "minimum": 0.0
+            },
+            "type": "array",
+            "maxItems": 64,
+            "title": "Remove Shocks"
+          },
+          "policy_overrides": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyOverrideModel"
+            },
+            "type": "array",
+            "maxItems": 64,
+            "title": "Policy Overrides"
+          },
+          "horizon_ns": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1e+18,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizon Ns"
+          },
+          "decisions": {
+            "type": "string",
+            "enum": [
+              "hold",
+              "parent",
+              "live"
+            ],
+            "title": "Decisions",
+            "default": "hold"
+          },
+          "directive_overrides": {
+            "items": {
+              "$ref": "#/components/schemas/DirectiveOverrideModel"
+            },
+            "type": "array",
+            "maxItems": 64,
+            "title": "Directive Overrides"
+          }
+        },
+        "type": "object",
+        "required": [
+          "at_ns"
+        ],
+        "title": "ForkRequest",
+        "description": "One change to a finished run from `at_ns` on. Every other field may be left out."
+      },
+      "FundamentalJumpShock": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "FundamentalJump",
+            "title": "Kind"
+          },
+          "at_ns": {
+            "type": "integer",
+            "maximum": 1e+18,
+            "minimum": 0.0,
+            "title": "At Ns",
+            "description": "Instant of the jump",
+            "unit": "ns"
+          },
+          "delta_milliticks": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": -1000000000000.0,
+            "title": "Delta Milliticks",
+            "description": "Shift of the latent value and its anchor; nonzero",
+            "unit": "milliticks"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "at_ns",
+          "delta_milliticks"
+        ],
+        "title": "FundamentalJumpShock"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -5953,6 +6693,93 @@
         ],
         "title": "Intent"
       },
+      "InventoryMarketMakerPolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "InventoryMarketMaker",
+            "title": "Kind"
+          },
+          "half_spread_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 1.0,
+            "title": "Half Spread Ticks",
+            "description": "Distance of the first quote from the reservation price",
+            "unit": "ticks"
+          },
+          "quote_size": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Quote Size",
+            "description": "Size of each quote",
+            "unit": "shares"
+          },
+          "levels": {
+            "type": "integer",
+            "maximum": 32.0,
+            "minimum": 1.0,
+            "title": "Levels",
+            "description": "Quotes per side",
+            "unit": "levels"
+          },
+          "level_spacing_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 1.0,
+            "title": "Level Spacing Ticks",
+            "description": "Distance between quote levels",
+            "unit": "ticks"
+          },
+          "risk_aversion_ppm": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Risk Aversion Ppm",
+            "description": "Weight of inventory risk in the reservation price",
+            "unit": "ppm"
+          },
+          "volatility_alpha_ppm": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Volatility Alpha Ppm",
+            "description": "EWMA weight of the variance estimate",
+            "unit": "ppm"
+          },
+          "volatility_floor_milliticks": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Volatility Floor Milliticks",
+            "description": "Floor of the volatility estimate",
+            "unit": "milliticks"
+          },
+          "max_skew_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 0.0,
+            "title": "Max Skew Ticks",
+            "description": "Clamp on the inventory skew and widening",
+            "unit": "ticks"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "half_spread_ticks",
+          "quote_size",
+          "levels",
+          "level_spacing_ticks",
+          "risk_aversion_ppm",
+          "volatility_alpha_ppm",
+          "volatility_floor_milliticks",
+          "max_skew_ticks"
+        ],
+        "title": "InventoryMarketMakerPolicy"
+      },
       "InvestigationList": {
         "properties": {
           "total": {
@@ -6216,6 +7043,79 @@
         ],
         "title": "InvestigationView"
       },
+      "LatencyDegradationShock": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "LatencyDegradation",
+            "title": "Kind"
+          },
+          "start_ns": {
+            "type": "integer",
+            "maximum": 1e+18,
+            "minimum": 0.0,
+            "title": "Start Ns",
+            "description": "Start of the interval (inclusive)",
+            "unit": "ns"
+          },
+          "end_ns": {
+            "type": "integer",
+            "maximum": 1e+18,
+            "minimum": 1.0,
+            "title": "End Ns",
+            "description": "End of the interval (exclusive)",
+            "unit": "ns"
+          },
+          "agents": {
+            "items": {
+              "type": "integer",
+              "maximum": 1048575.0,
+              "minimum": 1.0
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Agents",
+            "description": "Agents whose delays are raised",
+            "unit": "ids"
+          },
+          "added_order_entry_ns": {
+            "type": "integer",
+            "maximum": 1000000000000000.0,
+            "minimum": 0.0,
+            "title": "Added Order Entry Ns",
+            "description": "Delay added to orders and cancels",
+            "unit": "ns"
+          },
+          "added_report_ns": {
+            "type": "integer",
+            "maximum": 1000000000000000.0,
+            "minimum": 0.0,
+            "title": "Added Report Ns",
+            "description": "Delay added to order reports and fills",
+            "unit": "ns"
+          },
+          "added_market_data_ns": {
+            "type": "integer",
+            "maximum": 1000000000000000.0,
+            "minimum": 0.0,
+            "title": "Added Market Data Ns",
+            "description": "Delay added to top-of-book updates",
+            "unit": "ns"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "start_ns",
+          "end_ns",
+          "agents",
+          "added_order_entry_ns",
+          "added_report_ns",
+          "added_market_data_ns"
+        ],
+        "title": "LatencyDegradationShock"
+      },
       "LedgerPage": {
         "properties": {
           "total": {
@@ -6339,6 +7239,112 @@
         ],
         "title": "LedgerRow"
       },
+      "LiquidityWithdrawalShock": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "LiquidityWithdrawal",
+            "title": "Kind"
+          },
+          "start_ns": {
+            "type": "integer",
+            "maximum": 1e+18,
+            "minimum": 0.0,
+            "title": "Start Ns",
+            "description": "Start of the interval (inclusive)",
+            "unit": "ns"
+          },
+          "end_ns": {
+            "type": "integer",
+            "maximum": 1e+18,
+            "minimum": 1.0,
+            "title": "End Ns",
+            "description": "End of the interval (exclusive)",
+            "unit": "ns"
+          },
+          "agents": {
+            "items": {
+              "type": "integer",
+              "maximum": 1048575.0,
+              "minimum": 1.0
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Agents",
+            "description": "Market makers whose quote size is scaled",
+            "unit": "ids"
+          },
+          "quote_size_ppm": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Quote Size Ppm",
+            "description": "Scale applied to quote size; 0 withdraws entirely",
+            "unit": "ppm"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "start_ns",
+          "end_ns",
+          "agents",
+          "quote_size_ppm"
+        ],
+        "title": "LiquidityWithdrawalShock"
+      },
+      "MarketMakerPolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "MarketMaker",
+            "title": "Kind"
+          },
+          "half_spread_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 1.0,
+            "title": "Half Spread Ticks",
+            "description": "Distance of the first quote from the reference",
+            "unit": "ticks"
+          },
+          "quote_size": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Quote Size",
+            "description": "Size of each quote",
+            "unit": "shares"
+          },
+          "levels": {
+            "type": "integer",
+            "maximum": 32.0,
+            "minimum": 1.0,
+            "title": "Levels",
+            "description": "Quotes per side",
+            "unit": "levels"
+          },
+          "level_spacing_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 1.0,
+            "title": "Level Spacing Ticks",
+            "description": "Distance between quote levels",
+            "unit": "ticks"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "half_spread_ticks",
+          "quote_size",
+          "levels",
+          "level_spacing_ticks"
+        ],
+        "title": "MarketMakerPolicy"
+      },
       "MarketSeries": {
         "properties": {
           "sample_count": {
@@ -6447,6 +7453,270 @@
         ],
         "title": "Message"
       },
+      "ModelDirectedPolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "ModelDirected",
+            "title": "Kind"
+          },
+          "initial": {
+            "$ref": "#/components/schemas/DirectiveModel"
+          },
+          "decision_interval_ns": {
+            "type": "integer",
+            "maximum": 1000000000000000.0,
+            "minimum": 1000000.0,
+            "title": "Decision Interval Ns",
+            "description": "Time between decisions",
+            "unit": "ns"
+          },
+          "max_half_spread_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 1.0,
+            "title": "Max Half Spread Ticks",
+            "description": "Widest half spread a decision may set",
+            "unit": "ticks"
+          },
+          "max_skew_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 0.0,
+            "title": "Max Skew Ticks",
+            "description": "Largest skew a decision may set",
+            "unit": "ticks"
+          },
+          "mandate": {
+            "type": "string",
+            "maxLength": 2000,
+            "pattern": "^[ -~\\n]*$",
+            "title": "Mandate"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "initial",
+          "decision_interval_ns",
+          "max_half_spread_ticks",
+          "max_skew_ticks",
+          "mandate"
+        ],
+        "title": "ModelDirectedPolicy"
+      },
+      "MomentumPolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "Momentum",
+            "title": "Kind"
+          },
+          "short_window": {
+            "type": "integer",
+            "maximum": 4095.0,
+            "minimum": 1.0,
+            "title": "Short Window",
+            "description": "Short moving-average window",
+            "unit": "samples"
+          },
+          "long_window": {
+            "type": "integer",
+            "maximum": 4096.0,
+            "minimum": 2.0,
+            "title": "Long Window",
+            "description": "Long moving-average window",
+            "unit": "samples"
+          },
+          "threshold_milliticks": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": 0.0,
+            "title": "Threshold Milliticks",
+            "description": "Signal needed to trade",
+            "unit": "milliticks"
+          },
+          "order_size": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Order Size",
+            "description": "Size of each order",
+            "unit": "shares"
+          },
+          "slippage_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 0.0,
+            "title": "Slippage Ticks",
+            "description": "How far through the touch the IOC limit is set",
+            "unit": "ticks"
+          },
+          "cooldown_ns": {
+            "type": "integer",
+            "maximum": 1000000000000000.0,
+            "minimum": 0.0,
+            "title": "Cooldown Ns",
+            "description": "Minimum time between orders",
+            "unit": "ns"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "short_window",
+          "long_window",
+          "threshold_milliticks",
+          "order_size",
+          "slippage_ticks",
+          "cooldown_ns"
+        ],
+        "title": "MomentumPolicy"
+      },
+      "NoisePolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "Noise",
+            "title": "Kind"
+          },
+          "buy_probability_ppm": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Buy Probability Ppm",
+            "description": "Probability an order is a buy",
+            "unit": "ppm"
+          },
+          "market_order_ppm": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Market Order Ppm",
+            "description": "Probability an order is a market order",
+            "unit": "ppm"
+          },
+          "min_quantity": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Min Quantity",
+            "description": "Smallest order",
+            "unit": "shares"
+          },
+          "max_quantity": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Max Quantity",
+            "description": "Largest order",
+            "unit": "shares"
+          },
+          "limit_offset_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 0.0,
+            "title": "Limit Offset Ticks",
+            "description": "Largest distance of a limit order from the reference",
+            "unit": "ticks"
+          },
+          "max_resting_orders": {
+            "type": "integer",
+            "maximum": 4095.0,
+            "minimum": 1.0,
+            "title": "Max Resting Orders",
+            "description": "Resting orders kept before the oldest is canceled",
+            "unit": "orders"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "buy_probability_ppm",
+          "market_order_ppm",
+          "min_quantity",
+          "max_quantity",
+          "limit_offset_ticks",
+          "max_resting_orders"
+        ],
+        "title": "NoisePolicy"
+      },
+      "OrderFlowImbalanceShock": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "OrderFlowImbalance",
+            "title": "Kind"
+          },
+          "start_ns": {
+            "type": "integer",
+            "maximum": 1e+18,
+            "minimum": 0.0,
+            "title": "Start Ns",
+            "description": "Start of the interval (inclusive)",
+            "unit": "ns"
+          },
+          "end_ns": {
+            "type": "integer",
+            "maximum": 1e+18,
+            "minimum": 1.0,
+            "title": "End Ns",
+            "description": "End of the interval (exclusive)",
+            "unit": "ns"
+          },
+          "agents": {
+            "items": {
+              "type": "integer",
+              "maximum": 1048575.0,
+              "minimum": 1.0
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Agents",
+            "description": "Noise traders whose order flow is shifted",
+            "unit": "ids"
+          },
+          "buy_probability_ppm": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Buy Probability Ppm",
+            "description": "Probability that an order buys, replacing the agent's own",
+            "unit": "ppm"
+          },
+          "market_order_ppm": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Market Order Ppm",
+            "description": "Share of orders sent at market, replacing the agent's own",
+            "unit": "ppm"
+          },
+          "arrival_rate_ppm": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 10000.0,
+            "title": "Arrival Rate Ppm",
+            "description": "Arrival rate as a share of the agent's own; 2e6 doubles it",
+            "unit": "ppm"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "start_ns",
+          "end_ns",
+          "agents",
+          "buy_probability_ppm",
+          "market_order_ppm",
+          "arrival_rate_ppm"
+        ],
+        "title": "OrderFlowImbalanceShock"
+      },
       "PairedValues": {
         "properties": {
           "document": {
@@ -6461,6 +7731,57 @@
           "document"
         ],
         "title": "PairedValues"
+      },
+      "PolicyOverrideModel": {
+        "properties": {
+          "agent_id": {
+            "type": "integer",
+            "maximum": 1048575.0,
+            "minimum": 1.0,
+            "title": "Agent Id"
+          },
+          "policy": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MarketMakerPolicy"
+              },
+              {
+                "$ref": "#/components/schemas/InventoryMarketMakerPolicy"
+              },
+              {
+                "$ref": "#/components/schemas/MomentumPolicy"
+              },
+              {
+                "$ref": "#/components/schemas/ValuePolicy"
+              },
+              {
+                "$ref": "#/components/schemas/NoisePolicy"
+              },
+              {
+                "$ref": "#/components/schemas/ModelDirectedPolicy"
+              }
+            ],
+            "title": "Policy",
+            "discriminator": {
+              "propertyName": "kind",
+              "mapping": {
+                "InventoryMarketMaker": "#/components/schemas/InventoryMarketMakerPolicy",
+                "MarketMaker": "#/components/schemas/MarketMakerPolicy",
+                "ModelDirected": "#/components/schemas/ModelDirectedPolicy",
+                "Momentum": "#/components/schemas/MomentumPolicy",
+                "Noise": "#/components/schemas/NoisePolicy",
+                "Value": "#/components/schemas/ValuePolicy"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "agent_id",
+          "policy"
+        ],
+        "title": "PolicyOverrideModel"
       },
       "PolicySpec": {
         "properties": {
@@ -6553,6 +7874,43 @@
         ],
         "title": "ProvidersView"
       },
+      "QuoteWithdrawalStressShock": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "QuoteWithdrawalStress",
+            "title": "Kind"
+          },
+          "at_ns": {
+            "type": "integer",
+            "maximum": 1e+18,
+            "minimum": 0.0,
+            "title": "At Ns",
+            "description": "Instant of the cancel surge",
+            "unit": "ns"
+          },
+          "agents": {
+            "items": {
+              "type": "integer",
+              "maximum": 1048575.0,
+              "minimum": 1.0
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Agents",
+            "description": "Agents that cancel every working order",
+            "unit": "ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "at_ns",
+          "agents"
+        ],
+        "title": "QuoteWithdrawalStressShock"
+      },
       "RecordPageView": {
         "properties": {
           "session_id": {
@@ -6591,6 +7949,26 @@
           "next_offset"
         ],
         "title": "RecordPageView"
+      },
+      "RepeatRequest": {
+        "properties": {
+          "seeds": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 2.0,
+            "title": "Seeds",
+            "default": 20
+          },
+          "first_seed": {
+            "type": "integer",
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "First Seed",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "title": "RepeatRequest"
       },
       "ReplayView": {
         "properties": {
@@ -7232,7 +8610,9 @@
             "type": "string",
             "enum": [
               "user",
-              "experiment_cell"
+              "experiment_cell",
+              "fork",
+              "ledger"
             ],
             "title": "Source Kind"
           },
@@ -7267,6 +8647,55 @@
                 "type": "null"
               }
             ]
+          },
+          "parent_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Run Id"
+          },
+          "fork_at_ns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fork At Ns"
+          },
+          "fork_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "verified",
+                  "failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fork Status"
+          },
+          "desk": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desk"
           },
           "indexing_ms": {
             "anyOf": [
@@ -7626,7 +9055,9 @@
             "type": "string",
             "enum": [
               "user",
-              "experiment_cell"
+              "experiment_cell",
+              "fork",
+              "ledger"
             ],
             "title": "Source Kind"
           },
@@ -7661,6 +9092,55 @@
                 "type": "null"
               }
             ]
+          },
+          "parent_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Run Id"
+          },
+          "fork_at_ns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fork At Ns"
+          },
+          "fork_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "verified",
+                  "failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fork Status"
+          },
+          "desk": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desk"
           }
         },
         "type": "object",
@@ -8545,6 +10025,99 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "ValuePolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "Value",
+            "title": "Kind"
+          },
+          "estimate_noise_milliticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 0.0,
+            "title": "Estimate Noise Milliticks",
+            "description": "Standard deviation of the fundamental estimate",
+            "unit": "milliticks"
+          },
+          "threshold_milliticks": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": 0.0,
+            "title": "Threshold Milliticks",
+            "description": "Edge needed to trade",
+            "unit": "milliticks"
+          },
+          "order_size": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Order Size",
+            "description": "Size per threshold of edge",
+            "unit": "shares"
+          },
+          "slippage_ticks": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 0.0,
+            "title": "Slippage Ticks",
+            "description": "How far through the touch the IOC limit is set",
+            "unit": "ticks"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "estimate_noise_milliticks",
+          "threshold_milliticks",
+          "order_size",
+          "slippage_ticks"
+        ],
+        "title": "ValuePolicy"
+      },
+      "VolatilityRegimeShock": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "VolatilityRegime",
+            "title": "Kind"
+          },
+          "start_ns": {
+            "type": "integer",
+            "maximum": 1e+18,
+            "minimum": 0.0,
+            "title": "Start Ns",
+            "description": "Start of the interval (inclusive)",
+            "unit": "ns"
+          },
+          "end_ns": {
+            "type": "integer",
+            "maximum": 1e+18,
+            "minimum": 1.0,
+            "title": "End Ns",
+            "description": "End of the interval (exclusive)",
+            "unit": "ns"
+          },
+          "volatility_ppm": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Volatility Ppm",
+            "description": "Scale applied to fundamental step volatility",
+            "unit": "ppm"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "start_ns",
+          "end_ns",
+          "volatility_ppm"
+        ],
+        "title": "VolatilityRegimeShock"
       }
     }
   }

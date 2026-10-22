@@ -144,7 +144,10 @@ def test_an_ai_desk_records_decisions_and_its_ledger_forks_each_one(client: Test
     )["ledger"]
     assert ledger["status"] == "completed", ledger
     assert len(ledger["entries"]) == 10
-    changed = [entry for entry in ledger["entries"] if entry["status"] != "unchanged"]
+    changed = [
+        entry for entry in ledger["entries"] if entry["status"] not in ("unchanged", "at_horizon")
+    ]
+    assert ledger["entries"][-1]["status"] == "at_horizon"
     assert changed, "the fixture changes its directive at least once in five minutes"
     for entry in changed:
         assert entry["status"] == "completed"

@@ -41,6 +41,10 @@ const CELL_DIFFER: StatusSpec = {
   glyph: "diamond",
 };
 
+const FORK_VERIFIED: StatusSpec = { label: "Fork prefix verified", tone: "positive", glyph: "dot" };
+const FORK_FAILED: StatusSpec = { label: "Fork not verified", tone: "negative", glyph: "cross" };
+const FORK_PENDING: StatusSpec = { label: "Fork", tone: "muted", glyph: "ring" };
+
 /** The frame of one run: its identity and provenance stay in view across its screens. */
 export function RunLayout() {
   const { runId = "" } = useParams();
@@ -54,7 +58,11 @@ export function RunLayout() {
     ? "agents"
     : location.pathname.startsWith(`${base}/replay`)
       ? "replay"
-      : "market";
+      : location.pathname.startsWith(`${base}/timeline`)
+        ? "timeline"
+        : location.pathname.startsWith(`${base}/desk`)
+          ? "desk"
+          : "market";
 
   const context = (
     <ContextBar
@@ -77,6 +85,17 @@ export function RunLayout() {
             {run.status === "completed" ? (
               <StatusIndicator spec={REPLAY_STATUS[run.replay.status]} />
             ) : null}
+            {run.parent_run_id ? (
+              <StatusIndicator
+                spec={
+                  run.fork_status === "verified"
+                    ? FORK_VERIFIED
+                    : run.fork_status === "failed"
+                      ? FORK_FAILED
+                      : FORK_PENDING
+                }
+              />
+            ) : null}
             {run.cell && run.cell.digests_match !== null ? (
               <StatusIndicator spec={run.cell.digests_match ? CELL_MATCH : CELL_DIFFER} />
             ) : null}
@@ -91,6 +110,10 @@ export function RunLayout() {
             { to: base, label: "Microscope", active: view === "market" },
             { to: `${base}/agents`, label: "Agents", active: view === "agents" },
             { to: `${base}/replay`, label: "Replay", active: view === "replay" },
+            { to: `${base}/timeline`, label: "Timelines", active: view === "timeline" },
+            ...(run.desk
+              ? [{ to: `${base}/desk`, label: "AI Desk", active: view === "desk" }]
+              : []),
           ]}
         />
       ) : null}

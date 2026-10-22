@@ -674,3 +674,211 @@ export interface CalibrationReportView {
     facts: { facts: FactValues };
   }[];
 }
+
+// ---- Phase 6: timeline forks and the AI desk (ADR 0012) --------------------------------
+// These endpoints return documents the core wrote; their shapes are stated here.
+
+export interface Directive {
+  mode: "quote" | "pause" | "reduce";
+  half_spread_ticks: number;
+  skew_ticks: number;
+  quote_size: number;
+  levels: number;
+  max_position: number;
+  rationale: string;
+}
+
+export interface ForkStageRequest {
+  at_ns: number;
+  add_shocks?: Record<string, unknown>[];
+  remove_shocks?: number[];
+  policy_overrides?: { agent_id: number; policy: Record<string, unknown> }[];
+  horizon_ns?: number | null;
+  decisions?: "hold" | "parent" | "live";
+  directive_overrides?: { agent_id: number; directive: Directive }[];
+}
+
+export interface DeskInfo {
+  source: "model" | "fixture" | "recorded";
+  model: string | null;
+  agents: number[];
+  mandate: string | null;
+  decisions?: number;
+  label?: string;
+  usage?: {
+    calls: number;
+    failures: number;
+    input_tokens: number;
+    output_tokens: number;
+    cost_usd: string | null;
+  };
+}
+
+export interface TimelineNode {
+  id: string;
+  name: string;
+  status: RunStatus;
+  source_kind: string;
+  parent_run_id: string | null;
+  fork_at_ns: number | null;
+  fork_status: "verified" | "failed" | null;
+  title: string | null;
+  stage: ForkStageRequest | null;
+  desk: DeskInfo | null;
+  created_at: string;
+  horizon_ns: number;
+  divergence_ns: number | null;
+  prefix_records: number | null;
+}
+
+export interface Timeline {
+  root_id: string;
+  focus_id: string;
+  label: string;
+  nodes: TimelineNode[];
+}
+
+export interface TraceRecord {
+  kind: string;
+  timestamp_ns: number;
+  sequence: number;
+  actor_id: number | null;
+  correlation_id: number | null;
+  payload: Record<string, unknown>;
+}
+
+export interface Divergence {
+  timestamp_ns: number | null;
+  parent: TraceRecord | null;
+  fork: TraceRecord | null;
+}
+
+export interface Compared {
+  parent: number | null;
+  fork: number | null;
+  difference: number | null;
+}
+
+export interface ForkReport {
+  label: string;
+  parent_run_id: string;
+  fork_run_id: string;
+  stage: number;
+  at_ns: number;
+  prefix: {
+    commands: number;
+    execution: number;
+    records: number;
+    digest: string;
+    fork_point_sequence: number;
+  };
+  divergence: { first: Divergence | null; first_market: Divergence | null };
+  agents: {
+    agent_id: number;
+    parent_policy: string;
+    fork_policy: string;
+    values: Record<string, Compared>;
+  }[];
+  window: {
+    end_ns: number;
+    agents: { agent_id: number; values: Record<string, Compared> }[];
+  } | null;
+  market: {
+    trades: Compared;
+    events: Compared;
+    samples: {
+      timestamp_ns: number;
+      parent: { mid_milliticks: number | null; spread_ticks: number | null };
+      fork: { mid_milliticks: number | null; spread_ticks: number | null };
+      mid_gap_milliticks: number | null;
+    }[];
+  };
+  digests: Record<"parent" | "fork", Record<string, string>>;
+}
+
+export interface DivergenceView {
+  run_id: string;
+  parent_run_id: string;
+  verified: boolean;
+  code: string;
+  message: string;
+  report: ForkReport | null;
+}
+
+export interface DeskDecisionRow {
+  at_ns: number;
+  sequence: number;
+  agent_id: number;
+  index: number;
+  source: string;
+  model: string;
+  error_code: string | null;
+  input_tokens: number;
+  output_tokens: number;
+  directive: Directive;
+  position: number;
+  mid_milliticks: number | null;
+  observation: Record<string, unknown>;
+}
+
+export interface DeskDecisions {
+  run_id: string;
+  label: string;
+  desk: DeskInfo | null;
+  decisions: DeskDecisionRow[];
+}
+
+export interface LedgerEntry {
+  agent_id: number;
+  index: number;
+  at_ns: number;
+  end_ns: number | null;
+  from: Directive | null;
+  to: Directive;
+  status: "pending" | "running" | "completed" | "failed" | "unchanged" | "at_horizon";
+  fork_run_id: string | null;
+  value_minor: number | null;
+  error: string | null;
+}
+
+export interface DecisionLedger {
+  status: "pending" | "running" | "completed" | "partially_completed" | "failed";
+  created_at: string;
+  finished_at?: string;
+  entries: LedgerEntry[];
+  versus_hold: {
+    agent_id: number;
+    at_ns: number;
+    status: string;
+    fork_run_id: string | null;
+    value_minor: number | null;
+    error: string | null;
+  } | null;
+}
+
+export interface LedgerView {
+  run_id: string;
+  label: string;
+  ledger: DecisionLedger | null;
+}
+
+export interface DeskRequest {
+  scenario: string;
+  agent_id: number;
+  seed: number;
+  horizon_ns: number | null;
+  mandate: string | null;
+  decision_interval_ns: number;
+  max_half_spread_ticks: number;
+  max_skew_ticks: number;
+  source: "model" | "fixture";
+  approved_calls?: number | null;
+}
+
+export interface DeskEstimate {
+  model: string;
+  source: "model" | "fixture";
+  decisions: number;
+  model_calls: number;
+  model_configured: boolean;
+}

@@ -980,6 +980,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/forks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Fork */
+        post: operations["create_fork_api_v1_runs__run_id__forks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Timeline */
+        get: operations["timeline_api_v1_runs__run_id__timeline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/divergence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Divergence */
+        get: operations["divergence_api_v1_runs__run_id__divergence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Decisions */
+        get: operations["decisions_api_v1_runs__run_id__decisions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/decision-ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ledger */
+        get: operations["ledger_api_v1_runs__run_id__decision_ledger_get"];
+        put?: never;
+        /** Start Ledger */
+        post: operations["start_ledger_api_v1_runs__run_id__decision_ledger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/repeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Repeat */
+        post: operations["repeat_api_v1_runs__run_id__repeat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/desks/estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Estimate */
+        post: operations["estimate_api_v1_desks_estimate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/desks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Desk */
+        post: operations["create_desk_api_v1_desks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/live/status": {
         parameters: {
             query?: never;
@@ -1415,6 +1552,90 @@ export interface components {
             /** Datasets */
             datasets: components["schemas"]["DatasetView"][];
         };
+        /** DeskRequest */
+        DeskRequest: {
+            /** Scenario */
+            scenario: string;
+            /** Agent Id */
+            agent_id: number;
+            /**
+             * Seed
+             * @default 42
+             */
+            seed: number;
+            /** Horizon Ns */
+            horizon_ns?: number | null;
+            /** Mandate */
+            mandate?: string | null;
+            /**
+             * Decision Interval Ns
+             * @default 60000000000
+             */
+            decision_interval_ns: number;
+            /**
+             * Max Half Spread Ticks
+             * @default 20
+             */
+            max_half_spread_ticks: number;
+            /**
+             * Max Skew Ticks
+             * @default 10
+             */
+            max_skew_ticks: number;
+            initial?: components["schemas"]["DirectiveModel"] | null;
+            /**
+             * Source
+             * @default fixture
+             * @enum {string}
+             */
+            source: "model" | "fixture";
+            /** Approved Calls */
+            approved_calls?: number | null;
+        };
+        /**
+         * DirectiveModel
+         * @description One AI desk decision (ADR 0012). The core checks it against the desk's bounds.
+         */
+        DirectiveModel: {
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "quote" | "pause" | "reduce";
+            /**
+             * Half Spread Ticks
+             * @description Distance of each quote
+             */
+            half_spread_ticks: number;
+            /**
+             * Skew Ticks
+             * @description Shift of both quotes; positive is higher
+             */
+            skew_ticks: number;
+            /**
+             * Quote Size
+             * @description Size of each quote
+             */
+            quote_size: number;
+            /**
+             * Levels
+             * @description Quotes per side
+             */
+            levels: number;
+            /**
+             * Max Position
+             * @description The desk's own position cap
+             */
+            max_position: number;
+            /** Rationale */
+            rationale: string;
+        };
+        /** DirectiveOverrideModel */
+        DirectiveOverrideModel: {
+            /** Agent Id */
+            agent_id: number;
+            directive: components["schemas"]["DirectiveModel"];
+        };
         /** ErrorBody */
         ErrorBody: {
             /** Code */
@@ -1699,6 +1920,50 @@ export interface components {
             /** Nullable */
             nullable: boolean;
         };
+        /**
+         * ForkRequest
+         * @description One change to a finished run from `at_ns` on. Every other field may be left out.
+         */
+        ForkRequest: {
+            /** Title */
+            title?: string | null;
+            /** At Ns */
+            at_ns: number;
+            /** Add Shocks */
+            add_shocks?: (components["schemas"]["FundamentalJumpShock"] | components["schemas"]["LiquidityWithdrawalShock"] | components["schemas"]["VolatilityRegimeShock"] | components["schemas"]["OrderFlowImbalanceShock"] | components["schemas"]["LatencyDegradationShock"] | components["schemas"]["QuoteWithdrawalStressShock"])[];
+            /** Remove Shocks */
+            remove_shocks?: number[];
+            /** Policy Overrides */
+            policy_overrides?: components["schemas"]["PolicyOverrideModel"][];
+            /** Horizon Ns */
+            horizon_ns?: number | null;
+            /**
+             * Decisions
+             * @default hold
+             * @enum {string}
+             */
+            decisions: "hold" | "parent" | "live";
+            /** Directive Overrides */
+            directive_overrides?: components["schemas"]["DirectiveOverrideModel"][];
+        };
+        /** FundamentalJumpShock */
+        FundamentalJumpShock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "FundamentalJump";
+            /**
+             * At Ns
+             * @description Instant of the jump
+             */
+            at_ns: number;
+            /**
+             * Delta Milliticks
+             * @description Shift of the latent value and its anchor; nonzero
+             */
+            delta_milliticks: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1808,6 +2073,54 @@ export interface components {
          * @enum {string}
          */
         Intent: "compare_strategies" | "analyze_experiment" | "explain_metric" | "inspect_seed" | "unsupported";
+        /** InventoryMarketMakerPolicy */
+        InventoryMarketMakerPolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "InventoryMarketMaker";
+            /**
+             * Half Spread Ticks
+             * @description Distance of the first quote from the reservation price
+             */
+            half_spread_ticks: number;
+            /**
+             * Quote Size
+             * @description Size of each quote
+             */
+            quote_size: number;
+            /**
+             * Levels
+             * @description Quotes per side
+             */
+            levels: number;
+            /**
+             * Level Spacing Ticks
+             * @description Distance between quote levels
+             */
+            level_spacing_ticks: number;
+            /**
+             * Risk Aversion Ppm
+             * @description Weight of inventory risk in the reservation price
+             */
+            risk_aversion_ppm: number;
+            /**
+             * Volatility Alpha Ppm
+             * @description EWMA weight of the variance estimate
+             */
+            volatility_alpha_ppm: number;
+            /**
+             * Volatility Floor Milliticks
+             * @description Floor of the volatility estimate
+             */
+            volatility_floor_milliticks: number;
+            /**
+             * Max Skew Ticks
+             * @description Clamp on the inventory skew and widening
+             */
+            max_skew_ticks: number;
+        };
         /** InvestigationList */
         InvestigationList: {
             /** Total */
@@ -1877,6 +2190,44 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /** LatencyDegradationShock */
+        LatencyDegradationShock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "LatencyDegradation";
+            /**
+             * Start Ns
+             * @description Start of the interval (inclusive)
+             */
+            start_ns: number;
+            /**
+             * End Ns
+             * @description End of the interval (exclusive)
+             */
+            end_ns: number;
+            /**
+             * Agents
+             * @description Agents whose delays are raised
+             */
+            agents: number[];
+            /**
+             * Added Order Entry Ns
+             * @description Delay added to orders and cancels
+             */
+            added_order_entry_ns: number;
+            /**
+             * Added Report Ns
+             * @description Delay added to order reports and fills
+             */
+            added_report_ns: number;
+            /**
+             * Added Market Data Ns
+             * @description Delay added to top-of-book updates
+             */
+            added_market_data_ns: number;
+        };
         /** LedgerPage */
         LedgerPage: {
             /** Total */
@@ -1932,6 +2283,62 @@ export interface components {
             /** Counterparty Agent Id */
             counterparty_agent_id: number;
         };
+        /** LiquidityWithdrawalShock */
+        LiquidityWithdrawalShock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "LiquidityWithdrawal";
+            /**
+             * Start Ns
+             * @description Start of the interval (inclusive)
+             */
+            start_ns: number;
+            /**
+             * End Ns
+             * @description End of the interval (exclusive)
+             */
+            end_ns: number;
+            /**
+             * Agents
+             * @description Market makers whose quote size is scaled
+             */
+            agents: number[];
+            /**
+             * Quote Size Ppm
+             * @description Scale applied to quote size; 0 withdraws entirely
+             */
+            quote_size_ppm: number;
+        };
+        /** MarketMakerPolicy */
+        MarketMakerPolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "MarketMaker";
+            /**
+             * Half Spread Ticks
+             * @description Distance of the first quote from the reference
+             */
+            half_spread_ticks: number;
+            /**
+             * Quote Size
+             * @description Size of each quote
+             */
+            quote_size: number;
+            /**
+             * Levels
+             * @description Quotes per side
+             */
+            levels: number;
+            /**
+             * Level Spacing Ticks
+             * @description Distance between quote levels
+             */
+            level_spacing_ticks: number;
+        };
         /** MarketSeries */
         MarketSeries: {
             /** Sample Count */
@@ -1969,6 +2376,146 @@ export interface components {
             /** Content */
             content: string;
         };
+        /** ModelDirectedPolicy */
+        ModelDirectedPolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "ModelDirected";
+            initial: components["schemas"]["DirectiveModel"];
+            /**
+             * Decision Interval Ns
+             * @description Time between decisions
+             */
+            decision_interval_ns: number;
+            /**
+             * Max Half Spread Ticks
+             * @description Widest half spread a decision may set
+             */
+            max_half_spread_ticks: number;
+            /**
+             * Max Skew Ticks
+             * @description Largest skew a decision may set
+             */
+            max_skew_ticks: number;
+            /** Mandate */
+            mandate: string;
+        };
+        /** MomentumPolicy */
+        MomentumPolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "Momentum";
+            /**
+             * Short Window
+             * @description Short moving-average window
+             */
+            short_window: number;
+            /**
+             * Long Window
+             * @description Long moving-average window
+             */
+            long_window: number;
+            /**
+             * Threshold Milliticks
+             * @description Signal needed to trade
+             */
+            threshold_milliticks: number;
+            /**
+             * Order Size
+             * @description Size of each order
+             */
+            order_size: number;
+            /**
+             * Slippage Ticks
+             * @description How far through the touch the IOC limit is set
+             */
+            slippage_ticks: number;
+            /**
+             * Cooldown Ns
+             * @description Minimum time between orders
+             */
+            cooldown_ns: number;
+        };
+        /** NoisePolicy */
+        NoisePolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "Noise";
+            /**
+             * Buy Probability Ppm
+             * @description Probability an order is a buy
+             */
+            buy_probability_ppm: number;
+            /**
+             * Market Order Ppm
+             * @description Probability an order is a market order
+             */
+            market_order_ppm: number;
+            /**
+             * Min Quantity
+             * @description Smallest order
+             */
+            min_quantity: number;
+            /**
+             * Max Quantity
+             * @description Largest order
+             */
+            max_quantity: number;
+            /**
+             * Limit Offset Ticks
+             * @description Largest distance of a limit order from the reference
+             */
+            limit_offset_ticks: number;
+            /**
+             * Max Resting Orders
+             * @description Resting orders kept before the oldest is canceled
+             */
+            max_resting_orders: number;
+        };
+        /** OrderFlowImbalanceShock */
+        OrderFlowImbalanceShock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "OrderFlowImbalance";
+            /**
+             * Start Ns
+             * @description Start of the interval (inclusive)
+             */
+            start_ns: number;
+            /**
+             * End Ns
+             * @description End of the interval (exclusive)
+             */
+            end_ns: number;
+            /**
+             * Agents
+             * @description Noise traders whose order flow is shifted
+             */
+            agents: number[];
+            /**
+             * Buy Probability Ppm
+             * @description Probability that an order buys, replacing the agent's own
+             */
+            buy_probability_ppm: number;
+            /**
+             * Market Order Ppm
+             * @description Share of orders sent at market, replacing the agent's own
+             */
+            market_order_ppm: number;
+            /**
+             * Arrival Rate Ppm
+             * @description Arrival rate as a share of the agent's own; 2e6 doubles it
+             */
+            arrival_rate_ppm: number;
+        };
         /** PairedValues */
         PairedValues: {
             /**
@@ -1978,6 +2525,13 @@ export interface components {
             document: {
                 [key: string]: unknown;
             };
+        };
+        /** PolicyOverrideModel */
+        PolicyOverrideModel: {
+            /** Agent Id */
+            agent_id: number;
+            /** Policy */
+            policy: components["schemas"]["MarketMakerPolicy"] | components["schemas"]["InventoryMarketMakerPolicy"] | components["schemas"]["MomentumPolicy"] | components["schemas"]["ValuePolicy"] | components["schemas"]["NoisePolicy"] | components["schemas"]["ModelDirectedPolicy"];
         };
         /** PolicySpec */
         PolicySpec: {
@@ -2010,6 +2564,24 @@ export interface components {
             /** Providers */
             providers: components["schemas"]["ProviderView"][];
         };
+        /** QuoteWithdrawalStressShock */
+        QuoteWithdrawalStressShock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "QuoteWithdrawalStress";
+            /**
+             * At Ns
+             * @description Instant of the cancel surge
+             */
+            at_ns: number;
+            /**
+             * Agents
+             * @description Agents that cancel every working order
+             */
+            agents: number[];
+        };
         /** RecordPageView */
         RecordPageView: {
             /** Session Id */
@@ -2022,6 +2594,19 @@ export interface components {
             }[];
             /** Next Offset */
             next_offset: number | null;
+        };
+        /** RepeatRequest */
+        RepeatRequest: {
+            /**
+             * Seeds
+             * @default 20
+             */
+            seeds: number;
+            /**
+             * First Seed
+             * @default 1
+             */
+            first_seed: number;
         };
         /** ReplayView */
         ReplayView: {
@@ -2237,12 +2822,22 @@ export interface components {
              * Source Kind
              * @enum {string}
              */
-            source_kind: "user" | "experiment_cell";
+            source_kind: "user" | "experiment_cell" | "fork" | "ledger";
             /** Experiment Id */
             experiment_id: string | null;
             /** Variant */
             variant: string | null;
             error: components["schemas"]["RunError"] | null;
+            /** Parent Run Id */
+            parent_run_id?: string | null;
+            /** Fork At Ns */
+            fork_at_ns?: number | null;
+            /** Fork Status */
+            fork_status?: ("verified" | "failed") | null;
+            /** Desk */
+            desk?: {
+                [key: string]: unknown;
+            } | null;
             /** Indexing Ms */
             indexing_ms: number | null;
             /** Config */
@@ -2345,12 +2940,22 @@ export interface components {
              * Source Kind
              * @enum {string}
              */
-            source_kind: "user" | "experiment_cell";
+            source_kind: "user" | "experiment_cell" | "fork" | "ledger";
             /** Experiment Id */
             experiment_id: string | null;
             /** Variant */
             variant: string | null;
             error: components["schemas"]["RunError"] | null;
+            /** Parent Run Id */
+            parent_run_id?: string | null;
+            /** Fork At Ns */
+            fork_at_ns?: number | null;
+            /** Fork Status */
+            fork_status?: ("verified" | "failed") | null;
+            /** Desk */
+            desk?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** RunValidation */
         RunValidation: {
@@ -2643,6 +3248,57 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** ValuePolicy */
+        ValuePolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "Value";
+            /**
+             * Estimate Noise Milliticks
+             * @description Standard deviation of the fundamental estimate
+             */
+            estimate_noise_milliticks: number;
+            /**
+             * Threshold Milliticks
+             * @description Edge needed to trade
+             */
+            threshold_milliticks: number;
+            /**
+             * Order Size
+             * @description Size per threshold of edge
+             */
+            order_size: number;
+            /**
+             * Slippage Ticks
+             * @description How far through the touch the IOC limit is set
+             */
+            slippage_ticks: number;
+        };
+        /** VolatilityRegimeShock */
+        VolatilityRegimeShock: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "VolatilityRegime";
+            /**
+             * Start Ns
+             * @description Start of the interval (inclusive)
+             */
+            start_ns: number;
+            /**
+             * End Ns
+             * @description End of the interval (exclusive)
+             */
+            end_ns: number;
+            /**
+             * Volatility Ppm
+             * @description Scale applied to fundamental step volatility
+             */
+            volatility_ppm: number;
         };
     };
     responses: never;
@@ -5002,6 +5658,297 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_fork_api_v1_runs__run_id__forks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    timeline_api_v1_runs__run_id__timeline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    divergence_api_v1_runs__run_id__divergence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decisions_api_v1_runs__run_id__decisions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ledger_api_v1_runs__run_id__decision_ledger_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_ledger_api_v1_runs__run_id__decision_ledger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    repeat_api_v1_runs__run_id__repeat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RepeatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    estimate_api_v1_desks_estimate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_desk_api_v1_desks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
