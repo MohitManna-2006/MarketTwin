@@ -10,11 +10,13 @@ recorded in the run's trace, so replay never calls the model again.
 from __future__ import annotations
 
 import json
+import os
 import threading
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any, Literal, Protocol
 
-from pydantic import BaseModel, ConfigDict, Field
+import anthropic
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from markettwin_api.ai_provider import OpenAICompatibleProvider, ProviderError
 from markettwin_api.settings import Settings
@@ -136,12 +138,130 @@ def _answer(
     )
 
 
-def model_decider(settings: Settings) -> DeskDecider:
-    """A decider on the configured OpenAI-compatible model. Raises ProviderError when no
-    model is configured, so a desk run is refused before it starts."""
-    if not settings.ai_model or not settings.ai_api_key:
-        raise ProviderError(
-            "ProviderNotConfigured", "Set MARKETTWIN_AI_MODEL and MARKETTWIN_AI_API_KEY"
+# The directive as a JSON schema for structured outputs. Bounds are left to DeskDecision
+# and to the core, which check every value again.
+DESK_SCHEMA: Json = {
+    "type": "object",
+    "properties": {
+        "mode": {"type": "string", "enum": ["quote", "pause", "reduce"]},
+        "half_spread_ticks": {"type": "integer"},
+        "skew_ticks": {"type": "integer"},
+        "quote_size": {"type": "integer"},
+        "levels": {"type": "integer"},
+        "max_position": {"type": "integer"},
+        "rationale": {"type": "string"},
+    },
+    "required": [
+        "mode",
+        "half_spread_ticks",
+        "skew_ticks",
+        "quote_size",
+        "levels",
+        "max_position",
+        "rationale",
+    ],
+    "additionalProperties": False,
+}
+
+
+class AnthropicDeskProvider:
+    """Claude through the official Anthropic SDK, with the directive as a structured
+    output. Credentials come from MARKETTWIN_AI_API_KEY or the SDK's own resolution
+    (ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, or an `ant auth login` profile). A decision
+    is a small, routine judgment, so it runs at low effort."""
+
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+        self.client = anthropic.Anthropic(
+            api_key=settings.ai_api_key or None,
+            timeout=settings.ai_timeout_seconds,
+            max_retries=2,
         )
-    provider = OpenAICompatibleProvider(settings)
+        self.last_usage: dict[str, Any] = {}
+        self.last_cost_usd: str | None = None
+
+    def structured(self, model_type: type[DeskDecision], system: str, data: Json) -> Any:
+        try:
+            response = self.client.messages.create(
+                model=self.settings.ai_model,
+                max_tokens=4000,
+                system=system,
+                messages=[{"role": "user", "content": json.dumps(data, separators=(",", ":"))}],
+                output_config={
+                    "effort": "low",
+                    "format": {"type": "json_schema", "schema": DESK_SCHEMA},
+                },
+            )
+        except anthropic.AuthenticationError as error:
+            raise ProviderError(
+                "ProviderAuthentication", "Anthropic rejected the credentials"
+            ) from error
+        except anthropic.RateLimitError as error:
+            raise ProviderError("ProviderRateLimited", "Anthropic rate limit reached") from error
+        except anthropic.APIStatusError as error:
+            code = "ProviderUnavailable" if error.status_code >= 500 else "ProviderRequestRejected"
+            raise ProviderError(code, f"Anthropic returned HTTP {error.status_code}") from error
+        except anthropic.APIConnectionError as error:
+            raise ProviderError(
+                "ProviderUnavailable", "Anthropic is unreachable or timed out"
+            ) from error
+        usage = response.usage
+        self.last_usage = {
+            "prompt_tokens": usage.input_tokens,
+            "completion_tokens": usage.output_tokens,
+        }
+        self.last_cost_usd = self._cost(usage.input_tokens, usage.output_tokens)
+        if response.stop_reason == "refusal":
+            raise ProviderError("ModelRefused", "the model declined this decision")
+        if response.stop_reason == "max_tokens":
+            raise ProviderError("ProviderResponseInvalid", "the model ran out of output tokens")
+        text = next((block.text for block in response.content if block.type == "text"), "")
+        try:
+            return model_type.model_validate_json(text)
+        except ValidationError as error:
+            raise ProviderError(
+                "ProviderResponseInvalid", "the model's directive is not valid"
+            ) from error
+
+    def _cost(self, prompt: int, completion: int) -> str | None:
+        before = self.settings.ai_input_usd_per_million_tokens
+        after = self.settings.ai_output_usd_per_million_tokens
+        if not before or not after:
+            return None
+        try:
+            return str(
+                (Decimal(before) * prompt + Decimal(after) * completion) / Decimal(1_000_000)
+            )
+        except InvalidOperation:
+            return None
+
+
+def model_configured(settings: Settings) -> bool:
+    if not settings.ai_model:
+        return False
+    if settings.ai_provider == "anthropic":
+        return bool(
+            settings.ai_api_key
+            or os.environ.get("ANTHROPIC_API_KEY")
+            or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+            or os.environ.get("ANTHROPIC_PROFILE")
+        )
+    return bool(settings.ai_api_key)
+
+
+def model_decider(settings: Settings) -> DeskDecider:
+    """A decider on the configured model: Claude through the Anthropic SDK when
+    MARKETTWIN_AI_PROVIDER is `anthropic`, else the OpenAI-compatible adapter. Raises
+    ProviderError when no model is configured, so a desk run is refused before it starts."""
+    if not model_configured(settings):
+        raise ProviderError(
+            "ProviderNotConfigured",
+            "Set MARKETTWIN_AI_MODEL and credentials (MARKETTWIN_AI_API_KEY, or "
+            "ANTHROPIC_API_KEY with MARKETTWIN_AI_PROVIDER=anthropic)",
+        )
+    provider: StructuredProvider
+    if settings.ai_provider == "anthropic":
+        provider = AnthropicDeskProvider(settings)
+    else:
+        provider = OpenAICompatibleProvider(settings)
     return DeskDecider(provider, settings.ai_model)

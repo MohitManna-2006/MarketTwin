@@ -19,6 +19,7 @@ from typing import Any
 import markettwin
 
 from markettwin_api.ai_provider import ProviderError
+from markettwin_api.desk import model_configured
 from markettwin_api.registry import Row, now
 from markettwin_api.service import Research, ServiceError
 
@@ -169,8 +170,7 @@ class Timelines:
     # ---- the AI desk --------------------------------------------------------------------
 
     def _require_model(self) -> None:
-        settings = self.research.settings
-        if not settings.ai_model or not settings.ai_api_key:
+        if not model_configured(self.research.settings):
             raise ServiceError(
                 422,
                 "ProviderNotConfigured",
@@ -247,7 +247,7 @@ class Timelines:
 
     def estimate(self, request: Json) -> Json:
         _, desk = self.desk_config(request)
-        configured = bool(self.research.settings.ai_model and self.research.settings.ai_api_key)
+        configured = model_configured(self.research.settings)
         return {
             "model": desk["model"],
             "source": desk["source"],

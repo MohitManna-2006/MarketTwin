@@ -245,3 +245,77 @@ def test_the_desk_decider_records_usage_and_survives_a_failed_call(tmp_path: Pat
     assert records[0]["model"] == "scripted"
     assert markettwin.verify_replay(tmp_path / "run")["verified"] is True
     assert plain_rationale("a" * 400) == "a" * 280
+
+
+class _Usage:
+    input_tokens = 900
+    output_tokens = 60
+
+
+class _Text:
+    type = "text"
+
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+
+class _Response:
+    def __init__(self, text: str, stop_reason: str = "end_turn") -> None:
+        self.content = [_Text(text)]
+        self.stop_reason = stop_reason
+        self.usage = _Usage()
+
+
+def test_the_anthropic_provider_asks_for_a_structured_directive_at_low_effort(
+    tmp_path: Path,
+) -> None:
+    from markettwin_api.desk import DESK_SCHEMA, AnthropicDeskProvider, model_configured
+
+    settings = Settings(
+        workspace=tmp_path,
+        ai_provider="anthropic",
+        ai_model="claude-haiku-5-5",
+        ai_api_key="test-key",
+        ai_input_usd_per_million_tokens="0.10",
+        ai_output_usd_per_million_tokens="0.50",
+    )
+    assert model_configured(settings)
+    provider = AnthropicDeskProvider(settings)
+    sent: list[Json] = []
+    answer = json.dumps(
+        {
+            "mode": "quote",
+            "half_spread_ticks": 3,
+            "skew_ticks": -1,
+            "quote_size": 50,
+            "levels": 2,
+            "max_position": 400,
+            "rationale": "widen against a long book",
+        }
+    )
+
+    def create(**request: Any) -> _Response:
+        sent.append(request)
+        return _Response(answer)
+
+    provider.client.messages.create = create  # type: ignore[method-assign]
+    decision = provider.structured(DeskDecision, "system", {"observation": {}})
+    assert decision.half_spread_ticks == 3
+    assert sent[0]["model"] == "claude-haiku-5-5"
+    assert sent[0]["output_config"] == {
+        "effort": "low",
+        "format": {"type": "json_schema", "schema": DESK_SCHEMA},
+    }
+    assert provider.last_usage == {"prompt_tokens": 900, "completion_tokens": 60}
+    assert provider.last_cost_usd == "0.00012"
+
+    provider.client.messages.create = (  # type: ignore[method-assign]
+        lambda **request: _Response("", "refusal")
+    )
+    try:
+        provider.structured(DeskDecision, "system", {})
+    except ProviderError as error:
+        assert error.code == "ModelRefused"
+    else:
+        raise AssertionError("a refusal must fail the decision")
+    assert not model_configured(Settings(workspace=tmp_path, ai_provider="anthropic"))
