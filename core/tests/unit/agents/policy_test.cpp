@@ -444,13 +444,15 @@ ModelDirectedParams desk_params(Directive initial) {
 TEST(DirectedMakerTest, QuoteModeLaddersAroundTheSkewedReferenceWithinItsOwnCap) {
   Desk desk;
   desk.quote(99, 101);
-  DirectedMaker maker{desk_params({.mode = DeskMode::Quote,
-                                   .half_spread_ticks = 3,
-                                   .skew_ticks = -2,
-                                   .quote_size = Quantity{40},
-                                   .levels = 2,
-                                   .max_position = 50,
-                                   .rationale = {}})};
+  DirectedMaker maker{desk_params({
+      .mode = DeskMode::Quote,
+      .half_spread_ticks = 3,
+      .skew_ticks = -2,
+      .quote_size = Quantity{40},
+      .levels = 2,
+      .max_position = 50,
+      .rationale = {},
+  })};
   const auto intents = desk.timer(maker);
   // Reference 100 shifted to 98: bids 95, 94 and asks 101, 102.
   EXPECT_EQ(prices(submits(intents, Side::Buy)), (std::vector<std::int64_t>{95, 94}));
@@ -490,10 +492,12 @@ TEST(DirectedMakerTest, PauseCancelsEverythingAndReduceWorksOneOrderAtTheTouch) 
 }
 
 TEST(DirectedMakerTest, DirectiveBoundsComeFromTheDeskAndTheAgentLimits) {
-  const AgentLimits limits{.max_position = 500,
-                           .max_order_quantity = Quantity{100},
-                           .max_open_orders = 8,
-                           .max_messages = 1'000};
+  const AgentLimits limits{
+      .max_position = 500,
+      .max_order_quantity = Quantity{100},
+      .max_open_orders = 8,
+      .max_messages = 1'000,
+  };
   const auto params = desk_params({});
   EXPECT_EQ(directive_error({.max_position = 500}, params, limits), "");
   EXPECT_NE(directive_error({.half_spread_ticks = 0, .max_position = 1}, params, limits), "");
@@ -502,9 +506,8 @@ TEST(DirectedMakerTest, DirectiveBoundsComeFromTheDeskAndTheAgentLimits) {
   EXPECT_NE(directive_error({.quote_size = Quantity{101}, .max_position = 1}, params, limits), "");
   EXPECT_NE(directive_error({.levels = 5, .max_position = 1}, params, limits), "");
   EXPECT_NE(directive_error({.max_position = 501}, params, limits), "");
-  EXPECT_NE(directive_error({.max_position = 1, .rationale = std::string(281, 'a')}, params,
-                            limits),
-            "");
+  EXPECT_NE(
+      directive_error({.max_position = 1, .rationale = std::string(281, 'a')}, params, limits), "");
   EXPECT_NE(directive_error({.max_position = 1, .rationale = "caf\xc3\xa9"}, params, limits), "");
 }
 

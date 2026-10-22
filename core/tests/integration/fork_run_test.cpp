@@ -1,4 +1,5 @@
 #include "markettwin/common/hash.hpp"
+#include "markettwin/experiment/experiment.hpp"
 #include "markettwin/telemetry/fork.hpp"
 #include "markettwin/telemetry/replay.hpp"
 
@@ -25,12 +26,14 @@ RunConfig parent_config() {
   auto config = test::scenario_fixture();
   config.run_id = "parent";
   test::scenario(config).shocks = {
-      LatencyDegradation{.start = SimTime{20 * kSecond},
-                         .end = SimTime{30 * kSecond},
-                         .agents = {AgentId{1}, AgentId{2}},
-                         .added_order_entry = SimTime{50'000'000},
-                         .added_report = SimTime{},
-                         .added_market_data = SimTime{}},
+      LatencyDegradation{
+          .start = SimTime{20 * kSecond},
+          .end = SimTime{30 * kSecond},
+          .agents = {AgentId{1}, AgentId{2}},
+          .added_order_entry = SimTime{50'000'000},
+          .added_report = SimTime{},
+          .added_market_data = SimTime{},
+      },
   };
   return config;
 }
@@ -40,13 +43,16 @@ RunConfig desk_config() {
   auto config = parent_config();
   config.run_id = "desk";
   test::scenario(config).agents.at(0).policy = ModelDirectedParams{
-      .initial = {.mode = DeskMode::Quote,
-                  .half_spread_ticks = 2,
-                  .skew_ticks = 0,
-                  .quote_size = Quantity{100},
-                  .levels = 2,
-                  .max_position = 300,
-                  .rationale = "start"},
+      .initial =
+          {
+              .mode = DeskMode::Quote,
+              .half_spread_ticks = 2,
+              .skew_ticks = 0,
+              .quote_size = Quantity{100},
+              .levels = 2,
+              .max_position = 300,
+              .rationale = "start",
+          },
       .decision_interval = SimTime{10 * kSecond},
       .max_half_spread_ticks = 10,
       .max_skew_ticks = 5,
@@ -148,7 +154,11 @@ TEST(ForkRunTest, APolicySwitchKeepsTheAgentAndAForkOfAForkChainsItsStages) {
   const Family family{parent_config()};
   auto switched = stage_at(10);
   switched.policy_overrides = {
-      {.agent = AgentId{1}, .policy = MomentumParams{.short_window = 2, .long_window = 4}}};
+      {
+          .agent = AgentId{1},
+          .policy = MomentumParams{.short_window = 2, .long_window = 4},
+      },
+  };
   const auto first = family.fork("switched", switched);
   const auto result = report(family.parent, first);
   ASSERT_FALSE(result.is_null());
@@ -156,10 +166,14 @@ TEST(ForkRunTest, APolicySwitchKeepsTheAgentAndAForkOfAForkChainsItsStages) {
   // A momentum trader cannot be withdrawn as a maker: the later latency shock is fine,
   // a later withdrawal is not.
   auto withdrawn = switched;
-  withdrawn.add_shocks = {LiquidityWithdrawal{.start = SimTime{40 * kSecond},
-                                              .end = SimTime{50 * kSecond},
-                                              .agents = {AgentId{1}},
-                                              .quote_size_ppm = 0}};
+  withdrawn.add_shocks = {
+      LiquidityWithdrawal{
+          .start = SimTime{40 * kSecond},
+          .end = SimTime{50 * kSecond},
+          .agents = {AgentId{1}},
+          .quote_size_ppm = 0,
+      },
+  };
   EXPECT_THROW(static_cast<void>(fork_of(family.parent, withdrawn, "bad")), RunError);
 
   auto later = stage_at(40);
@@ -226,8 +240,14 @@ class FailingSource final : public DecisionSource {
 public:
   DecisionResponse decide(const DecisionRequest& /*request*/) override {
     ++calls;
-    return {.directive = {}, .source = "model", .model = "down", .input_tokens = 0,
-            .output_tokens = 0, .error_code = "ProviderUnavailable"};
+    return {
+        .directive = {},
+        .source = "model",
+        .model = "down",
+        .input_tokens = 0,
+        .output_tokens = 0,
+        .error_code = "ProviderUnavailable",
+    };
   }
   int calls = 0;
 };
@@ -238,8 +258,14 @@ public:
   DecisionResponse decide(const DecisionRequest& request) override {
     auto directive = *request.current;
     directive.half_spread_ticks = 1'000;
-    return {.directive = directive, .source = "model", .model = "reckless", .input_tokens = 7,
-            .output_tokens = 3, .error_code = {}};
+    return {
+        .directive = directive,
+        .source = "model",
+        .model = "reckless",
+        .input_tokens = 7,
+        .output_tokens = 3,
+        .error_code = {},
+    };
   }
 };
 
@@ -291,7 +317,7 @@ TEST(ForkRunTest, DeskForksHoldReplaceOrReplayTheParentsDecisions) {
   const Family family{desk_config(), &fixture};
   const auto parent = decisions(family.parent);
 
-  auto hold = stage_at(30);
+  const auto hold = stage_at(30);
   const auto held = decisions(family.fork("hold", hold));
   ASSERT_EQ(held.size(), parent.size());
   for (std::size_t index = 0; index < held.size(); ++index) {
@@ -310,8 +336,11 @@ TEST(ForkRunTest, DeskForksHoldReplaceOrReplayTheParentsDecisions) {
   ledger.decisions = DecisionMode::Parent;
   ledger.horizon = SimTime{40 * kSecond};
   ledger.directive_overrides = {
-      {.agent = AgentId{1},
-       .directive = parse_directive(parent.at(1).at("payload").at("directive").dump())}};
+      {
+          .agent = AgentId{1},
+          .directive = parse_directive(parent.at(1).at("payload").at("directive").dump()),
+      },
+  };
   const auto fork = family.fork("ledger", ledger);
   const auto replaced = decisions(fork);
   ASSERT_EQ(replaced.size(), 4U);
@@ -332,6 +361,51 @@ TEST(ForkRunTest, DeskForksHoldReplaceOrReplayTheParentsDecisions) {
   EXPECT_EQ(failing.calls, 4);
   EXPECT_EQ(relived.at(1).at("payload").at("source"), "model");
   EXPECT_EQ(relived.at(2).at("payload").at("source"), "fallback");
+}
+
+TEST(ForkRunTest, AForkVariantPairsEverySeedWithItsOwnParentCell) {
+  ExperimentConfig config;
+  config.experiment_id = "stress";
+  config.base = parent_config();
+  config.horizon = SimTime{30 * kSecond};
+  config.seeds = {3, 4, 5};
+  auto stage = stage_at(15);
+  stage.add_shocks = {QuoteWithdrawalStress{.at = SimTime{15 * kSecond}, .agents = {AgentId{1}}}};
+  config.variants = {
+      {.name = "calm", .overrides = {}, .fork = std::nullopt},
+      {.name = "stressed", .overrides = {}, .fork = VariantFork{.parent = "calm", .stage = stage}},
+  };
+  config.comparison =
+      ComparisonConfig{.baseline = "calm", .candidate = "stressed", .subject = AgentId{1}};
+  config.max_runs = 6;
+  const auto canonical = Json::parse(canonical_experiment(config));
+  EXPECT_EQ(canonical.at("schema_version"), 2);
+  EXPECT_EQ(canonical.at("variants").at(1).at("fork").at("parent"), "calm");
+  EXPECT_EQ(canonical_experiment(parse_experiment(canonical.dump(), {})), canonical.dump());
+
+  for (const auto seed : config.seeds) {
+    const auto parent = variant_config(config, config.variants.at(0), seed);
+    const auto cell = variant_config(config, config.variants.at(1), seed);
+    ASSERT_EQ(cell.forks.size(), 1U);
+    EXPECT_EQ(cell.forks.front().parent_run_id, parent.run_id);
+    EXPECT_EQ(cell.forks.front().parent_config_digest, sha256(canonical_config(parent)));
+  }
+  const auto result = run_experiment(config, {});
+  ASSERT_EQ(result.runs.size(), 6U);
+  for (const auto& run : result.runs) {
+    EXPECT_TRUE(run.completed) << run.error_code << ": " << run.error_message;
+  }
+  EXPECT_FALSE(result.comparisons.empty());
+
+  // A fork of a fork variant, or of an unknown one, is rejected.
+  auto chained = config;
+  chained.variants.push_back({
+      .name = "again",
+      .overrides = {},
+      .fork = VariantFork{.parent = "stressed", .stage = stage},
+  });
+  chained.max_runs = 9;
+  EXPECT_THROW(validate_experiment(chained), RunError);
 }
 
 } // namespace

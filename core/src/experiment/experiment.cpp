@@ -232,16 +232,31 @@ Json experiment_json(const ExperimentConfig& config) {
     seeds.push_back(seed);
   }
   auto variants = Json::array();
+  const bool forked = std::ranges::any_of(
+      config.variants, [](const Variant& variant) { return variant.fork.has_value(); });
   for (const auto& variant : config.variants) {
     auto overrides = Json::array();
     for (const auto& item : variant.overrides) {
       overrides.push_back(
           {{"agent_id", item.agent.value()}, {"policy", codec::policy(item.policy)}});
     }
-    variants.push_back({{"name", variant.name}, {"policy_overrides", overrides}});
+    Json entry{{"name", variant.name}, {"policy_overrides", overrides}};
+    if (forked) {
+      Json fork = nullptr;
+      // NOLINTNEXTLINE(bugprone-unchecked-optional-access): checked in the same expression.
+      if (const auto* item = variant.fork ? &*variant.fork : nullptr; item != nullptr) {
+        fork = codec::fork_stage(item->stage);
+        for (const auto* name : {"parent_run_id", "parent_config_digest", "recorded_decisions"}) {
+          fork.erase(name);
+        }
+        fork.update({{"parent", item->parent}});
+      }
+      entry.update({{"fork", fork}});
+    }
+    variants.push_back(entry);
   }
   return {
-      {"schema_version", kExperimentSchema},
+      {"schema_version", forked ? kForkExperimentSchema : kExperimentSchema},
       {"experiment_id", config.experiment_id},
       {"base_config", codec::config(config.base)},
       {"horizon_ns", config.horizon ? Json(config.horizon->value()) : Json(nullptr)},
@@ -578,8 +593,11 @@ std::string_view finding(const Interval* interval) {
 
 } // namespace
 
-RunConfig variant_config(const ExperimentConfig& config, const Variant& variant,
-                         std::uint64_t seed) {
+namespace {
+
+// A variant's cell from its policy overrides alone.
+RunConfig override_cell(const ExperimentConfig& config, const Variant& variant,
+                        std::uint64_t seed) {
   auto run = config.base;
   run.seed = seed;
   run.run_id = config.experiment_id + "-" + variant.name + "-s" + std::to_string(seed);
@@ -599,6 +617,28 @@ RunConfig variant_config(const ExperimentConfig& config, const Variant& variant,
             "variant " + variant.name + " overrides an agent the base scenario does not have");
     found->policy = item.policy;
   }
+  return run;
+}
+
+} // namespace
+
+RunConfig variant_config(const ExperimentConfig& config, const Variant& variant,
+                         std::uint64_t seed) {
+  if (!variant.fork) {
+    return override_cell(config, variant, seed);
+  }
+  const auto& fork = *variant.fork;
+  const auto* parent = find_variant(config, fork.parent);
+  require(parent != nullptr && !parent->fork && parent != &variant,
+          "variant " + variant.name + " must fork a variant of this experiment that is not a fork");
+  auto run = override_cell(config, *parent, seed);
+  require(!has_desk(run),
+          "variant " + variant.name + " forks an AI desk, whose decisions only a run records");
+  auto stage = fork.stage;
+  stage.parent_run_id = run.run_id;
+  stage.parent_config_digest = sha256(canonical_config(run));
+  run.run_id = config.experiment_id + "-" + variant.name + "-s" + std::to_string(seed);
+  run.forks.push_back(std::move(stage));
   return run;
 }
 
@@ -623,6 +663,8 @@ void validate_experiment(const ExperimentConfig& config) {
   for (const auto& variant : config.variants) {
     require(valid_name(variant.name), "variant names must be 1-48 ASCII letters, digits, '_', '-'");
     require(names.insert(variant.name).second, "variant names must be unique");
+    require(!variant.fork || variant.overrides.empty(),
+            "variant " + variant.name + " forks another variant and cannot override policies too");
     std::set<AgentId> overridden;
     for (const auto& item : variant.overrides) {
       require(overridden.insert(item.agent).second,
@@ -650,9 +692,11 @@ ExperimentConfig parse_experiment(std::string_view text,
     throw RunError{"ResourceLimit", "experiment config exceeds 16 MiB"};
   }
   const auto value = codec::parse(text);
-  if (!value.is_object() || !value.contains("schema_version") ||
-      codec::unsigned_integer(value.at("schema_version")) != kExperimentSchema) {
-    throw RunError{"UnsupportedSchema", "expected experiment schema version 1"};
+  const auto schema = value.is_object() && value.contains("schema_version")
+                          ? codec::unsigned_integer(value.at("schema_version"))
+                          : 0;
+  if (schema != kExperimentSchema && schema != kForkExperimentSchema) {
+    throw RunError{"UnsupportedSchema", "expected experiment schema version 1 or 2"};
   }
   codec::fields(value, {
                            "schema_version",
@@ -679,8 +723,26 @@ ExperimentConfig parse_experiment(std::string_view text,
     codec::invalid("variants must be an array");
   }
   for (const auto& item : value.at("variants")) {
-    codec::fields(item, {"name", "policy_overrides"});
-    Variant variant{.name = codec::text(item.at("name")), .overrides = {}};
+    if (schema == kForkExperimentSchema) {
+      codec::fields(item, {"name", "policy_overrides", "fork"});
+    } else {
+      codec::fields(item, {"name", "policy_overrides"});
+    }
+    Variant variant{.name = codec::text(item.at("name")), .overrides = {}, .fork = {}};
+    if (schema == kForkExperimentSchema && !item.at("fork").is_null()) {
+      auto fork = item.at("fork");
+      if (!fork.is_object() || !fork.contains("parent")) {
+        codec::invalid("a variant fork needs a parent variant");
+      }
+      const auto parent = codec::text(fork.at("parent"));
+      fork.erase("parent");
+      fork.update({
+          {"parent_run_id", ""},
+          {"parent_config_digest", ""},
+          {"recorded_decisions", Json::array()},
+      });
+      variant.fork = VariantFork{.parent = parent, .stage = codec::read_fork_stage(fork)};
+    }
     if (!item.at("policy_overrides").is_array()) {
       codec::invalid("policy_overrides must be an array");
     }

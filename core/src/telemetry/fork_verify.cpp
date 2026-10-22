@@ -1,11 +1,11 @@
-#include "markettwin/telemetry/fork.hpp"
-
 #include "markettwin/common/hash.hpp"
+#include "markettwin/telemetry/fork.hpp"
 #include "markettwin/telemetry/replay.hpp"
 
 #include "artifacts.hpp"
 #include "codec.hpp"
 
+#include <algorithm>
 #include <array>
 #include <fstream>
 #include <functional>
@@ -28,15 +28,15 @@ std::uint64_t sequence_of(std::string_view line) {
     throw RunError{"TraceMismatch", "a trace record has no sequence"};
   }
   std::uint64_t value = 0;
-  for (auto index = at + kKey.size(); index < line.size() && line.at(index) >= '0' &&
-                                      line.at(index) <= '9';
-       ++index) {
+  for (auto index = at + kKey.size();
+       index < line.size() && line.at(index) >= '0' && line.at(index) <= '9'; ++index) {
     value = (value * 10) + static_cast<std::uint64_t>(line.at(index) - '0');
   }
   return value;
 }
 
 // The text between `open` and the next `close`, or the last `close` when `last` is set.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters): delimiters in reading order.
 std::string_view between(std::string_view line, std::string_view open, std::string_view close,
                          bool last = false) {
   const auto start = line.find(open);
@@ -97,10 +97,16 @@ public:
     if (!command_ && !execution_) {
       return std::nullopt;
     }
-    const bool command = command_ && (!execution_ || command_->sequence < execution_->sequence);
-    auto& slot = command ? command_ : execution_;
-    auto result = std::make_pair(std::move(*slot), command);
-    slot = read(command ? commands_ : trace_);
+    if (command_ && (!execution_ || command_->sequence < execution_->sequence)) {
+      auto result = std::make_pair(std::move(*command_), true);
+      command_ = read(commands_);
+      return result;
+    }
+    if (!execution_) {
+      return std::nullopt;
+    }
+    auto result = std::make_pair(std::move(*execution_), false);
+    execution_ = read(trace_);
     return result;
   }
 
@@ -118,6 +124,7 @@ private:
   std::optional<Record> execution_;
 };
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters): from one run ID to the other.
 std::string replace_run_id(std::string line, std::string_view from, std::string_view to) {
   const auto key = R"("run_id":")" + std::string{from} + '"';
   if (const auto at = line.find(key); at != std::string::npos) {
@@ -150,9 +157,9 @@ Json divergence(const std::optional<Record>& parent, const std::optional<Record>
 }
 
 // The first pair of records after the prefix that `keep` selects and that differ.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters): parent then fork, as everywhere.
 Json first_difference(const RunArtifacts& parent, const RunArtifacts& fork,
-                      std::uint64_t fork_point,
-                      const std::function<bool(std::string_view)>& keep) {
+                      std::uint64_t fork_point, const std::function<bool(std::string_view)>& keep) {
   Stream left{parent};
   Stream right{fork};
   const auto advance = [&](Stream& stream, bool skip_point) -> std::optional<Record> {
@@ -217,24 +224,28 @@ Json market_sample(const Json& bid, const Json& ask) {
 }
 
 Json compare_values(const Json& parent, const Json& fork) {
-  const bool numbers = parent.is_number_integer() && fork.is_number_integer();
-  return {
-      {"parent", parent},
-      {"fork", fork},
-      {"difference",
-       numbers ? Json(codec::signed_integer(fork) - codec::signed_integer(parent)) : Json(nullptr)},
-  };
+  Json difference = nullptr;
+  if (parent.is_number_integer() && fork.is_number_integer()) {
+    difference = codec::signed_integer(fork) - codec::signed_integer(parent);
+  }
+  return {{"parent", parent}, {"fork", fork}, {"difference", difference}};
 }
 
 Json agent_differences(const Json& parent, const Json& fork) {
   constexpr std::array<std::string_view, 9> kFields{
-      "total_pnl_minor",  "realized_pnl_minor", "unrealized_pnl_minor",
-      "max_drawdown_minor", "position",         "max_abs_position",
-      "mean_abs_position_millishares", "fills", "maker_spread_capture_minor",
+      "total_pnl_minor",
+      "realized_pnl_minor",
+      "unrealized_pnl_minor",
+      "max_drawdown_minor",
+      "position",
+      "max_abs_position",
+      "mean_abs_position_millishares",
+      "fills",
+      "maker_spread_capture_minor",
   };
   auto result = Json::array();
   for (const auto& left : parent.at("agents")) {
-    const auto id = left.at("agent_id");
+    const auto& id = left.at("agent_id");
     const auto right = std::ranges::find_if(
         fork.at("agents"), [&](const Json& item) { return item.at("agent_id") == id; });
     if (right == fork.at("agents").end()) {
@@ -243,7 +254,8 @@ Json agent_differences(const Json& parent, const Json& fork) {
     Json values = Json::object();
     for (const auto name : kFields) {
       const std::string key{name};
-      values[key] = compare_values(left.value(key, Json(nullptr)), right->value(key, Json(nullptr)));
+      values.emplace(
+          key, compare_values(left.value(key, Json(nullptr)), right->value(key, Json(nullptr))));
     }
     result.push_back({
         {"agent_id", id},
@@ -304,8 +316,8 @@ Json window_differences(const RunArtifacts& parent, const RunArtifacts& fork) {
   for (std::size_t index = 0; index < left.agents.size(); ++index) {
     Json values = Json::object();
     for (std::size_t column = 0; column < left.columns.size(); ++column) {
-      values[left.columns.at(column)] =
-          compare_values(a.at(index).at(column), b.at(index).at(column));
+      values.emplace(left.columns.at(column),
+                     compare_values(a.at(index).at(column), b.at(index).at(column)));
     }
     agents.push_back({{"agent_id", left.agents.at(index)}, {"values", values}});
   }
@@ -320,6 +332,78 @@ Json digests(const ReplayResult& replay) {
       {"trade", summary.trade_digest},     {"accounting", summary.accounting_digest},
       {"metrics", summary.metrics_digest},
   };
+}
+
+struct RunIds {
+  std::string_view parent;
+  std::string_view fork;
+};
+
+struct Prefix {
+  std::uint64_t commands = 0;
+  std::uint64_t executions = 0;
+  std::string digest;
+  std::uint64_t fork_point = 0;
+};
+
+// Every record before the fork's ForkPoint for `stage`, in both channels, compared byte
+// for byte with the parent's after normalizing the run ID.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters): parent then fork, as everywhere.
+Prefix read_prefix(const RunArtifacts& parent, const RunArtifacts& fork, RunIds ids,
+                   std::size_t stage) {
+  Stream left{parent};
+  Stream right{fork};
+  Sha256 hash;
+  Prefix result;
+  while (auto item = right.next()) {
+    const auto& line = item->first.line;
+    if (kind_of(line) == "ForkPoint" &&
+        codec::parse(line).at("payload").at("stage") == Json(stage)) {
+      result.fork_point = item->first.sequence;
+      result.digest = hash.digest();
+      return result;
+    }
+    const auto other = left.next();
+    if (!other || replace_run_id(other->first.line, ids.parent, ids.fork) != line) {
+      throw RunError{"PrefixMismatch", "the traces differ before the fork",
+                     Sequence{item->first.sequence}};
+    }
+    hash.update(line);
+    hash.update("\n");
+    ++(item->second ? result.commands : result.executions);
+  }
+  throw RunError{"ForkPointMissing", "the fork's trace has no ForkPoint for its last stage"};
+}
+
+// The spread and midpoint at every sample time both runs share after the fork.
+Json paired_samples(const RunArtifacts& parent, const RunArtifacts& fork, std::uint64_t at) {
+  const auto left = samples_after(parent, at);
+  const auto right = samples_after(fork, at);
+  auto result = Json::array();
+  std::size_t other = 0;
+  for (const auto& sample : left) {
+    while (other < right.size() && right.at(other).timestamp < sample.timestamp) {
+      ++other;
+    }
+    if (other == right.size() || right.at(other).timestamp != sample.timestamp) {
+      continue;
+    }
+    const auto a = market_sample(sample.best_bid, sample.best_ask);
+    const auto b = market_sample(right.at(other).best_bid, right.at(other).best_ask);
+    Json gap = nullptr;
+    if (!a.at("mid_milliticks").is_null() && !b.at("mid_milliticks").is_null()) {
+      const auto difference = codec::signed_integer(b.at("mid_milliticks")) -
+                              codec::signed_integer(a.at("mid_milliticks"));
+      gap = difference < 0 ? -difference : difference;
+    }
+    result.push_back({
+        {"timestamp_ns", sample.timestamp},
+        {"parent", a},
+        {"fork", b},
+        {"mid_gap_milliticks", gap},
+    });
+  }
+  return result;
 }
 
 ForkVerification fail(std::string code, std::string message) {
@@ -353,73 +437,22 @@ ForkVerification verify_fork(const std::filesystem::path& parent_directory,
       return fail("ParentMismatch", "the fork's last stage names a different parent");
     }
 
-    // The prefix: every record before the fork's last ForkPoint, in both channels.
-    Stream left{parent};
-    Stream right{fork};
-    Sha256 prefix;
-    std::uint64_t commands = 0;
-    std::uint64_t executions = 0;
-    std::uint64_t fork_point = 0;
-    while (true) {
-      auto item = right.next();
-      if (!item) {
-        return fail("ForkPointMissing", "the fork's trace has no ForkPoint for its last stage");
-      }
-      const auto& line = item->first.line;
-      if (kind_of(line) == "ForkPoint" &&
-          codec::parse(line).at("payload").at("stage") == Json(stage_index)) {
-        fork_point = item->first.sequence;
-        break;
-      }
-      const auto other = left.next();
-      if (!other || replace_run_id(other->first.line, parent_config.run_id,
-                                   fork_config.run_id) != line) {
-        return fail("PrefixMismatch", "the traces differ before the fork at sequence " +
-                                          std::to_string(item->first.sequence));
-      }
-      prefix.update(line);
-      prefix.update("\n");
-      ++(item->second ? commands : executions);
-    }
-
+    const auto prefix = read_prefix(
+        parent, fork, {.parent = parent_config.run_id, .fork = fork_config.run_id}, stage_index);
     const auto at = stage.at.value();
     const auto everything = [](std::string_view /*kind*/) { return true; };
-    const auto first = first_difference(parent, fork, fork_point, everything);
-    const auto market = first_difference(parent, fork, fork_point, is_market);
+    const auto first = first_difference(parent, fork, prefix.fork_point, everything);
+    const auto market = first_difference(parent, fork, prefix.fork_point, is_market);
 
-    const auto parent_samples = samples_after(parent, at);
-    const auto fork_samples = samples_after(fork, at);
-    auto samples = Json::array();
-    for (std::size_t index = 0, other = 0; index < parent_samples.size(); ++index) {
-      const auto& left_sample = parent_samples.at(index);
-      while (other < fork_samples.size() &&
-             fork_samples.at(other).timestamp < left_sample.timestamp) {
-        ++other;
-      }
-      if (other == fork_samples.size() || fork_samples.at(other).timestamp != left_sample.timestamp) {
-        continue;
-      }
-      const auto& right_sample = fork_samples.at(other);
-      const auto a = market_sample(left_sample.best_bid, left_sample.best_ask);
-      const auto b = market_sample(right_sample.best_bid, right_sample.best_ask);
-      Json gap = nullptr;
-      if (!a.at("mid_milliticks").is_null() && !b.at("mid_milliticks").is_null()) {
-        const auto difference = codec::signed_integer(b.at("mid_milliticks")) -
-                                codec::signed_integer(a.at("mid_milliticks"));
-        gap = difference < 0 ? -difference : difference;
-      }
-      samples.push_back({
-          {"timestamp_ns", left_sample.timestamp},
-          {"parent", a},
-          {"fork", b},
-          {"mid_gap_milliticks", gap},
-      });
-    }
+    const auto samples = paired_samples(parent, fork, at);
 
-    const auto parent_metrics = codec::parse(codec::read_file(parent.metrics, codec::kMaxConfigBytes));
+    const auto parent_metrics =
+        codec::parse(codec::read_file(parent.metrics, codec::kMaxConfigBytes));
     const auto fork_metrics = codec::parse(codec::read_file(fork.metrics, codec::kMaxConfigBytes));
-    const auto& parent_summary = parent_replay.summary;
-    const auto& fork_summary = fork_replay.summary;
+    const auto trades = compare_values(Json(parent_replay.summary.trade_count),
+                                       Json(fork_replay.summary.trade_count));
+    const auto events = compare_values(Json(parent_replay.summary.event_count),
+                                       Json(fork_replay.summary.event_count));
     const Json report{
         {"schema_version", 1},
         {"kind", "ForkReport"},
@@ -432,11 +465,11 @@ ForkVerification verify_fork(const std::filesystem::path& parent_directory,
         {
             "prefix",
             {
-                {"commands", commands},
-                {"execution", executions},
-                {"records", commands + executions},
-                {"digest", prefix.digest()},
-                {"fork_point_sequence", fork_point},
+                {"commands", prefix.commands},
+                {"execution", prefix.executions},
+                {"records", prefix.commands + prefix.executions},
+                {"digest", prefix.digest},
+                {"fork_point_sequence", prefix.fork_point},
             },
         },
         {"divergence", {{"first", first}, {"first_market", market}}},
@@ -445,10 +478,8 @@ ForkVerification verify_fork(const std::filesystem::path& parent_directory,
         {
             "market",
             {
-                {"trades", compare_values(Json(parent_summary.trade_count),
-                                          Json(fork_summary.trade_count))},
-                {"events", compare_values(Json(parent_summary.event_count),
-                                          Json(fork_summary.event_count))},
+                {"trades", trades},
+                {"events", events},
                 {"samples", samples},
             },
         },
@@ -473,6 +504,51 @@ Directive parse_directive(std::string_view json) {
 
 std::string directive_json(const Directive& directive) {
   return codec::directive(directive).dump();
+}
+
+std::string decision_request_json(const DecisionRequest& request) {
+  return Json{
+      {"agent_id", request.agent.value()},
+      {"at_ns", request.at.value()},
+      {"index", request.index},
+      {"mandate", request.mandate},
+      {"observation", codec::parse(request.observation)},
+      {"current", request.current != nullptr ? codec::directive(*request.current) : Json(nullptr)},
+  }
+      .dump();
+}
+
+DecisionResponse parse_decision_response(std::string_view json) {
+  DecisionResponse response;
+  try {
+    const auto value = codec::parse(json);
+    codec::fields(value, {"directive", "model", "input_tokens", "output_tokens", "error_code"});
+    response.model = codec::text(value.at("model"));
+    response.input_tokens = codec::unsigned_integer(value.at("input_tokens"));
+    response.output_tokens = codec::unsigned_integer(value.at("output_tokens"));
+    if (const auto& error = value.at("error_code"); !error.is_null()) {
+      response.error_code = codec::text(error);
+    }
+    if (const auto& directive = value.at("directive"); !directive.is_null()) {
+      response.directive = codec::read_directive(directive);
+    }
+  } catch (const RunError& /*error*/) {
+    response.directive.reset();
+    response.error_code = "SourceResponseInvalid";
+  }
+  if (response.error_code.size() > 64 ||
+      !std::ranges::all_of(response.error_code, [](char ch) {
+        return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9');
+      })) {
+    response.directive.reset();
+    response.error_code = "SourceResponseInvalid";
+  }
+  if (response.model.size() > 128 || !std::ranges::all_of(response.model, [](char ch) {
+        return ch >= ' ' && ch <= '~';
+      })) {
+    response.model = "unknown";
+  }
+  return response;
 }
 
 std::vector<RecordedDecision> read_decisions(const std::filesystem::path& run) {
@@ -513,7 +589,7 @@ ForkStage parse_stage_request(std::string_view json) {
   };
   for (const auto& [key, fallback] : defaults.items()) {
     if (!value.contains(key)) {
-      value[key] = fallback;
+      value.emplace(key, fallback);
     }
   }
   return codec::read_fork_stage(value);

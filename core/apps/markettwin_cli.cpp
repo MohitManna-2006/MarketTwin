@@ -19,13 +19,14 @@
 
 namespace {
 void print_usage(std::ostream& output) {
-  output << "Usage: markettwin --version | --help\n"
-         << "       markettwin run --config CONFIG.json --output NEW_DIRECTORY [--decisions fixture]\n"
-         << "       markettwin replay --input RUN_DIRECTORY\n"
-         << "       markettwin fork --parent RUN_DIRECTORY --stage STAGE.json --output NEW_DIRECTORY "
-            "[--decisions fixture]\n"
-         << "       markettwin fork-verify --parent RUN_DIRECTORY --fork RUN_DIRECTORY\n"
-         << "       markettwin experiment --config EXPERIMENT.json --output NEW_DIRECTORY\n";
+  output
+      << "Usage: markettwin --version | --help\n"
+      << "       markettwin run --config CONFIG.json --output NEW_DIRECTORY [--decisions fixture]\n"
+      << "       markettwin replay --input RUN_DIRECTORY\n"
+      << "       markettwin fork --parent RUN_DIRECTORY --stage STAGE.json --output NEW_DIRECTORY "
+         "[--decisions fixture]\n"
+      << "       markettwin fork-verify --parent RUN_DIRECTORY --fork RUN_DIRECTORY\n"
+      << "       markettwin experiment --config EXPERIMENT.json --output NEW_DIRECTORY\n";
   output << "       markettwin historical-import --input RAW.jsonl --metadata META.json --output "
             "NEW_DIRECTORY\n"
          << "       markettwin historical-verify --input SESSION_DIRECTORY\n"
@@ -58,28 +59,10 @@ std::optional<int> calibration_command(int argc, char* const* argv) {
   return std::nullopt;
 }
 
-int execute(int argc, char* const* argv) {
-  if (argc == 2 && std::string_view{argv[1]} == "--version") {
-    std::cout << "MarketTwin " << markettwin::version() << '\n';
-    return 0;
-  }
-  if (argc == 2 && (std::string_view{argv[1]} == "--help" || std::string_view{argv[1]} == "-h")) {
-    print_usage(std::cout);
-    return 0;
-  }
-  if ((argc == 6 || (argc == 8 && std::string_view{argv[6]} == "--decisions" &&
-                      std::string_view{argv[7]} == "fixture")) &&
-      std::string_view{argv[1]} == "run" && std::string_view{argv[2]} == "--config" &&
-      std::string_view{argv[4]} == "--output") {
-    // AI desk decisions come only from the deterministic fixture here; the API supplies a
-    // model (ADR 0012).
-    markettwin::FixtureDecisionSource fixture;
-    markettwin::Simulation simulation{markettwin::load_config(argv[3]), argv[5]};
-    std::cout << markettwin::summary_json(simulation.run(argc == 8 ? &fixture : nullptr)) << '\n';
-    return 0;
-  }
+// The timeline fork subcommands (ADR 0012), or nothing when the arguments name another.
+std::optional<int> fork_command(int argc, char* const* argv) {
   if ((argc == 8 || (argc == 10 && std::string_view{argv[8]} == "--decisions" &&
-                      std::string_view{argv[9]} == "fixture")) &&
+                     std::string_view{argv[9]} == "fixture")) &&
       std::string_view{argv[1]} == "fork" && std::string_view{argv[2]} == "--parent" &&
       std::string_view{argv[4]} == "--stage" && std::string_view{argv[6]} == "--output") {
     const std::ifstream stage{argv[5]};
@@ -113,6 +96,29 @@ int execute(int argc, char* const* argv) {
     std::cout << markettwin::replay_result_json(result) << '\n';
     return result.verified ? 0 : 1;
   }
+  return std::nullopt;
+}
+
+int execute(int argc, char* const* argv) {
+  if (argc == 2 && std::string_view{argv[1]} == "--version") {
+    std::cout << "MarketTwin " << markettwin::version() << '\n';
+    return 0;
+  }
+  if (argc == 2 && (std::string_view{argv[1]} == "--help" || std::string_view{argv[1]} == "-h")) {
+    print_usage(std::cout);
+    return 0;
+  }
+  if ((argc == 6 || (argc == 8 && std::string_view{argv[6]} == "--decisions" &&
+                     std::string_view{argv[7]} == "fixture")) &&
+      std::string_view{argv[1]} == "run" && std::string_view{argv[2]} == "--config" &&
+      std::string_view{argv[4]} == "--output") {
+    // AI desk decisions come only from the deterministic fixture here; the API supplies a
+    // model (ADR 0012).
+    markettwin::FixtureDecisionSource fixture;
+    markettwin::Simulation simulation{markettwin::load_config(argv[3]), argv[5]};
+    std::cout << markettwin::summary_json(simulation.run(argc == 8 ? &fixture : nullptr)) << '\n';
+    return 0;
+  }
   if (argc == 6 && std::string_view{argv[1]} == "experiment" &&
       std::string_view{argv[2]} == "--config" && std::string_view{argv[4]} == "--output") {
     const auto config = markettwin::load_experiment(argv[3]);
@@ -143,6 +149,9 @@ int execute(int argc, char* const* argv) {
     return nlohmann::json::parse(result).value("verified", false) ? 0 : 1;
   }
   if (const auto status = calibration_command(argc, argv)) {
+    return *status;
+  }
+  if (const auto status = fork_command(argc, argv)) {
     return *status;
   }
   print_usage(std::cerr);

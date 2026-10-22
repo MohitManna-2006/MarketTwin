@@ -7,10 +7,9 @@ namespace {
 
 constexpr std::size_t kMaxDeskLevels = 32;
 
-void cancel_all(const AgentObservation& observation, AgentActions& actions,
-                std::optional<Side> keep = std::nullopt) {
+void cancel_all(const AgentObservation& observation, AgentActions& actions) {
   for (const auto& order : observation.open_orders) {
-    if (!order.cancel_requested && order.side != keep) {
+    if (!order.cancel_requested) {
       actions.cancel(order.id);
     }
   }
@@ -24,7 +23,8 @@ std::string directive_error(const Directive& directive, const ModelDirectedParam
       directive.mode != DeskMode::Reduce) {
     return "unknown directive mode";
   }
-  if (directive.half_spread_ticks < 1 || directive.half_spread_ticks > params.max_half_spread_ticks) {
+  if (directive.half_spread_ticks < 1 ||
+      directive.half_spread_ticks > params.max_half_spread_ticks) {
     return "half_spread_ticks must be 1 to the desk's max_half_spread_ticks";
   }
   const auto skew = directive.skew_ticks;
@@ -52,7 +52,8 @@ void DirectedMaker::on_timer(const AgentObservation& observation, AgentActions& 
   switch (directive_.mode) {
   case DeskMode::Quote: {
     auto bounded = observation;
-    bounded.limits.max_position = std::min(directive_.max_position, observation.limits.max_position);
+    bounded.limits.max_position =
+        std::min(directive_.max_position, observation.limits.max_position);
     const MarketMakerParams params{
         .half_spread_ticks = directive_.half_spread_ticks,
         .quote_size = directive_.quote_size,
@@ -60,8 +61,8 @@ void DirectedMaker::on_timer(const AgentObservation& observation, AgentActions& 
         .level_spacing_ticks = 1,
     };
     const QuoteTarget target{
-        .reservation_milliticks =
-            (reference_twice(observation) * (kMilliticks / 2)) + (directive_.skew_ticks * kMilliticks),
+        .reservation_milliticks = (reference_twice(observation) * (kMilliticks / 2)) +
+                                  (directive_.skew_ticks * kMilliticks),
         .half_spread_milliticks = to_signed(directive_.half_spread_ticks) * kMilliticks,
     };
     requote(bounded, params, target, actions);
@@ -81,7 +82,8 @@ void DirectedMaker::on_timer(const AgentObservation& observation, AgentActions& 
   // The touch on the other side: selling at the bid, buying at the ask.
   std::optional<PriceTicks> touch;
   if (observation.market) {
-    const auto& level = side == Side::Sell ? observation.market->best_bid : observation.market->best_ask;
+    const auto& level =
+        side == Side::Sell ? observation.market->best_bid : observation.market->best_ask;
     if (level) {
       touch = level->price;
     }
@@ -103,8 +105,8 @@ void DirectedMaker::on_timer(const AgentObservation& observation, AgentActions& 
   }
   const auto held = static_cast<std::uint64_t>(observation.position > 0 ? observation.position
                                                                         : -observation.position);
-  const auto quantity = std::min({directive_.quote_size.value(), held,
-                                  observation.limits.max_order_quantity.value()});
+  const auto limit = std::min(directive_.quote_size.value(), held);
+  const auto quantity = std::min(limit, observation.limits.max_order_quantity.value());
   actions.submit({
       .side = side,
       .type = OrderType::Limit,

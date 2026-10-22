@@ -468,7 +468,9 @@ TEST(ExperimentTest, ConfigParsingIsStrictAndCanonicalFormRoundTrips) {
     mutate(changed);
     return code_of([&] { static_cast<void>(parse_experiment(changed.dump(), {})); });
   };
-  EXPECT_EQ(rejected([](Json& value) { value.at("schema_version") = 2; }), "UnsupportedSchema");
+  EXPECT_EQ(rejected([](Json& value) { value.at("schema_version") = 3; }), "UnsupportedSchema");
+  // Schema 2 exists for fork variants, so every variant needs a fork field.
+  EXPECT_EQ(rejected([](Json& value) { value.at("schema_version") = 2; }), "InvalidConfig");
   EXPECT_EQ(rejected([](Json& value) { value.emplace("extra", 1); }), "InvalidConfig");
   EXPECT_EQ(rejected([](Json& value) { value.erase("limits"); }), "InvalidConfig");
   EXPECT_EQ(rejected([](Json& value) { value.at("seeds") = Json::array(); }), "InvalidConfig");

@@ -420,7 +420,11 @@ std::string Population::desk_observation(AgentId id, SimTime at, SimTime interva
                                          const ModelDirectedParams& desk,
                                          const Directive& current) {
   using codec::Json;
-  auto& agent = agents_.at(slot_of(id).value());
+  const auto slot = slot_of(id);
+  if (!slot) {
+    throw RunError{"InternalError", "a desk observation names an unknown agent"};
+  }
+  auto& agent = agents_.at(*slot);
   const auto optional_ticks = [](const std::optional<PriceTicks>& price) {
     return price ? Json(price->value()) : Json(nullptr);
   };

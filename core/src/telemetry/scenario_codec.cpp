@@ -434,9 +434,11 @@ ForkStage read_fork_stage(const Json& value) {
                     "recorded_decisions",
                     "directive_overrides",
                 });
-  for (const auto* name :
-       {"add_shocks", "remove_shocks", "policy_overrides", "recorded_decisions",
-        "directive_overrides"}) {
+  constexpr std::array<const char*, 5> kLists{
+      "add_shocks",         "remove_shocks",       "policy_overrides",
+      "recorded_decisions", "directive_overrides",
+  };
+  for (const auto* name : kLists) {
     if (!value.at(name).is_array()) {
       invalid(std::string{name} + " must be an array");
     }

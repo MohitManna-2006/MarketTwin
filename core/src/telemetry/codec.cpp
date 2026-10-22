@@ -109,9 +109,9 @@ constexpr std::array<std::string_view, 12> kAccountingFields{
     "max_trace_bytes", "commands",   "scenario",   "accounting",
 };
 constexpr std::array<std::string_view, 13> kForkFields{
-    "schema_version", "run_id",          "seed",     "tick_size_minor", "exchange",
-    "horizon_ns",     "max_events",      "max_queue", "max_trace_bytes", "commands",
-    "scenario",       "accounting",      "forks",
+    "schema_version", "run_id",     "seed",      "tick_size_minor", "exchange",
+    "horizon_ns",     "max_events", "max_queue", "max_trace_bytes", "commands",
+    "scenario",       "accounting", "forks",
 };
 
 void require_fields(const Json& value, std::span<const std::string_view> required) {

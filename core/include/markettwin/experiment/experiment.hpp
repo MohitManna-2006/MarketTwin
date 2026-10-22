@@ -9,11 +9,23 @@
 namespace markettwin {
 
 inline constexpr std::uint64_t kExperimentSchema = 1;
+// Schema 1 plus a nullable `fork` per variant; written only when a variant forks.
+inline constexpr std::uint64_t kForkExperimentSchema = 2;
 inline constexpr std::uint64_t kMaxExperimentRuns = 100'000;
+
+// A variant that forks another variant's cell of the same seed at one instant (ADR 0012),
+// so every seed's pair shares its history up to the fork by construction. The stage's
+// parent ID, digest, and recorded decisions are filled in per seed.
+struct VariantFork {
+  std::string parent; // the variant forked
+  ForkStage stage;
+  bool operator==(const VariantFork&) const = default;
+};
 
 struct Variant {
   std::string name;
   std::vector<PolicyOverride> overrides;
+  std::optional<VariantFork> fork; // with no overrides of its own
   bool operator==(const Variant&) const = default;
 };
 

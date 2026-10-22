@@ -219,6 +219,10 @@ void verify_manifest(const Json& manifest, const RunConfig& config, const RunSum
 }
 } // namespace
 
+std::unique_ptr<DecisionSource> recorded_decisions(const std::filesystem::path& run_directory) {
+  return std::make_unique<RecordedDecisions>(artifact_paths(run_directory).trace);
+}
+
 ReplayResult verify_replay(const std::filesystem::path& directory) {
   ReplayResult result;
   try {

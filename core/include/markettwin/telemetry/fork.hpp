@@ -28,6 +28,13 @@ struct ForkVerification {
 // A directive as the Decision records and fork stages spell it.
 [[nodiscard]] Directive parse_directive(std::string_view json);
 [[nodiscard]] std::string directive_json(const Directive& directive);
+// What a decision source outside the core receives and returns (ADR 0012):
+//   request  {"agent_id", "at_ns", "index", "mandate", "observation", "current"}
+//   response {"directive": {...} | null, "model", "input_tokens", "output_tokens",
+//             "error_code": string | null}
+// A malformed response is a failed decision with code SourceResponseInvalid.
+[[nodiscard]] std::string decision_request_json(const DecisionRequest& request);
+[[nodiscard]] DecisionResponse parse_decision_response(std::string_view json);
 // Every Decision record of a finished run, in trace order.
 [[nodiscard]] std::vector<RecordedDecision> read_decisions(const std::filesystem::path& run);
 // A stage from a request that may leave out every field but at_ns; the parent fields and

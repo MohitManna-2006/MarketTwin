@@ -147,14 +147,16 @@ private:
   bool apply_due_barrier(SimTime next) {
     const auto& forks = config_->forks;
     std::optional<AgentSlot> desk;
+    std::optional<SimTime> when;
     for (AgentSlot slot = 0; slot < desks_.size(); ++slot) {
-      if (desks_.at(slot) && desks_.at(slot)->next <= next &&
-          (!desk || desks_.at(slot)->next < desks_.at(*desk)->next)) {
+      const auto& item = desks_.at(slot);
+      if (item && item->next <= next && (!when || item->next < *when)) {
         desk = slot;
+        when = item->next;
       }
     }
     if (next_stage_ < forks.size() && forks.at(next_stage_).at <= next &&
-        (!desk || forks.at(next_stage_).at <= desks_.at(*desk)->next)) {
+        (!when || forks.at(next_stage_).at <= *when)) {
       apply_stage(next_stage_);
       ++next_stage_;
       return true;
@@ -190,15 +192,19 @@ private:
       const auto found = std::ranges::find(live.config->agents, item.agent, &AgentConfig::id);
       const auto slot = static_cast<std::size_t>(std::distance(live.config->agents.begin(), found));
       const auto* params = std::get_if<ModelDirectedParams>(&item.policy);
-      desks_.at(slot) =
-          params != nullptr ? std::optional{start_desk(item.agent, *params, stage.at)} : std::nullopt;
+      desks_.at(slot) = params != nullptr ? std::optional{start_desk(item.agent, *params, stage.at)}
+                                          : std::nullopt;
     }
   }
 
   // One desk decision (ADR 0012). A stage still ahead fixes it to the parent's record;
   // after the last stage its decision mode does; otherwise the decision source answers.
   void decide(AgentSlot slot) {
-    auto& desk = desks_.at(slot).value();
+    auto& item = desks_.at(slot);
+    if (!item) {
+      throw RunError{"InternalError", "a decision was due for an agent that is not a desk"};
+    }
+    auto& desk = *item;
     auto& live = scenario();
     const auto at = desk.next;
     ++desk.index;
@@ -226,8 +232,8 @@ private:
       decision = *recorded;
     } else if (!forks.empty() && forks.back().decisions != DecisionMode::Live) {
       const auto& stage = forks.back();
-      const auto override = std::ranges::find(stage.directive_overrides, desk.id,
-                                              &DirectiveOverride::agent);
+      const auto override =
+          std::ranges::find(stage.directive_overrides, desk.id, &DirectiveOverride::agent);
       if (stage.at == at && override != stage.directive_overrides.end()) {
         decision.source = "override";
         decision.directive = override->directive;
@@ -244,9 +250,9 @@ private:
                                  &DirectiveOverride::agent) !=
                    forks.back().directive_overrides.end()) {
       decision.source = "override";
-      decision.directive = std::ranges::find(forks.back().directive_overrides, desk.id,
-                                             &DirectiveOverride::agent)
-                               ->directive;
+      decision.directive =
+          std::ranges::find(forks.back().directive_overrides, desk.id, &DirectiveOverride::agent)
+              ->directive;
     } else {
       ask(desk, observation, decision);
     }
@@ -276,9 +282,8 @@ private:
     decision.output_tokens = response.output_tokens;
     auto error = response.error_code;
     if (response.directive && error.empty()) {
-      const auto reason =
-          directive_error(*response.directive, desk.params,
-                          scenario_->config->agents.at(slot_of(desk.id)).limits);
+      const auto reason = directive_error(*response.directive, desk.params,
+                                          scenario_->config->agents.at(slot_of(desk.id)).limits);
       if (reason.empty()) {
         decision.source = response.source;
         decision.directive = *response.directive;
