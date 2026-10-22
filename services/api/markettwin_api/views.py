@@ -47,6 +47,10 @@ def run_summary(row: Row) -> Json:
         "experiment_id": row["experiment_id"],
         "variant": row["variant"],
         "error": _error(row) if failed else None,
+        "parent_run_id": row.get("parent_run_id"),
+        "fork_at_ns": row.get("fork_at_ns"),
+        "fork_status": row.get("fork_status"),
+        "desk": row.get("desk"),
     }
 
 

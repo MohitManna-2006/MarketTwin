@@ -8,6 +8,7 @@ worker threads, and independent runs may execute concurrently.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from os import PathLike, fspath
 from typing import Any
@@ -41,15 +42,39 @@ def canonicalize_config(config: JsonObject | str) -> tuple[str, str]:
 
 
 def run(
-    config: JsonObject | str, output_directory: str | PathLike[str] | None = None
+    config: JsonObject | str,
+    output_directory: str | PathLike[str] | None = None,
+    decide: Callable[[str], str] | None = None,
+    decisions: str = "",
 ) -> JsonObject:
     """Run one simulation and return its terminal summary.
 
     With ``output_directory`` (which must not exist) the six run artifacts are written
-    there; without it the run stays in memory.
+    there; without it the run stays in memory. An AI desk's decisions come from
+    ``decide``, called with each decision request as JSON and returning the response as
+    JSON, or from the core's deterministic fixture with ``decisions="fixture"``.
     """
     directory = "" if output_directory is None else fspath(output_directory)
-    return json.loads(_native.run(_text(config), directory))
+    return json.loads(_native.run(_text(config), directory, decide, decisions))
+
+
+def fork_config(
+    parent_directory: str | PathLike[str], stage: JsonObject, run_id: str
+) -> tuple[JsonObject, str]:
+    """The canonical config and digest of a fork of a finished run (ADR 0012).
+
+    ``stage`` needs ``at_ns``; every other stage field may be left out. The core fills in
+    the parent's ID, config digest, and recorded AI desk decisions.
+    """
+    canonical, digest = _native.fork_config(fspath(parent_directory), json.dumps(stage), run_id)
+    return json.loads(canonical), digest
+
+
+def verify_fork(
+    parent_directory: str | PathLike[str], fork_directory: str | PathLike[str]
+) -> JsonObject:
+    """Replay both runs, check the shared prefix, and build the fork's divergence report."""
+    return json.loads(_native.verify_fork(fspath(parent_directory), fspath(fork_directory)))
 
 
 def verify_replay(run_directory: str | PathLike[str]) -> JsonObject:
@@ -162,14 +187,20 @@ def run_experiment(
     output_directory: str | PathLike[str] | None = None,
     progress: ExperimentProgress | None = None,
     base_directory: str | PathLike[str] | None = None,
+    recorded: Mapping[str, str | PathLike[str]] | None = None,
 ) -> ExperimentOutput:
     """Run every cell of an experiment on the calling thread.
 
     ``progress`` is updated from native code and may be read, or asked to cancel, from
-    another thread while this call is running.
+    another thread while this call is running. ``recorded`` maps an AI desk cell's run ID
+    to a finished run of that cell, whose decisions the cell reuses.
     """
     results, values = _native.run_experiment(
-        _text(config), _directory(base_directory), _directory(output_directory), progress
+        _text(config),
+        _directory(base_directory),
+        _directory(output_directory),
+        progress,
+        {key: fspath(value) for key, value in (recorded or {}).items()},
     )
     return ExperimentOutput(results=json.loads(results), paired_values=json.loads(values))
 

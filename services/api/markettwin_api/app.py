@@ -28,6 +28,8 @@ from markettwin_api.live_service import LiveService
 from markettwin_api.scenarios import field_catalogue
 from markettwin_api.service import Research, ServiceError
 from markettwin_api.settings import Settings, load_settings
+from markettwin_api.timeline_routes import router as timeline_router
+from markettwin_api.timeline_service import Timelines
 from markettwin_api.validation import validate_experiment_config, validate_run_config
 
 MAX_PAGE = 1_000
@@ -392,6 +394,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.ai = AIResearch(app.state.research)
         app.state.historical = HistoricalResearch(app.state.research)
         app.state.calibration = CalibrationResearch(app.state.research, app.state.historical)
+        app.state.timelines = Timelines(app.state.research)
         # The live hub is isolated from the rest of the service: it owns its own tasks,
         # and a feed that cannot start leaves every other route working.
         app.state.live = LiveService(app.state.research, app.state.historical)
@@ -455,5 +458,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(ai_router)
     app.include_router(historical_router)
     app.include_router(calibration_router)
+    app.include_router(timeline_router)
     app.include_router(live_router)
     return app

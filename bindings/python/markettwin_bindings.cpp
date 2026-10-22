@@ -18,11 +18,13 @@
 #include "markettwin/historical/historical.hpp"
 #include "markettwin/live/live.hpp"
 #include "markettwin/simulation/simulation.hpp"
+#include "markettwin/telemetry/fork.hpp"
 #include "markettwin/telemetry/replay.hpp"
 
 #include <atomic>
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <pybind11/pybind11.h>
@@ -68,6 +70,60 @@ private:
   std::string current_;
 };
 
+// Asks a Python callable for each AI desk decision no fork stage fixes (ADR 0012). The
+// run itself releases the GIL; each decision takes it back for the one call. A Python
+// exception is a failed decision, so the run continues on the previous directive.
+class PythonDecisions final : public markettwin::DecisionSource {
+public:
+  explicit PythonDecisions(py::function decide) : decide_(std::move(decide)) {}
+  PythonDecisions(const PythonDecisions&) = delete;
+  PythonDecisions& operator=(const PythonDecisions&) = delete;
+  PythonDecisions(PythonDecisions&&) = delete;
+  PythonDecisions& operator=(PythonDecisions&&) = delete;
+  ~PythonDecisions() override {
+    const py::gil_scoped_acquire acquire;
+    decide_ = py::function{};
+  }
+
+  markettwin::DecisionResponse decide(const markettwin::DecisionRequest& request) override {
+    const auto question = markettwin::decision_request_json(request);
+    std::string answer;
+    {
+      const py::gil_scoped_acquire acquire;
+      try {
+        answer = decide_(question).cast<std::string>();
+      } catch (const py::error_already_set& /*error*/) {
+        markettwin::DecisionResponse failed;
+        failed.error_code = "SourceError";
+        return failed;
+      } catch (const py::cast_error& /*error*/) {
+        markettwin::DecisionResponse failed;
+        failed.error_code = "SourceResponseInvalid";
+        return failed;
+      }
+    }
+    return markettwin::parse_decision_response(answer);
+  }
+
+private:
+  py::function decide_;
+};
+
+// The decision source a run asks: none, the native fixture, or a Python callable.
+std::unique_ptr<markettwin::DecisionSource> decision_source(const py::object& decide,
+                                                            const std::string& decisions) {
+  if (decisions == "fixture") {
+    return std::make_unique<markettwin::FixtureDecisionSource>();
+  }
+  if (!decisions.empty()) {
+    throw markettwin::RunError{"InvalidConfig", "decisions must be empty or 'fixture'"};
+  }
+  if (decide.is_none()) {
+    return nullptr;
+  }
+  return std::make_unique<PythonDecisions>(decide.cast<py::function>());
+}
+
 // Raised for every markettwin::RunError, with its stable code and sequence attached.
 py::object& native_error_type() {
   static auto* type = new py::object{};
@@ -96,11 +152,31 @@ py::tuple canonicalize_config(const std::string& text) {
   return py::make_tuple(canonical, markettwin::sha256(canonical));
 }
 
-std::string run(const std::string& config_text, const std::string& output_directory) {
+std::string run(const std::string& config_text, const std::string& output_directory,
+                const py::object& decide, const std::string& decisions) {
+  auto source = decision_source(decide, decisions);
   const py::gil_scoped_release release;
   markettwin::Simulation simulation{markettwin::parse_config(config_text),
                                     std::filesystem::path{output_directory}};
-  return markettwin::summary_json(simulation.run());
+  return markettwin::summary_json(simulation.run(source.get()));
+}
+
+py::tuple fork_config(const std::string& parent_directory, const std::string& stage_json,
+                      const std::string& run_id) {
+  std::string canonical;
+  {
+    const py::gil_scoped_release release;
+    canonical = markettwin::canonical_config(markettwin::fork_of(
+        std::filesystem::path{parent_directory}, markettwin::parse_stage_request(stage_json),
+        run_id));
+  }
+  return py::make_tuple(canonical, markettwin::sha256(canonical));
+}
+
+std::string verify_fork(const std::string& parent_directory, const std::string& fork_directory) {
+  const py::gil_scoped_release release;
+  return markettwin::fork_verification_json(markettwin::verify_fork(
+      std::filesystem::path{parent_directory}, std::filesystem::path{fork_directory}));
 }
 
 std::string verify_replay(const std::string& run_directory) {
@@ -129,7 +205,8 @@ std::string experiment_cell_config(const std::string& text, const std::string& b
 
 py::tuple run_experiment(const std::string& text, const std::string& base_directory,
                          const std::string& output_directory,
-                         const std::shared_ptr<ExperimentProgress>& progress) {
+                         const std::shared_ptr<ExperimentProgress>& progress,
+                         const std::map<std::string, std::string>& recorded) {
   std::string results;
   std::string values;
   {
@@ -140,10 +217,21 @@ py::tuple run_experiment(const std::string& text, const std::string& base_direct
     }
     // Same work as the runner's default, plus the counters. A canceled experiment still
     // records every remaining cell, as failed with code Canceled, and still publishes.
-    const markettwin::RunFunction execute = [progress](const markettwin::RunConfig& cell,
-                                                       const std::filesystem::path& directory) {
+    // An AI desk cell answers from the run already recorded for it (ADR 0012): the model
+    // was asked once, by the caller, and every statistic comes from the same decisions.
+    const auto simulate = [&recorded](const markettwin::RunConfig& cell,
+                                      const std::filesystem::path& directory) {
+      std::unique_ptr<markettwin::DecisionSource> source;
+      if (const auto found = recorded.find(cell.run_id); found != recorded.end()) {
+        source = markettwin::recorded_decisions(std::filesystem::path{found->second});
+      }
+      return markettwin::Simulation{cell, directory}.run(source.get());
+    };
+    const markettwin::RunFunction execute = [progress, simulate](
+                                                const markettwin::RunConfig& cell,
+                                                const std::filesystem::path& directory) {
       if (!progress) {
-        return markettwin::Simulation{cell, directory}.run();
+        return simulate(cell, directory);
       }
       if (progress->cancel_requested()) {
         progress->finish(false);
@@ -151,7 +239,7 @@ py::tuple run_experiment(const std::string& text, const std::string& base_direct
       }
       progress->start(cell.run_id);
       try {
-        auto summary = markettwin::Simulation{cell, directory}.run();
+        auto summary = simulate(cell, directory);
         progress->finish(true);
         return summary;
       } catch (...) {
@@ -201,8 +289,17 @@ PYBIND11_MODULE(_native, module) {
   module.def("canonicalize_config", &canonicalize_config, py::arg("config_text"),
              "Parse and validate a run config. Returns (canonical JSON, config digest).");
   module.def("run", &run, py::arg("config_text"), py::arg("output_directory") = std::string{},
+             py::arg("decide") = py::none(), py::arg("decisions") = std::string{},
              "Run one simulation. With a directory (which must not exist) it writes the run's "
-             "artifacts there. Returns the terminal summary as JSON.");
+             "artifacts there. AI desk decisions come from `decide`, a callable from request "
+             "JSON to response JSON, or from the native fixture with decisions='fixture'. "
+             "Returns the terminal summary as JSON.");
+  module.def("fork_config", &fork_config, py::arg("parent_directory"), py::arg("stage_json"),
+             py::arg("run_id"),
+             "The config of a fork of a finished run. Returns (canonical JSON, config digest).");
+  module.def("verify_fork", &verify_fork, py::arg("parent_directory"),
+             py::arg("fork_directory"),
+             "Check a fork against its parent and build its divergence report, as JSON.");
   module.def("verify_replay", &verify_replay, py::arg("run_directory"),
              "Regenerate a recorded run and compare every record. Returns the verdict as JSON.");
   module.def(
@@ -297,5 +394,8 @@ PYBIND11_MODULE(_native, module) {
   module.def("run_experiment", &run_experiment, py::arg("config_text"),
              py::arg("base_directory") = std::string{}, py::arg("output_directory") = std::string{},
              py::arg("progress") = std::shared_ptr<ExperimentProgress>{},
-             "Run every cell of an experiment. Returns (results JSON, paired values JSON).");
+             py::arg("recorded") = std::map<std::string, std::string>{},
+             "Run every cell of an experiment. `recorded` maps an AI desk cell's run ID to "
+             "the run directory whose decisions it reuses. Returns (results JSON, paired "
+             "values JSON).");
 }

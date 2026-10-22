@@ -208,10 +208,16 @@ class RunSummary(BaseModel):
     trade_count: int | None
     event_count: int | None
     stop_reason: str | None
-    source_kind: Literal["user", "experiment_cell"]
+    source_kind: Literal["user", "experiment_cell", "fork", "ledger"]
     experiment_id: str | None
     variant: str | None
     error: RunError | None
+    # Phase 6 (ADR 0012): the run this one forks, when, and whether its prefix verified;
+    # and, for an AI desk run, where its decisions came from and what they cost.
+    parent_run_id: str | None = None
+    fork_at_ns: int | None = None
+    fork_status: Literal["verified", "failed"] | None = None
+    desk: Json | None = None
 
 
 class RunList(BaseModel):

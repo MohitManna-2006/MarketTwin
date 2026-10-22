@@ -41,6 +41,11 @@ class Settings:
     ai_max_seeds: int = 100
     ai_max_investigations: int = 1000
     ai_max_concurrent_investigations: int = 32
+    # Phase 6 AI desk (ADR 0012): decisions per run, seeds per desk experiment, and model
+    # calls in flight across a desk experiment's live cells.
+    desk_max_decisions: int = 600
+    desk_max_seeds: int = 50
+    desk_concurrency: int = 4
     historical_sources_dir: Path = Path(__file__).resolve().parent / "fixtures" / "historical"
     alpaca_key_id: str = field(default="", repr=False)
     alpaca_secret_key: str = field(default="", repr=False)
@@ -147,6 +152,13 @@ def load_settings() -> Settings:
             "MARKETTWIN_AI_OUTPUT_USD_PER_MILLION_TOKENS", ""
         ),
         ai_max_seeds=int(os.environ.get("MARKETTWIN_AI_MAX_SEEDS", defaults.ai_max_seeds)),
+        desk_max_decisions=int(
+            os.environ.get("MARKETTWIN_DESK_MAX_DECISIONS", defaults.desk_max_decisions)
+        ),
+        desk_max_seeds=int(os.environ.get("MARKETTWIN_DESK_MAX_SEEDS", defaults.desk_max_seeds)),
+        desk_concurrency=int(
+            os.environ.get("MARKETTWIN_DESK_CONCURRENCY", defaults.desk_concurrency)
+        ),
         historical_sources_dir=Path(
             os.environ.get("MARKETTWIN_HISTORICAL_SOURCES", defaults.historical_sources_dir)
         ).resolve(),

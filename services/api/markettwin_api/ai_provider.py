@@ -107,6 +107,10 @@ class OpenAICompatibleProvider:
                 ) from error
         raise ProviderError("ProviderUnavailable", "Model provider retry budget exhausted")
 
+    def structured(self, model_type: type[T], system: str, data: dict[str, Any]) -> T:
+        """One JSON-mode request validated against ``model_type``; for the AI desk."""
+        return self._request(model_type, system, data)
+
     def _cost(self, usage: dict[str, Any]) -> str | None:
         before = self.settings.ai_input_usd_per_million_tokens
         after = self.settings.ai_output_usd_per_million_tokens

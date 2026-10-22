@@ -15,12 +15,15 @@ import threading
 import time
 from collections.abc import Iterator
 from concurrent.futures import Future, ThreadPoolExecutor
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 import markettwin
 
+from markettwin_api.ai_provider import ProviderError
 from markettwin_api.artifacts import ArtifactError, RunStore
+from markettwin_api.desk import DeskDecider, model_decider
 from markettwin_api.registry import Registry, Row, now
 from markettwin_api.scenarios import ScenarioCatalogue
 from markettwin_api.settings import Settings
@@ -160,7 +163,12 @@ class Research:
         config: Any,
         scenario_key: str | None = None,
         cell: Json | None = None,
+        extra: Json | None = None,
+        source_kind: str | None = None,
+        start: bool = True,
     ) -> Row:
+        """Records a run and queues it. With ``start=False`` the caller runs it itself with
+        ``execute_run`` on a thread it already holds, as the decision ledger does."""
         validation = validate_run_config(config, self.settings)
         if not validation["valid"]:
             raise ServiceError(
@@ -170,7 +178,8 @@ class Research:
             raise ServiceError(422, "UnknownScenario", f"no scenario is named {scenario_key}")
         canonical = validation["canonical_config"]
         run_id = _new_id("run")
-        with self._reserved():
+        reservation = self._reserved() if start else contextlib.nullcontext()
+        with reservation:
             self.registry.insert_run(
                 {
                     "id": run_id,
@@ -183,22 +192,42 @@ class Research:
                     "engine_version": self.build["engine_version"],
                     "config_digest": validation["config_digest"],
                     "config_json": canonical,
-                    "source_kind": "experiment_cell" if cell else "user",
+                    "source_kind": source_kind or ("experiment_cell" if cell else "user"),
                     "experiment_id": cell["experiment_id"] if cell else None,
                     "variant": cell["variant"] if cell else None,
                     "cell_json": cell,
+                    **(extra or {}),
                 }
             )
-        self._start(self._execute_run, run_id)
+        if start:
+            self._start(self._execute_run, run_id)
         return self.require_run(run_id)
+
+    def execute_run(self, run_id: str) -> None:
+        """Runs a recorded run on the calling thread."""
+        self._execute_run(run_id)
 
     def _execute_run(self, run_id: str) -> None:
         run = self.require_run(run_id)
         directory = self.run_dir(run_id)
         self.registry.update_run(run_id, status="running", started_at=now())
         started = time.perf_counter()
+        desk = run.get("desk")
+        decider: DeskDecider | None = None
         try:
-            markettwin.run(json.dumps(run["config"]), directory)
+            if desk is not None and desk["source"] == "model":
+                decider = model_decider(self.settings)
+            markettwin.run(
+                json.dumps(run["config"]),
+                directory,
+                decide=decider,
+                # A fork that replays recorded decisions never asks; if it did, the run
+                # fails rather than letting the fixture answer under another label.
+                decisions="fixture" if desk is not None and desk["source"] == "fixture" else "",
+            )
+        except ProviderError as error:
+            self._fail_run(run_id, started, error.code, str(error), None)
+            return
         except markettwin.NativeRunError as error:
             self._fail_run(run_id, started, error.code, str(error), error.sequence)
             shutil.rmtree(directory, ignore_errors=True)
@@ -220,6 +249,10 @@ class Research:
         cell = run["cell"]
         if cell is not None:
             cell = {**cell, **_cell_match(cell["expected"], manifest)}
+        if desk is not None and decider is not None:
+            self.registry.update_run(run_id, desk_json={**desk, "usage": decider.usage()})
+        if run.get("parent_run_id"):
+            self.registry.update_run(run_id, fork_status=self._verify_fork(run))
         self.registry.update_run(
             run_id,
             status="completed",
@@ -231,6 +264,17 @@ class Research:
             error_code=index_error.code if index_error else None,
             error_message=index_error.message if index_error else None,
         )
+
+    def fork_report_path(self, run_id: str) -> Path:
+        return self.settings.workspace / "forks" / f"{run_id}.json"
+
+    def _verify_fork(self, run: Row) -> str:
+        """Checks a fork against its parent and keeps the divergence report (ADR 0012)."""
+        result = markettwin.verify_fork(self.run_dir(run["parent_run_id"]), self.run_dir(run["id"]))
+        path = self.fork_report_path(run["id"])
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(result, separators=(",", ":")))
+        return "verified" if result["verified"] else "failed"
 
     def _fail_run(
         self, run_id: str, started: float, code: str, message: str, sequence: int | None
@@ -296,7 +340,9 @@ class Research:
 
     # ---- experiments --------------------------------------------------------------------
 
-    def create_experiment(self, config: Any, scenario_key: str | None = None) -> Row:
+    def create_experiment(
+        self, config: Any, scenario_key: str | None = None, desk: Json | None = None
+    ) -> Row:
         validation = validate_experiment_config(config, self.settings)
         if not validation["valid"]:
             raise ServiceError(
@@ -321,6 +367,7 @@ class Research:
                     "variants_json": [variant["name"] for variant in canonical["variants"]],
                     "comparison_json": canonical["comparison"],
                     "total_runs": design["total_runs"],
+                    "desk_json": desk,
                 }
             )
         self._progress[experiment_id] = markettwin.ExperimentProgress()
@@ -335,8 +382,9 @@ class Research:
         self.registry.update_experiment(experiment_id, status="running", started_at=now())
         started = time.perf_counter()
         try:
+            recorded = self._run_desk_cells(experiment, directory / "live")
             output = markettwin.run_experiment(
-                json.dumps(experiment["config"]), directory / "native", progress
+                json.dumps(experiment["config"]), directory / "native", progress, recorded=recorded
             )
         except Exception as error:
             self.registry.update_experiment(
@@ -378,6 +426,55 @@ class Research:
             headline_json=_headline(comparison),
         )
         self._progress.pop(experiment_id, None)
+
+    def _run_desk_cells(self, experiment: Row, directory: Path) -> dict[str, Path]:
+        """Runs every AI desk cell once, live, so the model is asked once per decision; the
+        native experiment then reruns those cells from the recorded decisions (ADR 0012).
+        Cells run concurrently because each mostly waits on the model."""
+        text = json.dumps(experiment["config"])
+        seeds = _experiment_seeds(experiment["config"])
+        cells: list[Json] = []
+        for variant in experiment["variants"]:
+            config = json.loads(markettwin.experiment_cell_config(text, variant, seeds[0]))
+            if not _has_desk(config):
+                continue
+            for seed in seeds:
+                cells.append(json.loads(markettwin.experiment_cell_config(text, variant, seed)))
+        if not cells:
+            return {}
+        desk = experiment.get("desk") or {"source": "fixture"}
+        deciders: list[DeskDecider] = []
+
+        def run_cell(cell: Json) -> tuple[str, Path]:
+            output = directory / cell["run_id"]
+            decider = model_decider(self.settings) if desk["source"] == "model" else None
+            if decider is not None:
+                deciders.append(decider)
+            markettwin.run(cell, output, decide=decider, decisions="" if decider else "fixture")
+            return cell["run_id"], output
+
+        directory.mkdir(parents=True, exist_ok=True)
+        with ThreadPoolExecutor(max_workers=self.settings.desk_concurrency) as pool:
+            recorded = dict(pool.map(run_cell, cells))
+        if deciders:
+            usage = [decider.usage() for decider in deciders]
+            costs = [item["cost_usd"] for item in usage]
+            self.registry.update_experiment(
+                experiment["id"],
+                desk_json={
+                    **desk,
+                    "usage": {
+                        "calls": sum(item["calls"] for item in usage),
+                        "failures": sum(item["failures"] for item in usage),
+                        "input_tokens": sum(item["input_tokens"] for item in usage),
+                        "output_tokens": sum(item["output_tokens"] for item in usage),
+                        "cost_usd": None
+                        if None in costs
+                        else str(sum(Decimal(item) for item in costs if item is not None)),
+                    },
+                },
+            )
+        return recorded
 
     def experiment_progress(self, experiment_id: str) -> Json | None:
         progress = self._progress.get(experiment_id)
@@ -492,10 +589,31 @@ class Research:
         run = self.require_run(run_id)
         if run["status"] in ("pending", "running") or run["replay_status"] == "running":
             raise ServiceError(409, "RunBusy", f"run {run_id} is still being processed")
+        if self.registry.child_runs([run_id]):
+            raise ServiceError(409, "RunHasForks", f"run {run_id} has forks; delete them first")
         with contextlib.suppress(FileNotFoundError):
             shutil.rmtree(self.run_dir(run_id))
         shutil.rmtree(self.settings.derived_dir / run_id, ignore_errors=True)
+        self.fork_report_path(run_id).unlink(missing_ok=True)
         self.registry.delete_run(run_id)
+
+
+def _has_desk(config: Json) -> bool:
+    agents = (config.get("scenario") or {}).get("agents", [])
+    if any(agent["policy"]["kind"] == "ModelDirected" for agent in agents):
+        return True
+    return any(
+        item["policy"]["kind"] == "ModelDirected"
+        for stage in config.get("forks", [])
+        for item in stage["policy_overrides"]
+    )
+
+
+def _experiment_seeds(config: Json) -> list[int]:
+    seeds = config["seeds"]
+    if isinstance(seeds, dict):
+        return list(range(seeds["first"], seeds["first"] + seeds["count"]))
+    return list(seeds)
 
 
 def _cell_match(expected: Json, manifest: Json) -> Json:

@@ -166,8 +166,45 @@ class NoisePolicy(Strict):
     )
 
 
+RATIONALE_PATTERN = r"^[ -~]*$"
+
+
+class DirectiveModel(Strict):
+    """One AI desk decision (ADR 0012). The core checks it against the desk's bounds."""
+
+    mode: Literal["quote", "pause", "reduce"]
+    half_spread_ticks: StrictInt = _field("ticks", "Distance of each quote", ge=1, le=MAX_TICKS)
+    skew_ticks: StrictInt = _field(
+        "ticks", "Shift of both quotes; positive is higher", ge=-MAX_TICKS, le=MAX_TICKS
+    )
+    quote_size: StrictInt = _field("shares", "Size of each quote", ge=1, le=MAX_SHARES)
+    levels: StrictInt = _field("levels", "Quotes per side", ge=1, le=32)
+    max_position: StrictInt = _field("shares", "The desk's own position cap", ge=0, le=MAX_SHARES)
+    rationale: StrictStr = Field(max_length=280, pattern=RATIONALE_PATTERN)
+
+
+class ModelDirectedPolicy(Strict):
+    kind: Literal["ModelDirected"]
+    initial: DirectiveModel
+    decision_interval_ns: StrictInt = _field(
+        "ns", "Time between decisions", ge=1_000_000, le=MAX_DURATION_NS
+    )
+    max_half_spread_ticks: StrictInt = _field(
+        "ticks", "Widest half spread a decision may set", ge=1, le=MAX_TICKS
+    )
+    max_skew_ticks: StrictInt = _field(
+        "ticks", "Largest skew a decision may set", ge=0, le=MAX_TICKS
+    )
+    mandate: StrictStr = Field(max_length=2000, pattern=r"^[ -~\n]*$")
+
+
 PolicyModel = Annotated[
-    MarketMakerPolicy | InventoryMarketMakerPolicy | MomentumPolicy | ValuePolicy | NoisePolicy,
+    MarketMakerPolicy
+    | InventoryMarketMakerPolicy
+    | MomentumPolicy
+    | ValuePolicy
+    | NoisePolicy
+    | ModelDirectedPolicy,
     Field(discriminator="kind"),
 ]
 
@@ -418,8 +455,46 @@ class AccountingRunConfig(RunConfigBase):
     accounting: AccountingModel
 
 
+class PolicyOverrideModel(Strict):
+    agent_id: StrictInt = Field(ge=1, le=MAX_API_AGENT_ID)
+    policy: PolicyModel
+
+
+class DirectiveOverrideModel(Strict):
+    agent_id: StrictInt = Field(ge=1, le=MAX_API_AGENT_ID)
+    directive: DirectiveModel
+
+
+class ForkChangesModel(Strict):
+    """What a fork stage changes at its instant (ADR 0012)."""
+
+    at_ns: StrictInt = _field("ns", "Time of the fork", ge=0, le=MAX_HORIZON_NS)
+    add_shocks: list[ShockModel] = Field(max_length=1024)
+    remove_shocks: list[Annotated[StrictInt, Field(ge=0, le=1023)]] = Field(max_length=1024)
+    policy_overrides: list[PolicyOverrideModel] = Field(max_length=1024)
+    horizon_ns: StrictInt | None = _field(
+        "ns", "A shorter horizon for the fork, or null", ge=1, le=MAX_HORIZON_NS
+    )
+    decisions: Literal["hold", "parent", "live"]
+    directive_overrides: list[DirectiveOverrideModel] = Field(max_length=1024)
+
+
+class ForkStageModel(ForkChangesModel):
+    parent_run_id: StrictStr = Field(min_length=1, max_length=128)
+    parent_config_digest: StrictStr = Field(pattern=r"^[0-9a-f]{64}$")
+    # Copied from the parent's trace by the core; validated there.
+    recorded_decisions: list[dict[str, Any]]
+
+
+class ForkRunConfig(RunConfigBase):
+    schema_version: Literal[4]
+    scenario: ScenarioModel | None
+    accounting: AccountingModel
+    forks: list[ForkStageModel] = Field(max_length=64)
+
+
 RunConfigModel = Annotated[
-    ScriptedRunConfig | ScenarioRunConfig | AccountingRunConfig,
+    ScriptedRunConfig | ScenarioRunConfig | AccountingRunConfig | ForkRunConfig,
     Field(discriminator="schema_version"),
 ]
 
@@ -432,14 +507,15 @@ class SeedRangeModel(Strict):
     count: StrictInt = Field(ge=1, le=100_000)
 
 
-class PolicyOverrideModel(Strict):
-    agent_id: StrictInt = Field(ge=1, le=MAX_API_AGENT_ID)
-    policy: PolicyModel
+class VariantForkModel(ForkChangesModel):
+    parent: StrictStr = Field(min_length=1, max_length=48, pattern=NAME_PATTERN)
 
 
 class VariantModel(Strict):
     name: StrictStr = Field(min_length=1, max_length=48, pattern=NAME_PATTERN)
     policy_overrides: list[PolicyOverrideModel]
+    # Experiment schema 2 only: fork another variant's cell of the same seed.
+    fork: VariantForkModel | None = None
 
 
 class ComparisonModel(Strict):
@@ -463,7 +539,7 @@ class ExperimentLimitsModel(Strict):
 
 
 class ExperimentConfigModel(Strict):
-    schema_version: Literal[1]
+    schema_version: Literal[1, 2]
     experiment_id: StrictStr = Field(min_length=1, max_length=48, pattern=NAME_PATTERN)
     # The CLI also accepts a file path here. The API never resolves a path from a request,
     # so the base config must be embedded.

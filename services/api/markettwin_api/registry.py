@@ -177,6 +177,8 @@ _JSON_COLUMNS = (
     "manifest_json",
     "sessions_json",
     "progress_json",
+    "fork_json",
+    "desk_json",
 )
 
 ACTIVE = ("pending", "running")
@@ -184,6 +186,18 @@ ACTIVE = ("pending", "running")
 # Tables whose jobs a process other than the API may own, such as
 # scripts/calibrate_aapl.py. Each row records the process that runs it.
 _OWNED_TABLES = ("historical_imports", "calibrations")
+
+# Columns added after a table was first created, added to an existing registry on open.
+# Phase 6 (ADR 0012): a run's parent and fork stage, its AI desk details, and whether
+# its fork report verified; an experiment's desk details.
+_ADDED_COLUMNS = (
+    ("runs", "parent_run_id", "TEXT"),
+    ("runs", "fork_at_ns", "INTEGER"),
+    ("runs", "fork_json", "TEXT"),
+    ("runs", "fork_status", "TEXT"),
+    ("runs", "desk_json", "TEXT"),
+    ("experiments", "desk_json", "TEXT"),
+)
 
 
 def _alive(pid: int) -> bool:
@@ -210,10 +224,12 @@ class Registry:
         with self._cursor() as cursor:
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.executescript(_SCHEMA)
-            for table in _OWNED_TABLES:
+            added = [(table, "owner_pid", "INTEGER") for table in _OWNED_TABLES]
+            for table, column, kind in (*added, *_ADDED_COLUMNS):
                 columns = {row[1] for row in cursor.execute(f"PRAGMA table_info({table})")}
-                if "owner_pid" not in columns:
-                    cursor.execute(f"ALTER TABLE {table} ADD COLUMN owner_pid INTEGER")
+                if column not in columns:
+                    cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
+            cursor.execute("CREATE INDEX IF NOT EXISTS runs_parent ON runs (parent_run_id)")
 
     def close(self) -> None:
         with self._lock:
@@ -360,15 +376,24 @@ class Registry:
         return self._one("SELECT * FROM runs WHERE id = ?", (run_id,))
 
     def runs(self, limit: int, offset: int, include_cells: bool = True) -> list[Row]:
-        where = "" if include_cells else "WHERE source_kind = 'user'"
+        where = "" if include_cells else "WHERE source_kind IN ('user', 'fork')"
         return self._many(
             f"SELECT * FROM runs {where} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
             (limit, offset),
         )
 
     def count_runs(self, include_cells: bool = True) -> int:
-        where = "" if include_cells else "WHERE source_kind = 'user'"
+        where = "" if include_cells else "WHERE source_kind IN ('user', 'fork')"
         return self._count(f"SELECT COUNT(*) FROM runs {where}")
+
+    def child_runs(self, parent_ids: list[str]) -> list[Row]:
+        if not parent_ids:
+            return []
+        marks = ", ".join("?" for _ in parent_ids)
+        return self._many(
+            f"SELECT * FROM runs WHERE parent_run_id IN ({marks}) ORDER BY created_at, id",
+            tuple(parent_ids),
+        )
 
     def cell_run(self, experiment_id: str, variant: str, seed: int) -> Row | None:
         return self._one(
