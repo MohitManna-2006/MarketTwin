@@ -327,6 +327,13 @@ seeds), verifies the artifact, and copies the aggregate report, per-session fact
 and selected config to `--export`. Raw observed records stay in the untracked workspace.
 The search is about 3,300 one-hour runs, roughly ten minutes on an 8-core laptop; on
 macOS prefix the command with `caffeinate -i` so the machine does not sleep mid-run.
+Each import and calibration row records the process that owns it, so starting or
+restarting the API while the script runs leaves the script's jobs alone.
+
+The committed run, for sessions 2026-10-07 to 2026-10-20, is a **null result**: the
+selected config beats the baseline on test but is within two scales on 8 of the 12 facts,
+not the required 9. See
+[`docs/experiments/phase5b-calibration/`](docs/experiments/phase5b-calibration/README.md).
 
 `markettwin calibration-facts --config RUN.json` prints the facts of one synthetic run, and
 `--session DIR --start NS --end NS` those of a historical session. Calibration routes are
