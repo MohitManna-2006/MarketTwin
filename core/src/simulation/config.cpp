@@ -1,6 +1,7 @@
 #include "markettwin/simulation/config.hpp"
 
 #include "../telemetry/codec.hpp"
+#include "timeline.hpp"
 
 #include <algorithm>
 
@@ -52,6 +53,7 @@ void validate_config(const RunConfig& config) {
   }
   validate_scenario(config);
   validate_accounting(config);
+  validate_forks(config);
 }
 
 RunConfig parse_config(std::string_view text) {

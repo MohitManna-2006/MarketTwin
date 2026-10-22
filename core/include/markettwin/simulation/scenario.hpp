@@ -1,10 +1,12 @@
 #ifndef MARKETTWIN_SIMULATION_SCENARIO_HPP
 #define MARKETTWIN_SIMULATION_SCENARIO_HPP
 
+#include "markettwin/agents/desk.hpp"
 #include "markettwin/agents/market_maker.hpp"
 #include "markettwin/agents/momentum.hpp"
 #include "markettwin/agents/noise.hpp"
 #include "markettwin/agents/value.hpp"
+#include "markettwin/exchange/matching_engine.hpp"
 #include "markettwin/simulation/latency.hpp"
 
 #include <memory>
@@ -22,7 +24,16 @@ struct WakeupConfig {
 };
 
 using PolicyConfig = std::variant<MarketMakerParams, InventoryMarketMakerParams, MomentumParams,
-                                  ValueParams, NoiseParams>;
+                                  ValueParams, NoiseParams, ModelDirectedParams>;
+
+// Replaces one agent's policy and nothing else. The agent keeps its ID, and with it its
+// random streams, wakeup schedule, latency, and limits, so a variant or a fork differs
+// from its base only in how that participant decides.
+struct PolicyOverride {
+  AgentId agent;
+  PolicyConfig policy;
+  bool operator==(const PolicyOverride&) const = default;
+};
 
 struct AgentConfig {
   AgentId id;
@@ -126,6 +137,9 @@ inline constexpr std::uint64_t kAgentOrderIdShift = 32;
 
 // Throws RunError{"InvalidConfig"} unless config.scenario is absent or fully in bounds.
 void validate_scenario(const RunConfig& config);
+// The per-agent and shock checks of validate_scenario, for configs a fork stage changes.
+void validate_agent(const AgentConfig& agent, const ExchangeConfig& exchange);
+void validate_shocks(const ScenarioConfig& scenario);
 [[nodiscard]] std::string_view policy_name(const PolicyConfig& policy);
 [[nodiscard]] std::unique_ptr<ITradingAgent> make_policy(const PolicyConfig& policy);
 

@@ -23,9 +23,12 @@ public:
   virtual void on_market(SimTime now, std::span<const Trade> trades, const TopOfBook& top) = 0;
 };
 
-// Each call creates fresh scheduler/exchange state. Sink failures abort the run.
+// Each call creates fresh scheduler/exchange state. Sink failures abort the run. An AI
+// desk's decisions that no fork stage fixes come from `decisions`; without one, such a
+// decision fails the run with DecisionSourceMissing.
 [[nodiscard]] RunSummary run_kernel(const RunConfig& config, RecordSink& sink,
-                                    MarketObserver* observer = nullptr);
+                                    MarketObserver* observer = nullptr,
+                                    DecisionSource* decisions = nullptr);
 
 } // namespace markettwin
 #endif // MARKETTWIN_SIMULATION_KERNEL_HPP

@@ -63,6 +63,14 @@ std::optional<Event> Scheduler::next() {
   return std::nullopt;
 }
 
+std::optional<SimTime> Scheduler::peek() const {
+  if (stop_reason_ || queue_.empty() || dispatched_ >= limits_.max_events ||
+      queue_.top().timestamp > limits_.horizon) {
+    return std::nullopt;
+  }
+  return queue_.top().timestamp;
+}
+
 void Scheduler::request_stop() noexcept {
   stop_reason_ = StopReason::Requested;
 }

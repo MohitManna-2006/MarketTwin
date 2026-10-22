@@ -30,6 +30,7 @@ add_executable(
   unit/calibration/calibration_test.cpp
   integration/accounting_run_test.cpp
   integration/experiment_test.cpp
+  integration/fork_run_test.cpp
   unit/simulation/fundamental_test.cpp
   unit/simulation/scenario_config_test.cpp
   integration/scenario_run_test.cpp

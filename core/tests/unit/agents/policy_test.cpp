@@ -1,3 +1,4 @@
+#include "markettwin/agents/desk.hpp"
 #include "markettwin/agents/market_maker.hpp"
 #include "markettwin/agents/momentum.hpp"
 #include "markettwin/agents/noise.hpp"
@@ -428,6 +429,83 @@ TEST(NoiseAgentTest, ConsumesTheSameDrawsWhateverTheMarketLooksLike) {
     static_cast<void>(empty.timer(second));
     ASSERT_EQ(liquid.rng.state(), empty.rng.state());
   }
+}
+
+ModelDirectedParams desk_params(Directive initial) {
+  return {
+      .initial = std::move(initial),
+      .decision_interval = SimTime{60'000'000'000},
+      .max_half_spread_ticks = 20,
+      .max_skew_ticks = 10,
+      .mandate = "make markets",
+  };
+}
+
+TEST(DirectedMakerTest, QuoteModeLaddersAroundTheSkewedReferenceWithinItsOwnCap) {
+  Desk desk;
+  desk.quote(99, 101);
+  DirectedMaker maker{desk_params({.mode = DeskMode::Quote,
+                                   .half_spread_ticks = 3,
+                                   .skew_ticks = -2,
+                                   .quote_size = Quantity{40},
+                                   .levels = 2,
+                                   .max_position = 50,
+                                   .rationale = {}})};
+  const auto intents = desk.timer(maker);
+  // Reference 100 shifted to 98: bids 95, 94 and asks 101, 102.
+  EXPECT_EQ(prices(submits(intents, Side::Buy)), (std::vector<std::int64_t>{95, 94}));
+  EXPECT_EQ(prices(submits(intents, Side::Sell)), (std::vector<std::int64_t>{101, 102}));
+  // The directive's cap of 50 shares bounds each side, not the agent's 1,000.
+  EXPECT_EQ(submits(intents, Side::Buy).at(0).quantity, Quantity{40});
+  EXPECT_EQ(submits(intents, Side::Buy).at(1).quantity, Quantity{10});
+}
+
+TEST(DirectedMakerTest, PauseCancelsEverythingAndReduceWorksOneOrderAtTheTouch) {
+  Desk desk;
+  desk.quote(99, 101).working(7, Side::Buy, 97, 10).working(8, Side::Sell, 103, 10);
+  DirectedMaker maker{desk_params({})};
+  maker.apply({.mode = DeskMode::Pause});
+  auto intents = desk.timer(maker);
+  EXPECT_EQ(cancels(intents), (std::vector<std::uint64_t>{7, 8}));
+  EXPECT_TRUE(submits(intents, Side::Buy).empty());
+
+  maker.apply({.mode = DeskMode::Reduce, .quote_size = Quantity{25}});
+  desk.observation.position = 60;
+  intents = desk.timer(maker);
+  EXPECT_EQ(cancels(intents), (std::vector<std::uint64_t>{7, 8}));
+  const auto sells = submits(intents, Side::Sell);
+  ASSERT_EQ(sells.size(), 1U);
+  EXPECT_EQ(sells.front().limit_price, PriceTicks{99}); // sells at the bid
+  EXPECT_EQ(sells.front().quantity, Quantity{25});
+
+  // An order already at the touch is kept and nothing more is sent.
+  desk.orders.clear();
+  desk.working(9, Side::Sell, 99, 25);
+  EXPECT_TRUE(desk.timer(maker).empty());
+  desk.observation.position = -5;
+  intents = desk.timer(maker);
+  EXPECT_EQ(cancels(intents), (std::vector<std::uint64_t>{9}));
+  EXPECT_EQ(submits(intents, Side::Buy).front().limit_price, PriceTicks{101});
+  EXPECT_EQ(submits(intents, Side::Buy).front().quantity, Quantity{5});
+}
+
+TEST(DirectedMakerTest, DirectiveBoundsComeFromTheDeskAndTheAgentLimits) {
+  const AgentLimits limits{.max_position = 500,
+                           .max_order_quantity = Quantity{100},
+                           .max_open_orders = 8,
+                           .max_messages = 1'000};
+  const auto params = desk_params({});
+  EXPECT_EQ(directive_error({.max_position = 500}, params, limits), "");
+  EXPECT_NE(directive_error({.half_spread_ticks = 0, .max_position = 1}, params, limits), "");
+  EXPECT_NE(directive_error({.half_spread_ticks = 21, .max_position = 1}, params, limits), "");
+  EXPECT_NE(directive_error({.skew_ticks = -11, .max_position = 1}, params, limits), "");
+  EXPECT_NE(directive_error({.quote_size = Quantity{101}, .max_position = 1}, params, limits), "");
+  EXPECT_NE(directive_error({.levels = 5, .max_position = 1}, params, limits), "");
+  EXPECT_NE(directive_error({.max_position = 501}, params, limits), "");
+  EXPECT_NE(directive_error({.max_position = 1, .rationale = std::string(281, 'a')}, params,
+                            limits),
+            "");
+  EXPECT_NE(directive_error({.max_position = 1, .rationale = "caf\xc3\xa9"}, params, limits), "");
 }
 
 } // namespace

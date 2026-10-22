@@ -15,8 +15,10 @@ add_library(markettwin_core
   src/agents/momentum.cpp
   src/agents/value.cpp
   src/agents/noise.cpp
+  src/agents/desk.cpp
   src/simulation/config.cpp
   src/simulation/scenario.cpp
+  src/simulation/fork.cpp
   src/simulation/fundamental.cpp
   src/simulation/population.cpp
   src/simulation/scheduler.cpp
@@ -28,6 +30,7 @@ add_library(markettwin_core
   src/telemetry/recorder.cpp
   src/telemetry/artifacts.cpp
   src/telemetry/replay.cpp
+  src/telemetry/fork_verify.cpp
   src/simulation/simulation.cpp
   src/experiment/statistics.cpp
   src/experiment/experiment.cpp

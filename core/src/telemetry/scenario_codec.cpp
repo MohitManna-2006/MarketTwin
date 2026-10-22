@@ -7,6 +7,8 @@ namespace {
 
 constexpr std::array<std::string_view, 2> kWakeups{"Fixed", "Exponential"};
 constexpr std::array<std::string_view, 3> kPhases{"Instant", "Begin", "End"};
+constexpr std::array<std::string_view, 3> kDeskModes{"quote", "pause", "reduce"};
+constexpr std::array<std::string_view, 3> kDecisionModes{"hold", "parent", "live"};
 
 Json maker(const MarketMakerParams& value) {
   return {
@@ -54,6 +56,15 @@ struct PolicyWriter {
         {"threshold_milliticks", value.threshold_milliticks},
         {"order_size", value.order_size.value()},
         {"slippage_ticks", value.slippage_ticks},
+    };
+  }
+  Json operator()(const ModelDirectedParams& value) const {
+    return {
+        {"initial", directive(value.initial)},
+        {"decision_interval_ns", value.decision_interval.value()},
+        {"max_half_spread_ticks", value.max_half_spread_ticks},
+        {"max_skew_ticks", value.max_skew_ticks},
+        {"mandate", value.mandate},
     };
   }
   Json operator()(const NoiseParams& value) const {
@@ -210,7 +221,7 @@ struct ShockWriter {
   }
 };
 
-Json shock(const Shock& value) {
+Json write_shock(const Shock& value) {
   return std::visit(ShockWriter{}, value);
 }
 
@@ -218,7 +229,7 @@ SimTime time(const Json& value, const char* field) {
   return SimTime{unsigned_integer(value.at(field))};
 }
 
-Shock read_shock(const Json& value) {
+Shock parse_shock(const Json& value) {
   if (!value.is_object() || !value.contains("kind")) {
     invalid("shock requires kind");
   }
@@ -304,6 +315,185 @@ Json words(const Rng::State& state) {
 }
 
 } // namespace
+
+Json shock(const Shock& value) {
+  return write_shock(value);
+}
+
+Shock read_shock(const Json& value) {
+  return parse_shock(value);
+}
+
+Json directive(const Directive& value) {
+  return {
+      {"mode", enum_name(value.mode, kDeskModes)},
+      {"half_spread_ticks", value.half_spread_ticks},
+      {"skew_ticks", value.skew_ticks},
+      {"quote_size", value.quote_size.value()},
+      {"levels", value.levels},
+      {"max_position", value.max_position},
+      {"rationale", value.rationale},
+  };
+}
+
+Directive read_directive(const Json& value) {
+  fields(value, {
+                    "mode",
+                    "half_spread_ticks",
+                    "skew_ticks",
+                    "quote_size",
+                    "levels",
+                    "max_position",
+                    "rationale",
+                });
+  return {
+      .mode = read_enum<DeskMode>(value.at("mode"), kDeskModes),
+      .half_spread_ticks = unsigned_integer(value.at("half_spread_ticks")),
+      .skew_ticks = signed_integer(value.at("skew_ticks")),
+      .quote_size = Quantity{unsigned_integer(value.at("quote_size"))},
+      .levels = size_integer(value.at("levels")),
+      .max_position = unsigned_integer(value.at("max_position")),
+      .rationale = text(value.at("rationale")),
+  };
+}
+
+Json decision_fields(const RecordedDecision& value) {
+  return {
+      {"agent_id", value.agent.value()},
+      {"index", value.index},
+      {"source", value.source},
+      {"directive", directive(value.directive)},
+      {"model", value.model},
+      {"input_tokens", value.input_tokens},
+      {"output_tokens", value.output_tokens},
+      {"error_code", value.error_code.empty() ? Json(nullptr) : Json(value.error_code)},
+      {"observation_digest", value.observation_digest},
+  };
+}
+
+RecordedDecision read_decision_fields(const Json& value, SimTime at) {
+  const auto& error = value.at("error_code");
+  return {
+      .agent = AgentId{unsigned_integer(value.at("agent_id"))},
+      .at = at,
+      .index = unsigned_integer(value.at("index")),
+      .source = text(value.at("source")),
+      .directive = read_directive(value.at("directive")),
+      .model = text(value.at("model")),
+      .input_tokens = unsigned_integer(value.at("input_tokens")),
+      .output_tokens = unsigned_integer(value.at("output_tokens")),
+      .error_code = error.is_null() ? std::string{} : text(error),
+      .observation_digest = text(value.at("observation_digest")),
+  };
+}
+
+Json fork_stage(const ForkStage& value) {
+  auto added = Json::array();
+  for (const auto& item : value.add_shocks) {
+    added.push_back(write_shock(item));
+  }
+  auto overrides = Json::array();
+  for (const auto& item : value.policy_overrides) {
+    overrides.push_back({{"agent_id", item.agent.value()}, {"policy", policy(item.policy)}});
+  }
+  auto recorded = Json::array();
+  for (const auto& item : value.recorded) {
+    auto entry = decision_fields(item);
+    entry.update({{"at_ns", item.at.value()}});
+    recorded.push_back(entry);
+  }
+  auto directives = Json::array();
+  for (const auto& item : value.directive_overrides) {
+    directives.push_back(
+        {{"agent_id", item.agent.value()}, {"directive", directive(item.directive)}});
+  }
+  return {
+      {"parent_run_id", value.parent_run_id},
+      {"parent_config_digest", value.parent_config_digest},
+      {"at_ns", value.at.value()},
+      {"add_shocks", added},
+      {"remove_shocks", value.remove_shocks},
+      {"policy_overrides", overrides},
+      {"horizon_ns", value.horizon ? Json(value.horizon->value()) : Json(nullptr)},
+      {"decisions", enum_name(value.decisions, kDecisionModes)},
+      {"recorded_decisions", recorded},
+      {"directive_overrides", directives},
+  };
+}
+
+ForkStage read_fork_stage(const Json& value) {
+  fields(value, {
+                    "parent_run_id",
+                    "parent_config_digest",
+                    "at_ns",
+                    "add_shocks",
+                    "remove_shocks",
+                    "policy_overrides",
+                    "horizon_ns",
+                    "decisions",
+                    "recorded_decisions",
+                    "directive_overrides",
+                });
+  for (const auto* name :
+       {"add_shocks", "remove_shocks", "policy_overrides", "recorded_decisions",
+        "directive_overrides"}) {
+    if (!value.at(name).is_array()) {
+      invalid(std::string{name} + " must be an array");
+    }
+  }
+  ForkStage result{
+      .parent_run_id = text(value.at("parent_run_id")),
+      .parent_config_digest = text(value.at("parent_config_digest")),
+      .at = SimTime{unsigned_integer(value.at("at_ns"))},
+      .add_shocks = {},
+      .remove_shocks = {},
+      .policy_overrides = {},
+      .horizon = {},
+      .decisions = read_enum<DecisionMode>(value.at("decisions"), kDecisionModes),
+      .recorded = {},
+      .directive_overrides = {},
+  };
+  for (const auto& item : value.at("add_shocks")) {
+    result.add_shocks.push_back(parse_shock(item));
+  }
+  for (const auto& item : value.at("remove_shocks")) {
+    result.remove_shocks.push_back(size_integer(item));
+  }
+  for (const auto& item : value.at("policy_overrides")) {
+    fields(item, {"agent_id", "policy"});
+    result.policy_overrides.push_back({
+        .agent = AgentId{unsigned_integer(item.at("agent_id"))},
+        .policy = read_policy(item.at("policy")),
+    });
+  }
+  if (const auto& horizon = value.at("horizon_ns"); !horizon.is_null()) {
+    result.horizon = SimTime{unsigned_integer(horizon)};
+  }
+  for (const auto& item : value.at("recorded_decisions")) {
+    fields(item, {
+                     "agent_id",
+                     "at_ns",
+                     "index",
+                     "source",
+                     "directive",
+                     "model",
+                     "input_tokens",
+                     "output_tokens",
+                     "error_code",
+                     "observation_digest",
+                 });
+    result.recorded.push_back(
+        read_decision_fields(item, SimTime{unsigned_integer(item.at("at_ns"))}));
+  }
+  for (const auto& item : value.at("directive_overrides")) {
+    fields(item, {"agent_id", "directive"});
+    result.directive_overrides.push_back({
+        .agent = AgentId{unsigned_integer(item.at("agent_id"))},
+        .directive = read_directive(item.at("directive")),
+    });
+  }
+  return result;
+}
 
 Json policy(const PolicyConfig& value) {
   auto output = std::visit(PolicyWriter{}, value);
@@ -393,6 +583,23 @@ PolicyConfig read_policy(const Json& value) {
         .max_resting_orders = size_integer(value.at("max_resting_orders")),
     };
   }
+  if (kind == "ModelDirected") {
+    fields(value, {
+                      "kind",
+                      "initial",
+                      "decision_interval_ns",
+                      "max_half_spread_ticks",
+                      "max_skew_ticks",
+                      "mandate",
+                  });
+    return ModelDirectedParams{
+        .initial = read_directive(value.at("initial")),
+        .decision_interval = SimTime{unsigned_integer(value.at("decision_interval_ns"))},
+        .max_half_spread_ticks = unsigned_integer(value.at("max_half_spread_ticks")),
+        .max_skew_ticks = unsigned_integer(value.at("max_skew_ticks")),
+        .mandate = text(value.at("mandate")),
+    };
+  }
   invalid("unknown agent policy kind: " + kind);
 }
 
@@ -403,7 +610,7 @@ Json scenario(const ScenarioConfig& value) {
   }
   auto shocks = Json::array();
   for (const auto& item : value.shocks) {
-    shocks.push_back(shock(item));
+    shocks.push_back(write_shock(item));
   }
   return {
       {"reference_price_ticks", value.reference_price.value()},
@@ -465,13 +672,13 @@ ScenarioConfig read_scenario(const Json& value) {
     result.agents.push_back(read_agent(item));
   }
   for (const auto& item : value.at("shocks")) {
-    result.shocks.push_back(read_shock(item));
+    result.shocks.push_back(parse_shock(item));
   }
   return result;
 }
 
 Json shock_transition(std::size_t index, ShockPhase phase, const Shock& value) {
-  return {{"index", index}, {"phase", enum_name(phase, kPhases)}, {"shock", shock(value)}};
+  return {{"index", index}, {"phase", enum_name(phase, kPhases)}, {"shock", write_shock(value)}};
 }
 
 Json fundamental_update(const FundamentalProcess& value) {

@@ -22,6 +22,8 @@ public:
   [[nodiscard]] Sequence schedule(SimTime timestamp, const EventPayload& payload);
   [[nodiscard]] Sequence schedule_after(SimTime delay, const EventPayload& payload);
   [[nodiscard]] std::optional<Event> next();
+  // The time of the event next() would dispatch, or nothing when next() would stop.
+  [[nodiscard]] std::optional<SimTime> peek() const;
   void request_stop() noexcept;
   [[nodiscard]] SimTime now() const noexcept { return now_; }
   [[nodiscard]] std::uint64_t dispatched() const noexcept { return dispatched_; }

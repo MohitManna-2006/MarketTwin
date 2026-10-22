@@ -77,7 +77,8 @@ RunArtifacts artifact_paths(const std::filesystem::path& directory) {
   };
 }
 
-RunSummary write_run(const RunConfig& config, const std::filesystem::path& directory) {
+RunSummary write_run(const RunConfig& config, const std::filesystem::path& directory,
+                     DecisionSource* decisions) {
   const auto config_bytes = canonical_config(config) + '\n';
   const auto paths = artifact_paths(directory);
   try {
@@ -89,7 +90,7 @@ RunSummary write_run(const RunConfig& config, const std::filesystem::path& direc
     }
     write_file(paths.config.string() + ".partial", config_bytes);
     FileSink sink{paths};
-    auto summary = run_kernel(config, sink);
+    auto summary = run_kernel(config, sink, nullptr, decisions);
     sink.close();
     const auto metrics_bytes = codec::metrics(config, summary).dump() + '\n';
     write_file(paths.metrics.string() + ".partial", metrics_bytes);

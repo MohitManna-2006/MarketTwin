@@ -11,15 +11,6 @@ namespace markettwin {
 inline constexpr std::uint64_t kExperimentSchema = 1;
 inline constexpr std::uint64_t kMaxExperimentRuns = 100'000;
 
-// Replaces one agent's policy and nothing else. The agent keeps its ID, and with it its
-// random streams, wakeup schedule, latency, and limits, so a variant differs from the
-// base scenario only in how that participant decides.
-struct PolicyOverride {
-  AgentId agent;
-  PolicyConfig policy;
-  bool operator==(const PolicyOverride&) const = default;
-};
-
 struct Variant {
   std::string name;
   std::vector<PolicyOverride> overrides;

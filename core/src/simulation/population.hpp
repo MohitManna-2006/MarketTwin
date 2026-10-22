@@ -34,6 +34,15 @@ public:
   void set_added_latency(AgentId id, const LatencyDegradation* degradation);
   // Requests a cancel of every working order the agent has not already asked to cancel.
   void withdraw_quotes(AgentId id);
+  // Fork stages and AI desk decisions (ADR 0012). The agent keeps everything the
+  // environment owns; only the policy object, which starts with no memory, changes.
+  void replace_policy(AgentId id, const PolicyConfig& policy);
+  void apply_directive(AgentId id, const Directive& directive);
+  // What a desk has been delivered since its last decision, as canonical JSON. Resets
+  // the interval statistics.
+  [[nodiscard]] std::string desk_observation(AgentId id, SimTime at, SimTime interval_start,
+                                             const ModelDirectedParams& desk,
+                                             const Directive& current);
   [[nodiscard]] std::vector<AgentActivity> activity() const;
   // Final state of every stream, four per agent in slot order.
   [[nodiscard]] std::vector<Rng::State> rng_states() const;
@@ -41,6 +50,20 @@ public:
   [[nodiscard]] std::vector<std::pair<AgentId, std::uint64_t>> cash_refusals() const;
 
 private:
+  // Delivered market data and own fills since a desk's last decision.
+  struct Interval {
+    std::uint64_t market_updates = 0;
+    std::optional<std::int64_t> mid_open_twice;
+    std::int64_t mid_high_twice = 0;
+    std::int64_t mid_low_twice = 0;
+    std::int64_t mid_last_twice = 0;
+    Quantity volume_at_start;
+    std::uint64_t bought = 0;
+    std::uint64_t sold = 0;
+    std::uint64_t buy_value_ticks = 0;
+    std::uint64_t sell_value_ticks = 0;
+  };
+
   struct Agent {
     Agent(const AgentConfig& agent, const RunConfig& run);
 
@@ -70,6 +93,7 @@ private:
     SimTime report_channel;
     SimTime market_channel;
     AgentActivity activity;
+    Interval interval;
   };
 
   [[nodiscard]] AgentObservation observe(const Agent& agent,

@@ -8,6 +8,7 @@
 #include "codec.hpp"
 
 #include <fstream>
+#include <map>
 
 namespace markettwin {
 namespace {
@@ -102,6 +103,56 @@ private:
   ReplayResult* result_;
 };
 
+// Answers each AI desk decision the run asks a source for from the trace's own Decision
+// record at that time, so replay never calls a model (ADR 0012). Decisions a fork stage
+// fixed are recorded too but never asked for; a missing or extra decision still shows
+// as a trace mismatch.
+class RecordedDecisions final : public DecisionSource {
+public:
+  explicit RecordedDecisions(const std::filesystem::path& trace) {
+    std::ifstream input{trace, std::ios::binary};
+    std::string line;
+    while (std::getline(input, line)) {
+      if (line.find(R"("kind":"Decision")") == std::string::npos) {
+        continue;
+      }
+      const auto record = codec::parse(line);
+      if (codec::text(record.at("kind")) != "Decision") {
+        continue;
+      }
+      auto decision = codec::read_decision_fields(
+          record.at("payload"), SimTime{codec::unsigned_integer(record.at("timestamp_ns"))});
+      if (decision.source == "model" || decision.source == "fallback") {
+        decisions_.emplace(std::pair{decision.agent.value(), decision.at.value()},
+                           std::move(decision));
+      }
+    }
+  }
+
+  DecisionResponse decide(const DecisionRequest& request) override {
+    const auto found = decisions_.find({request.agent.value(), request.at.value()});
+    if (found == decisions_.end()) {
+      throw RunError{"DecisionMismatch", "the run asks for a decision the trace does not record"};
+    }
+    const auto& item = found->second;
+    DecisionResponse response{
+        .directive = {},
+        .source = item.source,
+        .model = item.model,
+        .input_tokens = item.input_tokens,
+        .output_tokens = item.output_tokens,
+        .error_code = item.error_code,
+    };
+    if (item.source == "model") {
+      response.directive = item.directive;
+    }
+    return response;
+  }
+
+private:
+  std::map<std::pair<std::uint64_t, std::uint64_t>, RecordedDecision> decisions_;
+};
+
 Json load_manifest(const RunArtifacts& paths) {
   if (!std::filesystem::exists(paths.manifest)) {
     throw RunError{"IncompleteArtifacts", "completed manifest is missing"};
@@ -179,7 +230,8 @@ ReplayResult verify_replay(const std::filesystem::path& directory) {
       throw RunError{"NonCanonicalConfig", "stored config is not canonical"};
     }
     VerifySink sink{paths, result};
-    result.summary = run_kernel(config, sink);
+    RecordedDecisions decisions{paths.trace};
+    result.summary = run_kernel(config, sink, nullptr, &decisions);
     sink.finish();
     // The recomputed metrics must be the stored file, byte for byte.
     const auto metrics_bytes = codec::metrics(config, result.summary).dump() + '\n';

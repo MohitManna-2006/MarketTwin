@@ -78,6 +78,23 @@ void check(const NoiseParams& params, const AgentConfig& agent) {
           "noise max_resting_orders must be positive and below max_open_orders");
 }
 
+void check(const ModelDirectedParams& params, const AgentConfig& agent) {
+  require(params.decision_interval.value() >= 1'000'000 &&
+              params.decision_interval.value() <= kMaxDuration,
+          "desk decision interval must be 1 ms to 1e15 ns");
+  require(params.max_half_spread_ticks >= 1 && params.max_half_spread_ticks <= kMaxTicks &&
+              params.max_skew_ticks <= kMaxTicks,
+          "desk spread and skew bounds are out of range");
+  require(params.mandate.size() <= kMaxMandateBytes &&
+              std::ranges::all_of(params.mandate,
+                                  [](char ch) { return ch == '\n' || (ch >= ' ' && ch <= '~'); }),
+          "desk mandate must be at most 2000 printable ASCII characters");
+  const auto error = directive_error(params.initial, params, agent.limits);
+  if (!error.empty()) {
+    throw RunError{"InvalidConfig", "desk initial directive: " + error};
+  }
+}
+
 void check_agent(const AgentConfig& agent, const ExchangeConfig& exchange) {
   require(agent.id.value() >= 1 && agent.id.value() < (1ULL << 31U),
           "scenario agent IDs must be 1 to 2^31 - 1");
@@ -125,9 +142,11 @@ void require_disjoint(std::vector<Interval>& intervals, const char* message) {
 
 using AgentIntervals = std::vector<std::pair<AgentId, Interval>>;
 
+// A desk quotes through the same reconciliation and honors the same quote-size control.
 bool is_maker(const PolicyConfig& policy) {
   return std::holds_alternative<MarketMakerParams>(policy) ||
-         std::holds_alternative<InventoryMarketMakerParams>(policy);
+         std::holds_alternative<InventoryMarketMakerParams>(policy) ||
+         std::holds_alternative<ModelDirectedParams>(policy);
 }
 
 // Every named agent exists and passes `allowed`; with an interval, each is recorded for
@@ -242,6 +261,14 @@ void check_shocks(const ScenarioConfig& scenario) {
 
 } // namespace
 
+void validate_agent(const AgentConfig& agent, const ExchangeConfig& exchange) {
+  check_agent(agent, exchange);
+}
+
+void validate_shocks(const ScenarioConfig& scenario) {
+  check_shocks(scenario);
+}
+
 void validate_scenario(const RunConfig& config) {
   if (!config.scenario) {
     return;
@@ -284,8 +311,8 @@ void validate_scenario(const RunConfig& config) {
 }
 
 std::string_view policy_name(const PolicyConfig& policy) {
-  constexpr std::array<std::string_view, 5> kNames{
-      "MarketMaker", "InventoryMarketMaker", "Momentum", "Value", "Noise",
+  constexpr std::array<std::string_view, 6> kNames{
+      "MarketMaker", "InventoryMarketMaker", "Momentum", "Value", "Noise", "ModelDirected",
   };
   return kNames.at(policy.index()); // throws for a valueless variant
 }
@@ -306,6 +333,9 @@ std::unique_ptr<ITradingAgent> make_policy(const PolicyConfig& policy) {
     }
     std::unique_ptr<ITradingAgent> operator()(const NoiseParams& params) const {
       return std::make_unique<NoiseAgent>(params);
+    }
+    std::unique_ptr<ITradingAgent> operator()(const ModelDirectedParams& params) const {
+      return std::make_unique<DirectedMaker>(params);
     }
   };
   return std::visit(Factory{}, policy);

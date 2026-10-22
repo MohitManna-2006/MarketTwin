@@ -23,6 +23,8 @@ inline constexpr std::uint64_t kScriptedConfigSchema = 1;
 inline constexpr std::uint64_t kScenarioConfigSchema = 2;
 // Schema 2 with a required accounting object and a scenario that may be null.
 inline constexpr std::uint64_t kAccountingConfigSchema = 3;
+// Schema 3 with a required forks array (ADR 0012): forks, or an AI desk agent.
+inline constexpr std::uint64_t kForkConfigSchema = 4;
 inline constexpr std::uint64_t kManifestSchema = 2;
 
 [[noreturn]] void invalid(std::string_view message);
@@ -84,6 +86,15 @@ private:
 [[nodiscard]] ScenarioConfig read_scenario(const Json& value);
 [[nodiscard]] Json policy(const PolicyConfig& value);
 [[nodiscard]] PolicyConfig read_policy(const Json& value);
+[[nodiscard]] Json shock(const Shock& value);
+[[nodiscard]] Shock read_shock(const Json& value);
+[[nodiscard]] Json directive(const Directive& value);
+[[nodiscard]] Directive read_directive(const Json& value);
+// A Decision record's payload fields other than the observation.
+[[nodiscard]] Json decision_fields(const RecordedDecision& value);
+[[nodiscard]] RecordedDecision read_decision_fields(const Json& value, SimTime at);
+[[nodiscard]] Json fork_stage(const ForkStage& value);
+[[nodiscard]] ForkStage read_fork_stage(const Json& value);
 [[nodiscard]] Json shock_transition(std::size_t index, ShockPhase phase, const Shock& value);
 [[nodiscard]] Json fundamental_update(const FundamentalProcess& value);
 [[nodiscard]] Json scenario_summary(const ScenarioSummary& value);

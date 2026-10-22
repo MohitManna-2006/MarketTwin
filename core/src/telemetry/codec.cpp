@@ -108,6 +108,11 @@ constexpr std::array<std::string_view, 12> kAccountingFields{
     "exchange",        "horizon_ns", "max_events", "max_queue",
     "max_trace_bytes", "commands",   "scenario",   "accounting",
 };
+constexpr std::array<std::string_view, 13> kForkFields{
+    "schema_version", "run_id",          "seed",     "tick_size_minor", "exchange",
+    "horizon_ns",     "max_events",      "max_queue", "max_trace_bytes", "commands",
+    "scenario",       "accounting",      "forks",
+};
 
 void require_fields(const Json& value, std::span<const std::string_view> required) {
   if (!value.is_object() || value.size() != required.size()) {
@@ -262,9 +267,12 @@ Json config(const RunConfig& value) {
   }
   // The lowest schema that can express the config. A scripted or scenario config with
   // default accounting keeps its version 1 or 2 bytes, and so its earlier digests.
-  const bool accounted = value.accounting != AccountingConfig{};
+  const bool forked = !value.forks.empty() || has_desk(value);
+  const bool accounted = forked || value.accounting != AccountingConfig{};
   auto schema = kScriptedConfigSchema;
-  if (accounted) {
+  if (forked) {
+    schema = kForkConfigSchema;
+  } else if (accounted) {
     schema = kAccountingConfigSchema;
   } else if (value.scenario) {
     schema = kScenarioConfigSchema;
@@ -289,6 +297,13 @@ Json config(const RunConfig& value) {
   } else if (value.scenario) {
     output.update({{"scenario", scenario(*value.scenario)}});
   }
+  if (forked) {
+    auto stages = Json::array();
+    for (const auto& stage : value.forks) {
+      stages.push_back(fork_stage(stage));
+    }
+    output.update({{"forks", stages}});
+  }
   return output;
 }
 
@@ -302,8 +317,10 @@ RunConfig read_config(const Json& value) {
     require_fields(value, kScenarioFields);
   } else if (version == kAccountingConfigSchema) {
     require_fields(value, kAccountingFields);
+  } else if (version == kForkConfigSchema) {
+    require_fields(value, kForkFields);
   } else {
-    throw RunError{"UnsupportedSchema", "expected run config schema version 1, 2, or 3"};
+    throw RunError{"UnsupportedSchema", "expected run config schema version 1, 2, 3, or 4"};
   }
   RunConfig result;
   result.run_id = text(value.at("run_id"));
@@ -326,12 +343,24 @@ RunConfig read_config(const Json& value) {
     });
   }
   // Schema 2 requires a scenario; schema 3 may carry null for a purely scripted run.
-  if (version == kScenarioConfigSchema ||
-      (version == kAccountingConfigSchema && !value.at("scenario").is_null())) {
+  const bool accounted = version == kAccountingConfigSchema || version == kForkConfigSchema;
+  if (version == kScenarioConfigSchema || (accounted && !value.at("scenario").is_null())) {
     result.scenario = read_scenario(value.at("scenario"));
   }
-  if (version == kAccountingConfigSchema) {
+  if (accounted) {
     result.accounting = read_accounting(value.at("accounting"));
+  }
+  if (version == kForkConfigSchema) {
+    if (!value.at("forks").is_array()) {
+      invalid("forks must be an array");
+    }
+    for (const auto& item : value.at("forks")) {
+      result.forks.push_back(read_fork_stage(item));
+    }
+    // Schema 4 exists only for forks and desks, so each config has one spelling.
+    if (result.forks.empty() && !has_desk(result)) {
+      invalid("schema 4 needs a fork stage or an AI desk agent");
+    }
   }
   validate_config(result);
   return result;

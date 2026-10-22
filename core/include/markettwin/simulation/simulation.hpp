@@ -70,7 +70,8 @@ struct RunArtifacts {
 class Simulation {
 public:
   explicit Simulation(RunConfig config, std::filesystem::path output_directory = {});
-  [[nodiscard]] RunSummary run();
+  // An AI desk run needs a decision source for every decision no fork stage fixes.
+  [[nodiscard]] RunSummary run(DecisionSource* decisions = nullptr);
   [[nodiscard]] RunArtifacts artifacts() const;
 
 private:

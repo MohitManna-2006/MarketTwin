@@ -1,5 +1,9 @@
 #include "population.hpp"
 
+#include "markettwin/common/hash.hpp"
+
+#include "../telemetry/codec.hpp"
+
 #include <algorithm>
 
 namespace markettwin {
@@ -111,6 +115,19 @@ void Population::wake(AgentSlot slot) {
 void Population::deliver(AgentSlot slot, const MarketDataUpdate& update) {
   auto& agent = agents_.at(slot);
   agent.market = update;
+  auto& interval = agent.interval;
+  ++interval.market_updates;
+  if (update.best_bid && update.best_ask) {
+    const auto mid = update.best_bid->price.value() + update.best_ask->price.value();
+    if (!interval.mid_open_twice) {
+      interval.mid_open_twice = mid;
+      interval.mid_high_twice = mid;
+      interval.mid_low_twice = mid;
+    }
+    interval.mid_high_twice = std::max(interval.mid_high_twice, mid);
+    interval.mid_low_twice = std::min(interval.mid_low_twice, mid);
+    interval.mid_last_twice = mid;
+  }
   AgentActions actions{agent.policy_rng, intents_};
   agent.policy->on_market_data(observe(agent), actions);
   flush(agent);
@@ -138,6 +155,14 @@ void Population::deliver(AgentSlot slot, const Fill& fill) {
   auto& agent = agents_.at(slot);
   const auto quantity = to_signed(fill.quantity.value());
   agent.position += fill.side == Side::Buy ? quantity : -quantity;
+  const auto ticks = static_cast<std::uint64_t>(fill.price.value()) * fill.quantity.value();
+  if (fill.side == Side::Buy) {
+    agent.interval.bought += fill.quantity.value();
+    agent.interval.buy_value_ticks += ticks;
+  } else {
+    agent.interval.sold += fill.quantity.value();
+    agent.interval.sell_value_ticks += ticks;
+  }
   if (agent.credit_limit) {
     const auto value = notional(fill.price, fill.quantity, config_->tick_size_minor);
     const auto& fees = config_->accounting.fees;
@@ -366,6 +391,125 @@ void Population::withdraw_quotes(AgentId id) {
       ++agent.activity.intents_dropped;
     }
   }
+}
+
+void Population::replace_policy(AgentId id, const PolicyConfig& policy) {
+  const auto slot = slot_of(id);
+  if (!slot) {
+    return;
+  }
+  auto& agent = agents_.at(*slot);
+  agent.policy = make_policy(policy);
+  const auto* value = std::get_if<ValueParams>(&policy);
+  agent.signal_noise_milliticks =
+      value != nullptr ? std::optional{value->estimate_noise_milliticks} : std::nullopt;
+  agent.activity.policy = policy_name(policy);
+  agent.interval = Interval{};
+  agent.interval.volume_at_start = agent.market ? agent.market->cumulative_volume : Quantity{};
+}
+
+void Population::apply_directive(AgentId id, const Directive& directive) {
+  if (const auto slot = slot_of(id)) {
+    if (auto* desk = dynamic_cast<DirectedMaker*>(agents_.at(*slot).policy.get())) {
+      desk->apply(directive);
+    }
+  }
+}
+
+std::string Population::desk_observation(AgentId id, SimTime at, SimTime interval_start,
+                                         const ModelDirectedParams& desk,
+                                         const Directive& current) {
+  using codec::Json;
+  auto& agent = agents_.at(slot_of(id).value());
+  const auto optional_ticks = [](const std::optional<PriceTicks>& price) {
+    return price ? Json(price->value()) : Json(nullptr);
+  };
+  const auto level = [&](const std::optional<BookLevel>& book) {
+    return book ? Json{{"price_ticks", book->price.value()}, {"quantity", book->quantity.value()}}
+                : Json(nullptr);
+  };
+  const auto milliticks = [](std::int64_t twice) { return twice * (kMilliticks / 2); };
+  const auto& interval = agent.interval;
+  Json market = nullptr;
+  if (agent.market) {
+    market = {
+        {"best_bid", level(agent.market->best_bid)},
+        {"best_ask", level(agent.market->best_ask)},
+        {"last_trade_ticks", optional_ticks(agent.market->last_trade_price)},
+        {"exchange_time_ns", agent.market->exchange_time.value()},
+    };
+  }
+  const auto volume = agent.market ? agent.market->cumulative_volume : Quantity{};
+  Json mids = nullptr;
+  if (interval.mid_open_twice) {
+    mids = {
+        {"open", milliticks(*interval.mid_open_twice)},
+        {"high", milliticks(interval.mid_high_twice)},
+        {"low", milliticks(interval.mid_low_twice)},
+        {"last", milliticks(interval.mid_last_twice)},
+    };
+  }
+  std::uint64_t bids = 0;
+  std::uint64_t asks = 0;
+  std::uint64_t bid_quantity = 0;
+  std::uint64_t ask_quantity = 0;
+  for (const auto& order : agent.orders) {
+    if (order.cancel_requested) {
+      continue;
+    }
+    if (order.side == Side::Buy) {
+      ++bids;
+      bid_quantity += order.remaining.value();
+    } else {
+      ++asks;
+      ask_quantity += order.remaining.value();
+    }
+  }
+  const auto& limits = agent.config->limits;
+  const Json observation{
+      {"time_ns", at.value()},
+      {"horizon_ns", config_->limits.horizon.value()},
+      {"tick_size_minor", config_->tick_size_minor},
+      {"market", market},
+      {
+          "interval",
+          {
+              {"start_ns", interval_start.value()},
+              {"market_updates", interval.market_updates},
+              {"mid_milliticks", mids},
+              {"volume", volume.value() - interval.volume_at_start.value()},
+          },
+      },
+      {
+          "own",
+          {
+              {"position", agent.position},
+              {"bought", interval.bought},
+              {"sold", interval.sold},
+              {"buy_value_ticks", interval.buy_value_ticks},
+              {"sell_value_ticks", interval.sell_value_ticks},
+              {"working_bids", bids},
+              {"working_asks", asks},
+              {"working_bid_quantity", bid_quantity},
+              {"working_ask_quantity", ask_quantity},
+          },
+      },
+      {"controls", {{"quote_size_ppm", agent.controls.quote_size_ppm}}},
+      {
+          "limits",
+          {
+              {"max_position", limits.max_position},
+              {"max_order_quantity", limits.max_order_quantity.value()},
+              {"max_open_orders", limits.max_open_orders},
+              {"max_half_spread_ticks", desk.max_half_spread_ticks},
+              {"max_skew_ticks", desk.max_skew_ticks},
+          },
+      },
+      {"directive", codec::directive(current)},
+  };
+  agent.interval = Interval{};
+  agent.interval.volume_at_start = volume;
+  return observation.dump();
 }
 
 std::vector<AgentActivity> Population::activity() const {

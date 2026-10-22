@@ -4,6 +4,7 @@
 #include "markettwin/experiment/experiment.hpp"
 #include "markettwin/historical/historical.hpp"
 #include "markettwin/simulation/simulation.hpp"
+#include "markettwin/telemetry/fork.hpp"
 #include "markettwin/telemetry/replay.hpp"
 
 #include <algorithm>
@@ -19,8 +20,11 @@
 namespace {
 void print_usage(std::ostream& output) {
   output << "Usage: markettwin --version | --help\n"
-         << "       markettwin run --config CONFIG.json --output NEW_DIRECTORY\n"
+         << "       markettwin run --config CONFIG.json --output NEW_DIRECTORY [--decisions fixture]\n"
          << "       markettwin replay --input RUN_DIRECTORY\n"
+         << "       markettwin fork --parent RUN_DIRECTORY --stage STAGE.json --output NEW_DIRECTORY "
+            "[--decisions fixture]\n"
+         << "       markettwin fork-verify --parent RUN_DIRECTORY --fork RUN_DIRECTORY\n"
          << "       markettwin experiment --config EXPERIMENT.json --output NEW_DIRECTORY\n";
   output << "       markettwin historical-import --input RAW.jsonl --metadata META.json --output "
             "NEW_DIRECTORY\n"
@@ -63,11 +67,45 @@ int execute(int argc, char* const* argv) {
     print_usage(std::cout);
     return 0;
   }
-  if (argc == 6 && std::string_view{argv[1]} == "run" && std::string_view{argv[2]} == "--config" &&
+  if ((argc == 6 || (argc == 8 && std::string_view{argv[6]} == "--decisions" &&
+                      std::string_view{argv[7]} == "fixture")) &&
+      std::string_view{argv[1]} == "run" && std::string_view{argv[2]} == "--config" &&
       std::string_view{argv[4]} == "--output") {
+    // AI desk decisions come only from the deterministic fixture here; the API supplies a
+    // model (ADR 0012).
+    markettwin::FixtureDecisionSource fixture;
     markettwin::Simulation simulation{markettwin::load_config(argv[3]), argv[5]};
-    std::cout << markettwin::summary_json(simulation.run()) << '\n';
+    std::cout << markettwin::summary_json(simulation.run(argc == 8 ? &fixture : nullptr)) << '\n';
     return 0;
+  }
+  if ((argc == 8 || (argc == 10 && std::string_view{argv[8]} == "--decisions" &&
+                      std::string_view{argv[9]} == "fixture")) &&
+      std::string_view{argv[1]} == "fork" && std::string_view{argv[2]} == "--parent" &&
+      std::string_view{argv[4]} == "--stage" && std::string_view{argv[6]} == "--output") {
+    const std::ifstream stage{argv[5]};
+    if (!stage) {
+      throw markettwin::RunError{"IoError", "cannot read fork stage"};
+    }
+    std::ostringstream text;
+    text << stage.rdbuf();
+    const std::filesystem::path output{argv[7]};
+    auto config = markettwin::fork_of(argv[3], markettwin::parse_stage_request(text.str()),
+                                      output.filename().string());
+    markettwin::FixtureDecisionSource fixture;
+    markettwin::Simulation simulation{std::move(config), output};
+    std::cout << markettwin::summary_json(simulation.run(argc == 10 ? &fixture : nullptr)) << '\n';
+    return 0;
+  }
+  if (argc == 6 && std::string_view{argv[1]} == "fork-verify" &&
+      std::string_view{argv[2]} == "--parent" && std::string_view{argv[4]} == "--fork") {
+    const auto result = markettwin::verify_fork(argv[3], argv[5]);
+    if (result.verified) {
+      // The report lives with the fork, like the run's other derived documents.
+      std::ofstream output{std::string{argv[5]} + "/fork_report.json", std::ios::binary};
+      output << result.report << '\n';
+    }
+    std::cout << markettwin::fork_verification_json(result) << '\n';
+    return result.verified ? 0 : 1;
   }
   if (argc == 4 && std::string_view{argv[1]} == "replay" &&
       std::string_view{argv[2]} == "--input") {

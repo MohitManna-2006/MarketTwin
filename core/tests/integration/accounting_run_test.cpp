@@ -391,7 +391,7 @@ TEST(AccountingRunTest, RejectsMalformedAndOutOfBoundsAccounting) {
             "InvalidConfig");
   EXPECT_EQ(rejected([&](Json& value) { value.at("accounting").at("accounts") = {account}; }),
             "no error");
-  EXPECT_EQ(rejected([](Json& value) { value.at("schema_version") = 4; }), "UnsupportedSchema");
+  EXPECT_EQ(rejected([](Json& value) { value.at("schema_version") = 5; }), "UnsupportedSchema");
 
   // A credit limit needs an enforcement point, which only a scenario agent has.
   auto scripted = test::fixture();
