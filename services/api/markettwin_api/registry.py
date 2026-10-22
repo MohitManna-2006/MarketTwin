@@ -8,6 +8,7 @@ replay verification last said. Everything else is read back from the artifacts.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 from collections.abc import Iterator
@@ -180,6 +181,20 @@ _JSON_COLUMNS = (
 
 ACTIVE = ("pending", "running")
 
+# Tables whose jobs a process other than the API may own, such as
+# scripts/calibrate_aapl.py. Each row records the process that runs it.
+_OWNED_TABLES = ("historical_imports", "calibrations")
+
+
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
 
 def now() -> str:
     """Wall-clock creation and completion times, UTC, to the millisecond."""
@@ -195,6 +210,10 @@ class Registry:
         with self._cursor() as cursor:
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.executescript(_SCHEMA)
+            for table in _OWNED_TABLES:
+                columns = {row[1] for row in cursor.execute(f"PRAGMA table_info({table})")}
+                if "owner_pid" not in columns:
+                    cursor.execute(f"ALTER TABLE {table} ADD COLUMN owner_pid INTEGER")
 
     def close(self) -> None:
         with self._lock:
@@ -532,21 +551,24 @@ class Registry:
                 "WHERE status IN ('PLANNING', 'APPROVED', 'ANALYZING')",
                 (stamp,),
             )
-            historical = cursor.execute(
-                "UPDATE historical_imports SET status = 'failed', finished_at = ?, "
-                "error_code = 'WorkerInterrupted', "
-                "error_message = 'the API process stopped during historical import' "
-                "WHERE status IN ('pending', 'running')",
-                (stamp,),
-            ).rowcount
-            calibrations = cursor.execute(
-                "UPDATE calibrations SET status = 'failed', finished_at = ?, "
-                "error_code = 'WorkerInterrupted', "
-                "error_message = 'the API process stopped during this calibration' "
-                "WHERE status IN ('pending', 'running')",
-                (stamp,),
-            ).rowcount
-        return int(runs) + int(experiments) + int(historical) + int(calibrations)
+            # A job another live process owns is still running; leave it alone.
+            owned = 0
+            for table, message in (
+                ("historical_imports", "the process stopped during historical import"),
+                ("calibrations", "the process stopped during this calibration"),
+            ):
+                for row_id, owner in cursor.execute(
+                    f"SELECT id, owner_pid FROM {table} WHERE status IN ('pending', 'running')"
+                ).fetchall():
+                    if owner is not None and owner != os.getpid() and _alive(int(owner)):
+                        continue
+                    cursor.execute(
+                        f"UPDATE {table} SET status = 'failed', finished_at = ?, "
+                        "error_code = 'WorkerInterrupted', error_message = ? WHERE id = ?",
+                        (stamp, message, row_id),
+                    )
+                    owned += 1
+        return int(runs) + int(experiments) + owned
 
 
 def _encode(key: str, value: Any) -> Any:

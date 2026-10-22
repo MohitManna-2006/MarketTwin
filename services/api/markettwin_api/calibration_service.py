@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import random
 import re
 import secrets
@@ -244,6 +245,7 @@ class CalibrationResearch:
                     "feed": spec.feed,
                     "observation_kind": observation_kind(first["provider"], first["feed"]),
                     "status": "pending",
+                    "owner_pid": os.getpid(),
                     "created_at": now(),
                     "sessions_json": [
                         {"session_id": session.id, "day": session.day, "role": session.role}

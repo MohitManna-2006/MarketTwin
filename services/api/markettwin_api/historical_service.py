@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import secrets
 from collections.abc import Callable
@@ -136,6 +137,7 @@ class HistoricalResearch:
                     "start_time": start,
                     "end_time": end,
                     "status": "pending",
+                    "owner_pid": os.getpid(),
                     "created_at": now(),
                 }
             )
@@ -238,6 +240,7 @@ class HistoricalResearch:
                 "start_time": start,
                 "end_time": end,
                 "status": "running",
+                "owner_pid": os.getpid(),
                 "created_at": now(),
                 "started_at": now(),
             }

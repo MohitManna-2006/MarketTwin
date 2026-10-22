@@ -219,3 +219,46 @@ def test_fabricated_pipeline_publishes_a_verified_artifact(calibration_client: T
     assert second["test"] == report["test"]
     assert second["stage1"]["fit_ppm"] == report["stage1"]["fit_ppm"]
     assert second["targets"] == report["targets"]
+
+
+def test_startup_leaves_jobs_of_another_live_process_running(tmp_path: Path) -> None:
+    import subprocess
+
+    from markettwin_api.registry import Registry, now
+
+    other = subprocess.Popen(["sleep", "30"])
+    try:
+        registry = Registry(tmp_path / "registry.sqlite3")
+        for row_id, owner in (("cal-live000000", other.pid), ("cal-orphan0000", None)):
+            registry.insert_calibration(
+                {
+                    "id": row_id,
+                    "request_key": row_id,
+                    "spec_key": "fixture_smoke",
+                    "spec_digest": "d",
+                    "title": "t",
+                    "symbol": "AAPL",
+                    "feed": "fabricated_l1",
+                    "observation_kind": "FABRICATED TEST DATA",
+                    "status": "running",
+                    "created_at": now(),
+                    "sessions_json": [],
+                    "owner_pid": owner,
+                }
+            )
+        registry.close()
+        restarted = Registry(tmp_path / "registry.sqlite3")
+        assert restarted.fail_interrupted() == 1
+        live, orphan = (
+            restarted.calibration("cal-live000000"),
+            restarted.calibration("cal-orphan0000"),
+        )
+        assert live is not None and live["status"] == "running"
+        assert orphan is not None and orphan["status"] == "failed"
+        other.kill()
+        other.wait()
+        assert restarted.fail_interrupted() == 1
+        assert restarted.calibration("cal-live000000")["status"] == "failed"  # type: ignore[index]
+        restarted.close()
+    finally:
+        other.kill()
