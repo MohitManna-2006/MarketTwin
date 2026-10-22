@@ -210,7 +210,7 @@ TEST(ForkRunTest, RejectsStagesThatCouldChangeThePast) {
   longer.horizon = SimTime{90 * kSecond};
   EXPECT_EQ(rejected(longer), "InvalidConfig");
   auto directive = stage_at(10);
-  directive.directive_overrides = {{.agent = AgentId{1}, .directive = {.max_position = 1}}};
+  directive.directive_overrides = {{.agent = AgentId{1}, .directive = Directive{}}};
   EXPECT_EQ(rejected(directive), "InvalidConfig"); // agent 1 is not a desk
 
   // A config that does not lead back to its parent's digest.

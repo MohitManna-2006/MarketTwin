@@ -166,9 +166,9 @@ py::tuple fork_config(const std::string& parent_directory, const std::string& st
   std::string canonical;
   {
     const py::gil_scoped_release release;
-    canonical = markettwin::canonical_config(markettwin::fork_of(
-        std::filesystem::path{parent_directory}, markettwin::parse_stage_request(stage_json),
-        run_id));
+    canonical = markettwin::canonical_config(
+        markettwin::fork_of(std::filesystem::path{parent_directory},
+                            markettwin::parse_stage_request(stage_json), run_id));
   }
   return py::make_tuple(canonical, markettwin::sha256(canonical));
 }
@@ -227,9 +227,9 @@ py::tuple run_experiment(const std::string& text, const std::string& base_direct
       }
       return markettwin::Simulation{cell, directory}.run(source.get());
     };
-    const markettwin::RunFunction execute = [progress, simulate](
-                                                const markettwin::RunConfig& cell,
-                                                const std::filesystem::path& directory) {
+    const markettwin::RunFunction execute = [progress,
+                                             simulate](const markettwin::RunConfig& cell,
+                                                       const std::filesystem::path& directory) {
       if (!progress) {
         return simulate(cell, directory);
       }
@@ -297,8 +297,7 @@ PYBIND11_MODULE(_native, module) {
   module.def("fork_config", &fork_config, py::arg("parent_directory"), py::arg("stage_json"),
              py::arg("run_id"),
              "The config of a fork of a finished run. Returns (canonical JSON, config digest).");
-  module.def("verify_fork", &verify_fork, py::arg("parent_directory"),
-             py::arg("fork_directory"),
+  module.def("verify_fork", &verify_fork, py::arg("parent_directory"), py::arg("fork_directory"),
              "Check a fork against its parent and build its divergence report, as JSON.");
   module.def("verify_replay", &verify_replay, py::arg("run_directory"),
              "Regenerate a recorded run and compare every record. Returns the verdict as JSON.");

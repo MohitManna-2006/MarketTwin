@@ -536,16 +536,14 @@ DecisionResponse parse_decision_response(std::string_view json) {
     response.directive.reset();
     response.error_code = "SourceResponseInvalid";
   }
-  if (response.error_code.size() > 64 ||
-      !std::ranges::all_of(response.error_code, [](char ch) {
+  if (response.error_code.size() > 64 || !std::ranges::all_of(response.error_code, [](char ch) {
         return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9');
       })) {
     response.directive.reset();
     response.error_code = "SourceResponseInvalid";
   }
-  if (response.model.size() > 128 || !std::ranges::all_of(response.model, [](char ch) {
-        return ch >= ' ' && ch <= '~';
-      })) {
+  if (response.model.size() > 128 ||
+      !std::ranges::all_of(response.model, [](char ch) { return ch >= ' ' && ch <= '~'; })) {
     response.model = "unknown";
   }
   return response;

@@ -25,7 +25,7 @@ struct VariantFork {
 struct Variant {
   std::string name;
   std::vector<PolicyOverride> overrides;
-  std::optional<VariantFork> fork; // with no overrides of its own
+  std::optional<VariantFork> fork = std::nullopt; // with no overrides of its own
   bool operator==(const Variant&) const = default;
 };
 

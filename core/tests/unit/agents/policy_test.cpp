@@ -4,6 +4,7 @@
 #include "markettwin/agents/noise.hpp"
 #include "markettwin/agents/value.hpp"
 
+#include <functional>
 #include <gtest/gtest.h>
 
 namespace markettwin {
@@ -431,6 +432,14 @@ TEST(NoiseAgentTest, ConsumesTheSameDrawsWhateverTheMarketLooksLike) {
   }
 }
 
+// A default directive with some fields changed. GCC rejects designated initializers that
+// leave out a member without a default, such as the rationale.
+Directive directive(const std::function<void(Directive&)>& edit) {
+  Directive value;
+  edit(value);
+  return value;
+}
+
 ModelDirectedParams desk_params(Directive initial) {
   return {
       .initial = std::move(initial),
@@ -466,12 +475,15 @@ TEST(DirectedMakerTest, PauseCancelsEverythingAndReduceWorksOneOrderAtTheTouch) 
   Desk desk;
   desk.quote(99, 101).working(7, Side::Buy, 97, 10).working(8, Side::Sell, 103, 10);
   DirectedMaker maker{desk_params({})};
-  maker.apply({.mode = DeskMode::Pause});
+  maker.apply(directive([](Directive& value) { value.mode = DeskMode::Pause; }));
   auto intents = desk.timer(maker);
   EXPECT_EQ(cancels(intents), (std::vector<std::uint64_t>{7, 8}));
   EXPECT_TRUE(submits(intents, Side::Buy).empty());
 
-  maker.apply({.mode = DeskMode::Reduce, .quote_size = Quantity{25}});
+  maker.apply(directive([](Directive& value) {
+    value.mode = DeskMode::Reduce;
+    value.quote_size = Quantity{25};
+  }));
   desk.observation.position = 60;
   intents = desk.timer(maker);
   EXPECT_EQ(cancels(intents), (std::vector<std::uint64_t>{7, 8}));
@@ -493,22 +505,39 @@ TEST(DirectedMakerTest, PauseCancelsEverythingAndReduceWorksOneOrderAtTheTouch) 
 
 TEST(DirectedMakerTest, DirectiveBoundsComeFromTheDeskAndTheAgentLimits) {
   const AgentLimits limits{
-      .max_position = 500,
+      .max_position = 1'000,
       .max_order_quantity = Quantity{100},
       .max_open_orders = 8,
       .max_messages = 1'000,
   };
   const auto params = desk_params({});
-  EXPECT_EQ(directive_error({.max_position = 500}, params, limits), "");
-  EXPECT_NE(directive_error({.half_spread_ticks = 0, .max_position = 1}, params, limits), "");
-  EXPECT_NE(directive_error({.half_spread_ticks = 21, .max_position = 1}, params, limits), "");
-  EXPECT_NE(directive_error({.skew_ticks = -11, .max_position = 1}, params, limits), "");
-  EXPECT_NE(directive_error({.quote_size = Quantity{101}, .max_position = 1}, params, limits), "");
-  EXPECT_NE(directive_error({.levels = 5, .max_position = 1}, params, limits), "");
-  EXPECT_NE(directive_error({.max_position = 501}, params, limits), "");
+  EXPECT_EQ(directive_error(directive([](Directive& value) { value.max_position = 1'000; }), params,
+                            limits),
+            "");
+  EXPECT_NE(directive_error(directive([](Directive& value) { value.half_spread_ticks = 0; }),
+                            params, limits),
+            "");
+  EXPECT_NE(directive_error(directive([](Directive& value) { value.half_spread_ticks = 21; }),
+                            params, limits),
+            "");
   EXPECT_NE(
-      directive_error({.max_position = 1, .rationale = std::string(281, 'a')}, params, limits), "");
-  EXPECT_NE(directive_error({.max_position = 1, .rationale = "caf\xc3\xa9"}, params, limits), "");
+      directive_error(directive([](Directive& value) { value.skew_ticks = -11; }), params, limits),
+      "");
+  EXPECT_NE(directive_error(directive([](Directive& value) { value.quote_size = Quantity{101}; }),
+                            params, limits),
+            "");
+  EXPECT_NE(directive_error(directive([](Directive& value) { value.levels = 5; }), params, limits),
+            "");
+  EXPECT_NE(directive_error(directive([](Directive& value) { value.max_position = 1'001; }), params,
+                            limits),
+            "");
+  EXPECT_NE(
+      directive_error(directive([](Directive& value) { value.rationale = std::string(281, 'a'); }),
+                      params, limits),
+      "");
+  EXPECT_NE(directive_error(directive([](Directive& value) { value.rationale = "caf\xc3\xa9"; }),
+                            params, limits),
+            "");
 }
 
 } // namespace
