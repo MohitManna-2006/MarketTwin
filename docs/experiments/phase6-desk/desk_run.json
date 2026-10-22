@@ -1,0 +1,547 @@
+{
+ "config": {
+  "accounting": {
+   "accounts": [],
+   "default_initial_cash_minor": 0,
+   "fees": {
+    "maker_ppm": 0,
+    "taker_ppm": 0
+   }
+  },
+  "commands": [],
+  "exchange": {
+   "agents": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "max_accepted_orders": 5000000,
+   "max_active_orders": 100000,
+   "max_order_quantity": 1000000,
+   "max_snapshot_depth": 1000,
+   "max_trades": 5000000,
+   "symbol": 1
+  },
+  "forks": [],
+  "horizon_ns": 3600000000000,
+  "max_events": 20000000,
+  "max_queue": 100000,
+  "max_trace_bytes": 1073741824,
+  "run_id": "desk-91aaaecd",
+  "scenario": {
+   "agents": [
+    {
+     "id": 1,
+     "latency": {
+      "market_data_ns": 100000,
+      "order_entry_jitter_ns": 50000,
+      "order_entry_ns": 200000,
+      "report_ns": 100000
+     },
+     "limits": {
+      "max_messages": 1000000,
+      "max_open_orders": 16,
+      "max_order_quantity": 200,
+      "max_position": 2000
+     },
+     "policy": {
+      "half_spread_ticks": 2,
+      "kind": "MarketMaker",
+      "level_spacing_ticks": 1,
+      "levels": 3,
+      "quote_size": 100
+     },
+     "wakeup": {
+      "distribution": "Fixed",
+      "first_ns": 0,
+      "interval_ns": 500000000
+     }
+    },
+    {
+     "id": 2,
+     "latency": {
+      "market_data_ns": 100000,
+      "order_entry_jitter_ns": 50000,
+      "order_entry_ns": 200000,
+      "report_ns": 100000
+     },
+     "limits": {
+      "max_messages": 1000000,
+      "max_open_orders": 16,
+      "max_order_quantity": 200,
+      "max_position": 2000
+     },
+     "policy": {
+      "half_spread_ticks": 3,
+      "kind": "MarketMaker",
+      "level_spacing_ticks": 2,
+      "levels": 3,
+      "quote_size": 150
+     },
+     "wakeup": {
+      "distribution": "Fixed",
+      "first_ns": 100000000,
+      "interval_ns": 750000000
+     }
+    },
+    {
+     "id": 3,
+     "latency": {
+      "market_data_ns": 100000,
+      "order_entry_jitter_ns": 50000,
+      "order_entry_ns": 200000,
+      "report_ns": 100000
+     },
+     "limits": {
+      "max_messages": 1000000,
+      "max_open_orders": 16,
+      "max_order_quantity": 200,
+      "max_position": 2000
+     },
+     "policy": {
+      "decision_interval_ns": 60000000000,
+      "initial": {
+       "half_spread_ticks": 2,
+       "levels": 3,
+       "max_position": 2000,
+       "mode": "quote",
+       "quote_size": 100,
+       "rationale": "initial directive",
+       "skew_ticks": 0
+      },
+      "kind": "ModelDirected",
+      "mandate": "Make markets in this name. Keep inventory within 2000 shares, and protect the desk when the market becomes one-sided or unstable.",
+      "max_half_spread_ticks": 20,
+      "max_skew_ticks": 10
+     },
+     "wakeup": {
+      "distribution": "Fixed",
+      "first_ns": 250000000,
+      "interval_ns": 500000000
+     }
+    },
+    {
+     "id": 4,
+     "latency": {
+      "market_data_ns": 500000,
+      "order_entry_jitter_ns": 200000,
+      "order_entry_ns": 1000000,
+      "report_ns": 500000
+     },
+     "limits": {
+      "max_messages": 100000,
+      "max_open_orders": 8,
+      "max_order_quantity": 200,
+      "max_position": 20000
+     },
+     "policy": {
+      "estimate_noise_milliticks": 3000,
+      "kind": "Value",
+      "order_size": 20,
+      "slippage_ticks": 1,
+      "threshold_milliticks": 2000
+     },
+     "wakeup": {
+      "distribution": "Exponential",
+      "first_ns": 1000000000,
+      "interval_ns": 2000000000
+     }
+    },
+    {
+     "id": 5,
+     "latency": {
+      "market_data_ns": 500000,
+      "order_entry_jitter_ns": 200000,
+      "order_entry_ns": 1000000,
+      "report_ns": 500000
+     },
+     "limits": {
+      "max_messages": 100000,
+      "max_open_orders": 8,
+      "max_order_quantity": 200,
+      "max_position": 20000
+     },
+     "policy": {
+      "estimate_noise_milliticks": 3000,
+      "kind": "Value",
+      "order_size": 20,
+      "slippage_ticks": 1,
+      "threshold_milliticks": 2000
+     },
+     "wakeup": {
+      "distribution": "Exponential",
+      "first_ns": 2000000000,
+      "interval_ns": 2000000000
+     }
+    },
+    {
+     "id": 6,
+     "latency": {
+      "market_data_ns": 500000,
+      "order_entry_jitter_ns": 200000,
+      "order_entry_ns": 1000000,
+      "report_ns": 500000
+     },
+     "limits": {
+      "max_messages": 100000,
+      "max_open_orders": 8,
+      "max_order_quantity": 50,
+      "max_position": 300
+     },
+     "policy": {
+      "cooldown_ns": 10000000000,
+      "kind": "Momentum",
+      "long_window": 30,
+      "order_size": 15,
+      "short_window": 5,
+      "slippage_ticks": 1,
+      "threshold_milliticks": 1500
+     },
+     "wakeup": {
+      "distribution": "Fixed",
+      "first_ns": 1000000000,
+      "interval_ns": 1000000000
+     }
+    },
+    {
+     "id": 7,
+     "latency": {
+      "market_data_ns": 500000,
+      "order_entry_jitter_ns": 200000,
+      "order_entry_ns": 1000000,
+      "report_ns": 500000
+     },
+     "limits": {
+      "max_messages": 100000,
+      "max_open_orders": 8,
+      "max_order_quantity": 50,
+      "max_position": 300
+     },
+     "policy": {
+      "cooldown_ns": 10000000000,
+      "kind": "Momentum",
+      "long_window": 30,
+      "order_size": 15,
+      "short_window": 5,
+      "slippage_ticks": 1,
+      "threshold_milliticks": 1500
+     },
+     "wakeup": {
+      "distribution": "Fixed",
+      "first_ns": 1500000000,
+      "interval_ns": 1000000000
+     }
+    },
+    {
+     "id": 8,
+     "latency": {
+      "market_data_ns": 1000000,
+      "order_entry_jitter_ns": 500000,
+      "order_entry_ns": 2000000,
+      "report_ns": 1000000
+     },
+     "limits": {
+      "max_messages": 100000,
+      "max_open_orders": 8,
+      "max_order_quantity": 50,
+      "max_position": 5000
+     },
+     "policy": {
+      "buy_probability_ppm": 500000,
+      "kind": "Noise",
+      "limit_offset_ticks": 4,
+      "market_order_ppm": 350000,
+      "max_quantity": 30,
+      "max_resting_orders": 4,
+      "min_quantity": 1
+     },
+     "wakeup": {
+      "distribution": "Exponential",
+      "first_ns": 500000000,
+      "interval_ns": 2000000000
+     }
+    },
+    {
+     "id": 9,
+     "latency": {
+      "market_data_ns": 1000000,
+      "order_entry_jitter_ns": 500000,
+      "order_entry_ns": 2000000,
+      "report_ns": 1000000
+     },
+     "limits": {
+      "max_messages": 100000,
+      "max_open_orders": 8,
+      "max_order_quantity": 50,
+      "max_position": 5000
+     },
+     "policy": {
+      "buy_probability_ppm": 500000,
+      "kind": "Noise",
+      "limit_offset_ticks": 4,
+      "market_order_ppm": 350000,
+      "max_quantity": 30,
+      "max_resting_orders": 4,
+      "min_quantity": 1
+     },
+     "wakeup": {
+      "distribution": "Exponential",
+      "first_ns": 1000000000,
+      "interval_ns": 2000000000
+     }
+    },
+    {
+     "id": 10,
+     "latency": {
+      "market_data_ns": 1000000,
+      "order_entry_jitter_ns": 500000,
+      "order_entry_ns": 2000000,
+      "report_ns": 1000000
+     },
+     "limits": {
+      "max_messages": 100000,
+      "max_open_orders": 8,
+      "max_order_quantity": 50,
+      "max_position": 5000
+     },
+     "policy": {
+      "buy_probability_ppm": 500000,
+      "kind": "Noise",
+      "limit_offset_ticks": 4,
+      "market_order_ppm": 350000,
+      "max_quantity": 30,
+      "max_resting_orders": 4,
+      "min_quantity": 1
+     },
+     "wakeup": {
+      "distribution": "Exponential",
+      "first_ns": 1500000000,
+      "interval_ns": 2000000000
+     }
+    },
+    {
+     "id": 11,
+     "latency": {
+      "market_data_ns": 1000000,
+      "order_entry_jitter_ns": 500000,
+      "order_entry_ns": 2000000,
+      "report_ns": 1000000
+     },
+     "limits": {
+      "max_messages": 100000,
+      "max_open_orders": 8,
+      "max_order_quantity": 50,
+      "max_position": 5000
+     },
+     "policy": {
+      "buy_probability_ppm": 500000,
+      "kind": "Noise",
+      "limit_offset_ticks": 4,
+      "market_order_ppm": 350000,
+      "max_quantity": 30,
+      "max_resting_orders": 4,
+      "min_quantity": 1
+     },
+     "wakeup": {
+      "distribution": "Exponential",
+      "first_ns": 2000000000,
+      "interval_ns": 2000000000
+     }
+    }
+   ],
+   "fundamental": {
+    "initial_milliticks": 15000000,
+    "mean_reversion_ppm": 200,
+    "update_interval_ns": 1000000000,
+    "volatility_milliticks": 1000
+   },
+   "reference_price_ticks": 15000,
+   "sampling": {
+    "depth": 5,
+    "interval_ns": 1000000000
+   },
+   "shocks": [
+    {
+     "added_market_data_ns": 50000000,
+     "added_order_entry_ns": 50000000,
+     "added_report_ns": 20000000,
+     "agents": [
+      1,
+      2,
+      3
+     ],
+     "end_ns": 1800000000000,
+     "kind": "LatencyDegradation",
+     "start_ns": 1200000000000
+    }
+   ]
+  },
+  "schema_version": 4,
+  "seed": 42,
+  "tick_size_minor": 1
+ },
+ "desk": {
+  "agents": [
+   3
+  ],
+  "decisions": 60,
+  "label": "AI DESK (SYNTHETIC MARKET)",
+  "mandate": "Make markets in this name. Keep inventory within 2000 shares, and protect the desk when the market becomes one-sided or unstable.",
+  "model": "fixture",
+  "source": "fixture"
+ },
+ "run_id": "run-1051bf8717",
+ "summary": {
+  "book_digest": "44a546070290df79b9f5f7860803b72f71d3bff766aa7750ce011d5fc3590dfe",
+  "commands_digest": "ff49a0c6f35cc07b520ec7729520854962a25da1b759642e64b2e5b3fd3401f3",
+  "config_digest": "e057f642976cbb807f6842d6f896dd8af4c256cdeb4bf9c0e5b7a18ba8624299",
+  "event_count": 300683,
+  "final_time_ns": 3600000000000,
+  "resting_order_count": 30,
+  "scenario": {
+   "agents": [
+    {
+     "cancels_sent": 3836,
+     "filled_quantity": 68481,
+     "fills": 2759,
+     "id": 1,
+     "intents_dropped": 0,
+     "net_position": 1905,
+     "orders_sent": 4319,
+     "policy": "MarketMaker",
+     "wakeups": 7201
+    },
+    {
+     "cancels_sent": 8153,
+     "filled_quantity": 6843,
+     "fills": 156,
+     "id": 2,
+     "intents_dropped": 0,
+     "net_position": 645,
+     "orders_sent": 8177,
+     "policy": "MarketMaker",
+     "wakeups": 4800
+    },
+    {
+     "cancels_sent": 3676,
+     "filled_quantity": 60154,
+     "fills": 2385,
+     "id": 3,
+     "intents_dropped": 0,
+     "net_position": 1234,
+     "orders_sent": 4058,
+     "policy": "ModelDirected",
+     "wakeups": 7200
+    },
+    {
+     "cancels_sent": 0,
+     "filled_quantity": 50393,
+     "fills": 1703,
+     "id": 4,
+     "intents_dropped": 0,
+     "net_position": 439,
+     "orders_sent": 1021,
+     "policy": "Value",
+     "wakeups": 1785
+    },
+    {
+     "cancels_sent": 0,
+     "filled_quantity": 47859,
+     "fills": 1648,
+     "id": 5,
+     "intents_dropped": 0,
+     "net_position": -4659,
+     "orders_sent": 994,
+     "policy": "Value",
+     "wakeups": 1744
+    },
+    {
+     "cancels_sent": 0,
+     "filled_quantity": 3292,
+     "fills": 295,
+     "id": 6,
+     "intents_dropped": 0,
+     "net_position": -236,
+     "orders_sent": 225,
+     "policy": "Momentum",
+     "wakeups": 3600
+    },
+    {
+     "cancels_sent": 0,
+     "filled_quantity": 3289,
+     "fills": 287,
+     "id": 7,
+     "intents_dropped": 0,
+     "net_position": -155,
+     "orders_sent": 224,
+     "policy": "Momentum",
+     "wakeups": 3599
+    },
+    {
+     "cancels_sent": 225,
+     "filled_quantity": 22499,
+     "fills": 2026,
+     "id": 8,
+     "intents_dropped": 0,
+     "net_position": 253,
+     "orders_sent": 1839,
+     "policy": "Noise",
+     "wakeups": 1839
+    },
+    {
+     "cancels_sent": 246,
+     "filled_quantity": 21803,
+     "fills": 1992,
+     "id": 9,
+     "intents_dropped": 0,
+     "net_position": 483,
+     "orders_sent": 1818,
+     "policy": "Noise",
+     "wakeups": 1818
+    },
+    {
+     "cancels_sent": 206,
+     "filled_quantity": 21849,
+     "fills": 1941,
+     "id": 10,
+     "intents_dropped": 0,
+     "net_position": 639,
+     "orders_sent": 1777,
+     "policy": "Noise",
+     "wakeups": 1777
+    },
+    {
+     "cancels_sent": 230,
+     "filled_quantity": 22844,
+     "fills": 2076,
+     "id": 11,
+     "intents_dropped": 0,
+     "net_position": -548,
+     "orders_sent": 1909,
+     "policy": "Noise",
+     "wakeups": 1909
+    }
+   ],
+   "fundamental_milliticks": 14933028,
+   "fundamental_updates": 3600,
+   "market_data_updates": 13131,
+   "rng_algorithm": "xoshiro256**-splitmix64-v1",
+   "rng_digest": "198e58b721dd2affc88b084238e91de0ce156c77c25c04d84492508cbb7ff316",
+   "shock_transitions": 2
+  },
+  "seed": 42,
+  "status": "Completed",
+  "stop_reason": "Horizon",
+  "trace_digest": "be4dd6f27dcf3e9c827581d4cce16e5aeeaa7331b98443ae7ecb32df81a21d21",
+  "trade_count": 8634,
+  "trade_digest": "a4d87337fdf813b611c2a2a586f312f814f88006382e889da6ed900b2a9ebfb7"
+ }
+}

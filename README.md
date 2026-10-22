@@ -43,6 +43,18 @@ A single run stays deterministic and logically single-threaded. Independent runs
 
 ## Current status
 
+**Phase 6 — timeline forks and the AI desk.** Pick any moment in a finished run and change
+one thing from there on: add a shock, remove one that has not started, or switch a
+participant's strategy. The engine replays the identical past, applies the change at a
+barrier, and `fork-verify` proves the two runs agree record for record up to the fork,
+then reports where they first part. An **AI desk** hands one agent to a language model:
+every 60 s it sees only what that agent was delivered and returns a typed directive
+(quote, pause, or reduce) that a native execution layer carries out. Every decision is
+recorded, so replay never asks the model again, and the **decision ledger** forks the run
+at each decision against the directive it replaced. A fork or a desk can be repeated
+over paired seeds. See [ADR 0012](docs/adr/0012-timeline-forks-and-ai-desk.md) and
+[the evidence](docs/experiments/phase6-desk/README.md).
+
 **Phase 5B — calibration against observed sessions.** A pre-registered search fits
 noise-trader, maker, and fundamental parameters so that twelve stylized facts of synthetic
 runs (spread quantiles, trade arrival, return autocorrelation and volatility, quote state)
@@ -109,8 +121,6 @@ Not implemented:
 - Parquet artifacts, effective-spread and adverse-selection metrics, Sharpe ratios, and parallel execution of the cells of one experiment
 - PostgreSQL, Redis, WebSocket progress, authentication, or any hosted deployment: the service is local and single-user
 - Progress or cancellation inside a single run, and as-of series for VWAP, volatility, and time in each book state: the engine reports those only for a whole run
-- AI research tools
-
 The scenarios are stylized. Prices come from the interaction of the configured agents, not from market data, and nothing here is calibrated to a real stock or says anything about real-world profitability.
 
 ## Running a simulation
@@ -304,6 +314,32 @@ are untracked. See [ADR 0007](docs/adr/0007-observed-historical-market-data.md) 
 ordering, schemas, licensing, and limitations. The reproducible fabricated-data
 performance smoke is recorded in
 [`docs/benchmarks/phase4a-historical.md`](docs/benchmarks/phase4a-historical.md).
+
+## Timeline forks and the AI desk
+
+In the terminal, open a finished run's **Timelines** tab, choose a time, a change, and
+**Fork this run**. The fork's page shows the tree of timelines, both markets with the
+shared past shaded and badged `PREFIX VERIFIED`, the gap between them over time, the
+first divergence and first market divergence, and every agent's difference. **AI Desk**
+in the top bar hands an agent to the desk; the run's **AI Desk** tab shows each decision
+with its directive and the model's rationale, and runs the decision ledger.
+
+From the CLI:
+
+```bash
+markettwin run --config DESK.json --output RUN --decisions fixture
+echo '{"at_ns": 1500000000000, "add_shocks": [{"kind": "QuoteWithdrawalStress",
+  "at_ns": 1500000000000, "agents": [1, 2]}]}' > stage.json
+markettwin fork --parent RUN --stage stage.json --output FORK --decisions fixture
+markettwin fork-verify --parent RUN --fork FORK   # also writes FORK/fork_report.json
+```
+
+A desk uses the configured OpenAI-compatible model (`MARKETTWIN_AI_MODEL`,
+`MARKETTWIN_AI_API_KEY`) or the deterministic fixture, labelled `FIXTURE MODEL` wherever
+it is shown. A model desk states how many calls it will make and starts only once exactly
+that many are approved. Routes: `/api/v1/desks`, and under `/api/v1/runs/{id}`: `forks`,
+`timeline`, `divergence`, `decisions`, `decision-ledger`, and `repeat`. A single fork is
+`ONE SAMPLE PATH`; only a repeat over seeds supports a claim about an effect.
 
 ## Calibration
 
@@ -624,7 +660,7 @@ Useful CMake options:
 
 ## Phases
 
-Status follows [`architecture.md`](architecture.md) section 20. Phases 1A through 3A, 4A, 4B, 5A, and 5B are implemented; Phase 3B is in progress. See [Phase 3B setup and evaluation](docs/phase3b-ai-research.md) and [ADR 0006](docs/adr/0006-supervised-ai-research.md).
+Status follows [`architecture.md`](architecture.md) section 20. Phases 1A through 3A, 4A, 4B, 5A, 5B, and 6 are implemented; Phase 3B is in progress. See [Phase 3B setup and evaluation](docs/phase3b-ai-research.md) and [ADR 0006](docs/adr/0006-supervised-ai-research.md).
 
 | Phase | Scope | State |
 | --- | --- | --- |
@@ -638,7 +674,8 @@ Status follows [`architecture.md`](architecture.md) section 20. Phases 1A throug
 | 4A | Historical equity ingestion and deterministic observed-market replay | Implemented; live provider access unverified |
 | 4B | Live L1 market data, bounded fan-out, and recordings into historical sessions | Implemented against the mock stream; Alpaca IEX/test streams unverified |
 | 5A | Order-flow imbalance, latency degradation, and quote-withdrawal stress shocks | Implemented and locally verified |
-| 5B | Calibration of synthetic parameters to observed IEX stylized facts | Implemented and verified on fabricated sessions; the AAPL IEX run awaits credentials |
+| 5B | Calibration of synthetic parameters to observed IEX stylized facts | Implemented; the AAPL IEX run is a null result |
+| 6 | Timeline forks, the AI desk, and the decision ledger | Implemented and locally verified with the fixture model; a live model run awaits credentials |
 
 ## License
 

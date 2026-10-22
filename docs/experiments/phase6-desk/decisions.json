@@ -1,0 +1,3042 @@
+{
+ "decisions": [
+  {
+   "agent_id": 3,
+   "at_ns": 60000000000,
+   "directive": {
+    "half_spread_ticks": 3,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory past half the cap; widen and lean against it",
+    "skew_ticks": -1
+   },
+   "error_code": null,
+   "index": 1,
+   "input_tokens": 0,
+   "mid_milliticks": 14996000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 1079,
+   "sequence": 2044,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 120000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 2,
+   "input_tokens": 0,
+   "mid_milliticks": 14989000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 628,
+   "sequence": 3943,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 180000000000,
+   "directive": {
+    "half_spread_ticks": 3,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory past half the cap; widen and lean against it",
+    "skew_ticks": -1
+   },
+   "error_code": null,
+   "index": 3,
+   "input_tokens": 0,
+   "mid_milliticks": 14988000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 1207,
+   "sequence": 5544,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 240000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 4,
+   "input_tokens": 0,
+   "mid_milliticks": 14981500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 477,
+   "sequence": 7617,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 300000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 5,
+   "input_tokens": 0,
+   "mid_milliticks": 14987500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -191,
+   "sequence": 9500,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 360000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 6,
+   "input_tokens": 0,
+   "mid_milliticks": 14989500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 114,
+   "sequence": 11439,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 420000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "reduce",
+    "quote_size": 100,
+    "rationale": "inventory past four fifths of the cap; reduce toward flat",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 7,
+   "input_tokens": 0,
+   "mid_milliticks": 14982500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 1785,
+   "sequence": 13764,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 480000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 8,
+   "input_tokens": 0,
+   "mid_milliticks": 14978000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 0,
+   "sequence": 15915,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 540000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 9,
+   "input_tokens": 0,
+   "mid_milliticks": 14990000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 129,
+   "sequence": 17798,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 600000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 10,
+   "input_tokens": 0,
+   "mid_milliticks": 14987000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 238,
+   "sequence": 19551,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 660000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 11,
+   "input_tokens": 0,
+   "mid_milliticks": 14983500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 150,
+   "sequence": 21212,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 720000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 12,
+   "input_tokens": 0,
+   "mid_milliticks": 14976500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 312,
+   "sequence": 23363,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 780000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 13,
+   "input_tokens": 0,
+   "mid_milliticks": 14973000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 522,
+   "sequence": 24876,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 840000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 14,
+   "input_tokens": 0,
+   "mid_milliticks": 14968000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 689,
+   "sequence": 26361,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 900000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 15,
+   "input_tokens": 0,
+   "mid_milliticks": 14987500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -177,
+   "sequence": 28360,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 960000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 16,
+   "input_tokens": 0,
+   "mid_milliticks": 14978000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 292,
+   "sequence": 29959,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1020000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 17,
+   "input_tokens": 0,
+   "mid_milliticks": 14974000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 380,
+   "sequence": 32124,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1080000000000,
+   "directive": {
+    "half_spread_ticks": 3,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory past half the cap; widen and lean against it",
+    "skew_ticks": 1
+   },
+   "error_code": null,
+   "index": 18,
+   "input_tokens": 0,
+   "mid_milliticks": 14988000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -1065,
+   "sequence": 34413,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1140000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 19,
+   "input_tokens": 0,
+   "mid_milliticks": 14986000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 380,
+   "sequence": 36748,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1200000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 20,
+   "input_tokens": 0,
+   "mid_milliticks": 14981000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 975,
+   "sequence": 38471,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1260000000000,
+   "directive": {
+    "half_spread_ticks": 3,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory past half the cap; widen and lean against it",
+    "skew_ticks": -1
+   },
+   "error_code": null,
+   "index": 21,
+   "input_tokens": 0,
+   "mid_milliticks": 14982000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 1261,
+   "sequence": 40123,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1320000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 22,
+   "input_tokens": 0,
+   "mid_milliticks": 14984000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 969,
+   "sequence": 41852,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1380000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 23,
+   "input_tokens": 0,
+   "mid_milliticks": 14986000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 672,
+   "sequence": 43529,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1440000000000,
+   "directive": {
+    "half_spread_ticks": 3,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory past half the cap; widen and lean against it",
+    "skew_ticks": -1
+   },
+   "error_code": null,
+   "index": 24,
+   "input_tokens": 0,
+   "mid_milliticks": 14984000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 1248,
+   "sequence": 45254,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1500000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 25,
+   "input_tokens": 0,
+   "mid_milliticks": 14967500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 933,
+   "sequence": 47277,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1560000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 26,
+   "input_tokens": 0,
+   "mid_milliticks": 14964000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 50,
+   "sequence": 49476,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1620000000000,
+   "directive": {
+    "half_spread_ticks": 3,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory past half the cap; widen and lean against it",
+    "skew_ticks": 1
+   },
+   "error_code": null,
+   "index": 27,
+   "input_tokens": 0,
+   "mid_milliticks": 14970000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -1192,
+   "sequence": 51545,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1680000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 28,
+   "input_tokens": 0,
+   "mid_milliticks": 14976000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -806,
+   "sequence": 53482,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1740000000000,
+   "directive": {
+    "half_spread_ticks": 3,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory past half the cap; widen and lean against it",
+    "skew_ticks": 1
+   },
+   "error_code": null,
+   "index": 29,
+   "input_tokens": 0,
+   "mid_milliticks": 14979000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -1122,
+   "sequence": 55091,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1800000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 30,
+   "input_tokens": 0,
+   "mid_milliticks": 14976500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -409,
+   "sequence": 57202,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1860000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 31,
+   "input_tokens": 0,
+   "mid_milliticks": 14972000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -159,
+   "sequence": 59034,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1920000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 32,
+   "input_tokens": 0,
+   "mid_milliticks": 14967000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 184,
+   "sequence": 60925,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 1980000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 33,
+   "input_tokens": 0,
+   "mid_milliticks": 14961500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 117,
+   "sequence": 63036,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2040000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 34,
+   "input_tokens": 0,
+   "mid_milliticks": 14962000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 179,
+   "sequence": 64983,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2100000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 35,
+   "input_tokens": 0,
+   "mid_milliticks": 14963500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 348,
+   "sequence": 67088,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2160000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 36,
+   "input_tokens": 0,
+   "mid_milliticks": 14973000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 48,
+   "sequence": 68635,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2220000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 37,
+   "input_tokens": 0,
+   "mid_milliticks": 14966000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 839,
+   "sequence": 70618,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2280000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 38,
+   "input_tokens": 0,
+   "mid_milliticks": 14971500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 826,
+   "sequence": 72377,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2340000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 39,
+   "input_tokens": 0,
+   "mid_milliticks": 14971500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 238,
+   "sequence": 74216,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2400000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "reduce",
+    "quote_size": 100,
+    "rationale": "inventory past four fifths of the cap; reduce toward flat",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 40,
+   "input_tokens": 0,
+   "mid_milliticks": 14970000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 1865,
+   "sequence": 76281,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2460000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 41,
+   "input_tokens": 0,
+   "mid_milliticks": 14952500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 0,
+   "sequence": 78124,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2520000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "reduce",
+    "quote_size": 100,
+    "rationale": "inventory past four fifths of the cap; reduce toward flat",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 42,
+   "input_tokens": 0,
+   "mid_milliticks": 14964000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -1713,
+   "sequence": 80605,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2580000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 43,
+   "input_tokens": 0,
+   "mid_milliticks": 14973000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 0,
+   "sequence": 82582,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2640000000000,
+   "directive": {
+    "half_spread_ticks": 3,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory past half the cap; widen and lean against it",
+    "skew_ticks": -1
+   },
+   "error_code": null,
+   "index": 44,
+   "input_tokens": 0,
+   "mid_milliticks": 14970500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 1322,
+   "sequence": 84357,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2700000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 45,
+   "input_tokens": 0,
+   "mid_milliticks": 14962500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 584,
+   "sequence": 86628,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2760000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 46,
+   "input_tokens": 0,
+   "mid_milliticks": 14960500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 391,
+   "sequence": 88201,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2820000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 47,
+   "input_tokens": 0,
+   "mid_milliticks": 14965000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -43,
+   "sequence": 89686,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2880000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 48,
+   "input_tokens": 0,
+   "mid_milliticks": 14964000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -226,
+   "sequence": 91413,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 2940000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 49,
+   "input_tokens": 0,
+   "mid_milliticks": 14976000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -534,
+   "sequence": 93416,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 3000000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "reduce",
+    "quote_size": 100,
+    "rationale": "inventory past four fifths of the cap; reduce toward flat",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 50,
+   "input_tokens": 0,
+   "mid_milliticks": 14951000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 1972,
+   "sequence": 95687,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 3060000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 51,
+   "input_tokens": 0,
+   "mid_milliticks": 14933000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 0,
+   "sequence": 97758,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 3120000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 52,
+   "input_tokens": 0,
+   "mid_milliticks": 14947000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -836,
+   "sequence": 99259,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 3180000000000,
+   "directive": {
+    "half_spread_ticks": 3,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory past half the cap; widen and lean against it",
+    "skew_ticks": 1
+   },
+   "error_code": null,
+   "index": 53,
+   "input_tokens": 0,
+   "mid_milliticks": 14952000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -1177,
+   "sequence": 100826,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 3240000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 54,
+   "input_tokens": 0,
+   "mid_milliticks": 14947500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -319,
+   "sequence": 102535,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 3300000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 55,
+   "input_tokens": 0,
+   "mid_milliticks": 14946000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -386,
+   "sequence": 103932,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 3360000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 56,
+   "input_tokens": 0,
+   "mid_milliticks": 14943000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -117,
+   "sequence": 105823,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 3420000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 57,
+   "input_tokens": 0,
+   "mid_milliticks": 14945000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": -515,
+   "sequence": 107726,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 3480000000000,
+   "directive": {
+    "half_spread_ticks": 2,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory within half the cap; quote both sides",
+    "skew_ticks": 0
+   },
+   "error_code": null,
+   "index": 58,
+   "input_tokens": 0,
+   "mid_milliticks": 14940000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 279,
+   "sequence": 109547,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 3540000000000,
+   "directive": {
+    "half_spread_ticks": 3,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory past half the cap; widen and lean against it",
+    "skew_ticks": -1
+   },
+   "error_code": null,
+   "index": 59,
+   "input_tokens": 0,
+   "mid_milliticks": 14940000,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 1326,
+   "sequence": 111928,
+   "source": "model"
+  },
+  {
+   "agent_id": 3,
+   "at_ns": 3600000000000,
+   "directive": {
+    "half_spread_ticks": 4,
+    "levels": 3,
+    "max_position": 2000,
+    "mode": "quote",
+    "quote_size": 100,
+    "rationale": "inventory past half the cap; widen and lean against it",
+    "skew_ticks": -1
+   },
+   "error_code": null,
+   "index": 60,
+   "input_tokens": 0,
+   "mid_milliticks": 14934500,
+   "model": "fixture",
+   "output_tokens": 0,
+   "position": 1234,
+   "sequence": 113993,
+   "source": "model"
+  }
+ ],
+ "desk": {
+  "agents": [
+   3
+  ],
+  "decisions": 60,
+  "label": "AI DESK (SYNTHETIC MARKET)",
+  "ledger": {
+   "created_at": "2026-10-22T05:27:42.227Z",
+   "entries": [
+    {
+     "agent_id": 3,
+     "at_ns": 60000000000,
+     "end_ns": 120000000000,
+     "error": null,
+     "fork_run_id": "run-ee7107a3b3",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "initial directive",
+      "skew_ticks": 0
+     },
+     "index": 1,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "value_minor": 1246
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 120000000000,
+     "end_ns": 180000000000,
+     "error": null,
+     "fork_run_id": "run-5848c0eeee",
+     "from": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "index": 2,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 1772
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 180000000000,
+     "end_ns": 240000000000,
+     "error": null,
+     "fork_run_id": "run-f2c6baf24e",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 3,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "value_minor": -3559
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 240000000000,
+     "end_ns": 300000000000,
+     "error": null,
+     "fork_run_id": "run-5543a06149",
+     "from": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "index": 4,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 842
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 300000000000,
+     "end_ns": 360000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 5,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 360000000000,
+     "end_ns": 420000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 6,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 420000000000,
+     "end_ns": 480000000000,
+     "error": null,
+     "fork_run_id": "run-15518a6e36",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 7,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "reduce",
+      "quote_size": 100,
+      "rationale": "inventory past four fifths of the cap; reduce toward flat",
+      "skew_ticks": 0
+     },
+     "value_minor": -13598
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 480000000000,
+     "end_ns": 540000000000,
+     "error": null,
+     "fork_run_id": "run-bb584ccdc0",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "reduce",
+      "quote_size": 100,
+      "rationale": "inventory past four fifths of the cap; reduce toward flat",
+      "skew_ticks": 0
+     },
+     "index": 8,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 1741
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 540000000000,
+     "end_ns": 600000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 9,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 600000000000,
+     "end_ns": 660000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 10,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 660000000000,
+     "end_ns": 720000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 11,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 720000000000,
+     "end_ns": 780000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 12,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 780000000000,
+     "end_ns": 840000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 13,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 840000000000,
+     "end_ns": 900000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 14,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 900000000000,
+     "end_ns": 960000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 15,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 960000000000,
+     "end_ns": 1020000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 16,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1020000000000,
+     "end_ns": 1080000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 17,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1080000000000,
+     "end_ns": 1140000000000,
+     "error": null,
+     "fork_run_id": "run-42cf5bae78",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 18,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": 1
+     },
+     "value_minor": -3695
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1140000000000,
+     "end_ns": 1200000000000,
+     "error": null,
+     "fork_run_id": "run-e2bea0069b",
+     "from": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": 1
+     },
+     "index": 19,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 431
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1200000000000,
+     "end_ns": 1260000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 20,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1260000000000,
+     "end_ns": 1320000000000,
+     "error": null,
+     "fork_run_id": "run-e40d2caf94",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 21,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "value_minor": -748
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1320000000000,
+     "end_ns": 1380000000000,
+     "error": null,
+     "fork_run_id": "run-f9445d348e",
+     "from": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "index": 22,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 299
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1380000000000,
+     "end_ns": 1440000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 23,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1440000000000,
+     "end_ns": 1500000000000,
+     "error": null,
+     "fork_run_id": "run-06aa9be780",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 24,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "value_minor": -2863
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1500000000000,
+     "end_ns": 1560000000000,
+     "error": null,
+     "fork_run_id": "run-67278630d4",
+     "from": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "index": 25,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 631
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1560000000000,
+     "end_ns": 1620000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 26,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1620000000000,
+     "end_ns": 1680000000000,
+     "error": null,
+     "fork_run_id": "run-7a103e5313",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 27,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": 1
+     },
+     "value_minor": -2891
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1680000000000,
+     "end_ns": 1740000000000,
+     "error": null,
+     "fork_run_id": "run-9b04845cf3",
+     "from": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": 1
+     },
+     "index": 28,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 105
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1740000000000,
+     "end_ns": 1800000000000,
+     "error": null,
+     "fork_run_id": "run-51cfe92a86",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 29,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": 1
+     },
+     "value_minor": -3707
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1800000000000,
+     "end_ns": 1860000000000,
+     "error": null,
+     "fork_run_id": "run-80dbe7f95a",
+     "from": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": 1
+     },
+     "index": 30,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 660
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1860000000000,
+     "end_ns": 1920000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 31,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1920000000000,
+     "end_ns": 1980000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 32,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 1980000000000,
+     "end_ns": 2040000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 33,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2040000000000,
+     "end_ns": 2100000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 34,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2100000000000,
+     "end_ns": 2160000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 35,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2160000000000,
+     "end_ns": 2220000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 36,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2220000000000,
+     "end_ns": 2280000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 37,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2280000000000,
+     "end_ns": 2340000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 38,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2340000000000,
+     "end_ns": 2400000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 39,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2400000000000,
+     "end_ns": 2460000000000,
+     "error": null,
+     "fork_run_id": "run-c9f28775a2",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 40,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "reduce",
+      "quote_size": 100,
+      "rationale": "inventory past four fifths of the cap; reduce toward flat",
+      "skew_ticks": 0
+     },
+     "value_minor": 16447
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2460000000000,
+     "end_ns": 2520000000000,
+     "error": null,
+     "fork_run_id": "run-78cb163116",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "reduce",
+      "quote_size": 100,
+      "rationale": "inventory past four fifths of the cap; reduce toward flat",
+      "skew_ticks": 0
+     },
+     "index": 41,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": -11677
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2520000000000,
+     "end_ns": 2580000000000,
+     "error": null,
+     "fork_run_id": "run-549cde4146",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 42,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "reduce",
+      "quote_size": 100,
+      "rationale": "inventory past four fifths of the cap; reduce toward flat",
+      "skew_ticks": 0
+     },
+     "value_minor": -3268
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2580000000000,
+     "end_ns": 2640000000000,
+     "error": null,
+     "fork_run_id": "run-b4a98de95b",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "reduce",
+      "quote_size": 100,
+      "rationale": "inventory past four fifths of the cap; reduce toward flat",
+      "skew_ticks": 0
+     },
+     "index": 43,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 1474
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2640000000000,
+     "end_ns": 2700000000000,
+     "error": null,
+     "fork_run_id": "run-5b10c4bcde",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 44,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "value_minor": -4977
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2700000000000,
+     "end_ns": 2760000000000,
+     "error": null,
+     "fork_run_id": "run-83eb3a10b2",
+     "from": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "index": 45,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": -25
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2760000000000,
+     "end_ns": 2820000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 46,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2820000000000,
+     "end_ns": 2880000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 47,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2880000000000,
+     "end_ns": 2940000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 48,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 2940000000000,
+     "end_ns": 3000000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 49,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 3000000000000,
+     "end_ns": 3060000000000,
+     "error": null,
+     "fork_run_id": "run-62a0de38f9",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 50,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "reduce",
+      "quote_size": 100,
+      "rationale": "inventory past four fifths of the cap; reduce toward flat",
+      "skew_ticks": 0
+     },
+     "value_minor": -11382
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 3060000000000,
+     "end_ns": 3120000000000,
+     "error": null,
+     "fork_run_id": "run-da1eda8491",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "reduce",
+      "quote_size": 100,
+      "rationale": "inventory past four fifths of the cap; reduce toward flat",
+      "skew_ticks": 0
+     },
+     "index": 51,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": -4667
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 3120000000000,
+     "end_ns": 3180000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 52,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 3180000000000,
+     "end_ns": 3240000000000,
+     "error": null,
+     "fork_run_id": "run-de40f63ed9",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 53,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": 1
+     },
+     "value_minor": -1862
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 3240000000000,
+     "end_ns": 3300000000000,
+     "error": null,
+     "fork_run_id": "run-a11117a725",
+     "from": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": 1
+     },
+     "index": 54,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 1229
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 3300000000000,
+     "end_ns": 3360000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 55,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 3360000000000,
+     "end_ns": 3420000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 56,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 3420000000000,
+     "end_ns": 3480000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 57,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 3480000000000,
+     "end_ns": 3540000000000,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 58,
+     "status": "unchanged",
+     "to": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "value_minor": 0
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 3540000000000,
+     "end_ns": 3600000000000,
+     "error": null,
+     "fork_run_id": "run-6cc05a73f3",
+     "from": {
+      "half_spread_ticks": 2,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory within half the cap; quote both sides",
+      "skew_ticks": 0
+     },
+     "index": 59,
+     "status": "completed",
+     "to": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "value_minor": -4060
+    },
+    {
+     "agent_id": 3,
+     "at_ns": 3600000000000,
+     "end_ns": null,
+     "error": null,
+     "fork_run_id": null,
+     "from": {
+      "half_spread_ticks": 3,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "index": 60,
+     "status": "at_horizon",
+     "to": {
+      "half_spread_ticks": 4,
+      "levels": 3,
+      "max_position": 2000,
+      "mode": "quote",
+      "quote_size": 100,
+      "rationale": "inventory past half the cap; widen and lean against it",
+      "skew_ticks": -1
+     },
+     "value_minor": 0
+    }
+   ],
+   "finished_at": "2026-10-22T05:28:36.279Z",
+   "initial": {
+    "3": {
+     "half_spread_ticks": 2,
+     "levels": 3,
+     "max_position": 2000,
+     "mode": "quote",
+     "quote_size": 100,
+     "rationale": "initial directive",
+     "skew_ticks": 0
+    }
+   },
+   "status": "completed",
+   "versus_hold": {
+    "agent_id": 3,
+    "at_ns": 60000000000,
+    "error": null,
+    "fork_run_id": "run-4f28db4acc",
+    "status": "completed",
+    "value_minor": -68474
+   }
+  },
+  "mandate": "Make markets in this name. Keep inventory within 2000 shares, and protect the desk when the market becomes one-sided or unstable.",
+  "model": "fixture",
+  "source": "fixture"
+ },
+ "label": "AI DESK (SYNTHETIC MARKET)",
+ "run_id": "run-1051bf8717"
+}

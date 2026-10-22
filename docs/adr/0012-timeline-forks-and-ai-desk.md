@@ -1,8 +1,8 @@
 # ADR 0012: Timeline forks and the AI desk
 
 **Date:** 2026-10-21  
-**Status:** Proposed for Phase 6. Implementation starts after the owner accepts it and
-answers the [open decisions](#open-decisions).
+**Status:** Accepted for Phase 6 on 2026-10-22 and implemented. The owner's decisions and
+what changed in implementation are in [Decisions on acceptance](#decisions-on-acceptance).
 
 ## Question
 
@@ -79,10 +79,11 @@ numbers and schedules nothing when a stage is empty. Hence:
 
 - **Prefix identity.** Every trace record before `ForkPoint` is byte-identical to the
   parent's record at the same position, except `run_id`.
-- **The empty fork.** A stage with no changes ends with the parent's book digest, trade
-  digest, and every per-agent accounting and metric value. The trace, accounting, and
-  metrics digests still differ, because those files carry the run ID and config digest
-  and the recorder sequences after `ForkPoint` move by one. This is the main correctness
+- **The empty fork.** A stage with no changes has no divergence at all under the
+  comparison below, and every per-agent accounting and metric value equals the parent's.
+  Its digests still differ: `ForkPoint` takes one recorder sequence, so every later
+  record's sequence, and the arrival sequences inside trades and resting orders, move by
+  one, and the files carry the run ID and config digest. This is the main correctness
   test.
 
 Validation runs on the combined config: the parent's shocks minus the removed ones plus the
@@ -101,8 +102,9 @@ failure with a typed code:
    to the fork's `ForkPoint`. It reports the record counts and one **prefix digest** over
    the normalized prefix, which is the same value for both runs.
 4. It finds the **first divergence**: the first record after the prefix whose kind,
-   timestamp, actor, correlation, or payload digest differs from the parent's (recorder
-   and causation sequences are ignored, since `ForkPoint` shifts them by one). It also
+   timestamp, actor, correlation, or payload differs from the parent's. Recorder,
+   causation, and scheduler sequences are ignored, and so is a trade's arrival sequence,
+   since `ForkPoint` and added shocks shift them. It also
    reports the **first market divergence**, the first differing order, cancel, or trade,
    because the first differing record is often the added shock itself. Either may be
    "none": a change can have no effect before the horizon.
@@ -183,8 +185,12 @@ Model output is not reproducible, so the recorded decision is the source of trut
 
 ### Decisions in forks
 
-A fork of a desk run copies the parent's recorded decisions before `at_ns` into the
-stage, digest-checked, so its prefix replays exactly. After `at_ns`, `decisions` is one
+A fork of a desk run copies the parent's recorded decisions into the stage. Before
+`at_ns` each is written again byte for byte, including its source, model, and token
+counts, after checking that the recomputed observation has the recorded digest, so the
+prefix replays exactly. A mismatch fails the run with `DecisionMismatch`. Decision
+records name their source: `model` and `fallback` for a source's answer, `hold`,
+`parent`, and `override` for a stage's. After `at_ns`, `decisions` is one
 of:
 
 - `"hold"`: the directive in force at `at_ns` stays to the horizon. Forking the first
@@ -204,7 +210,9 @@ forks the run at each `t_k`, replaces `d_k` with `d_{k-1}` (the directive it sup
 takes `"parent"` for later decisions, and sets `horizon_ns = t_{k+1}`. Each fork's
 **decision value** is the desk's mark-to-market P&L at `t_{k+1}` in the parent minus the
 fork: what making that change, rather than not, was worth over its own interval on this
-path. Every value comes with its verified prefix.
+path. Every value comes with its verified prefix, and is read from the fork report's
+accounting at the end of the window both runs share. A decision at the horizon has no
+interval and is listed as `at_horizon`.
 
 The values are not additive. A decision's effect continues past its interval and
 interacts with later ones, so the ledger never shows a sum as the desk's total edge. The
@@ -213,9 +221,13 @@ costs `n` short runs and no model calls; they run on the existing worker pool.
 
 ### Across seeds
 
-A desk experiment (experiment schema 2) pairs the desk with a baseline policy as the same
-agent over seeds and shocks: the variant runs live per seed, the baseline runs as before,
-and the existing paired statistics and intervals apply (ADR 0004). This is the only claim
+A desk experiment pairs the desk with the baseline maker built from its initial directive,
+as the same agent, over seeds. The API runs each desk cell live once, several at a time
+because each mostly waits on the model, and the native experiment then reruns every cell
+from those recorded decisions, so the existing paired statistics and intervals apply
+(ADR 0004) and the model is asked once per decision. The desk's initial cap should equal
+the agent's limit, which is all the baseline maker has; otherwise the comparison measures
+the cap. This is the only claim
 about the desk beyond one path, and its cost is `seeds × decisions` model calls, shown and
 approved before it starts, as with historical imports. Fork experiments without a desk use
 the same schema: a variant carries one stage, the baseline none, and every seed's pair
@@ -241,7 +253,9 @@ shares its history up to `at_ns` by construction.
 - Trace format 1 gains two execution record kinds, `ForkPoint` and `Decision`. Runs
   without forks or desks never write them.
 - Experiment schema 2 adds an optional stage per variant; schema 1 files are unchanged.
-- Engine version 0.5.0.
+- The engine version stays 0.4.0. Replay checks a run's manifest against the engine
+  version, so a new version would make every stored run unverifiable; an older engine
+  already rejects schema 4.
 - CI uses a deterministic fixture `DecisionSource` (a rule that widens when inventory
   grows), labelled `FIXTURE MODEL`, and never calls a provider, as in Phase 3B.
 
@@ -279,17 +293,21 @@ shares its history up to `at_ns` by construction.
    `configs/latency_shock.json` with its decision ledger, and the desk against the
    baseline maker over seeds.
 
-## Open decisions
+## Decisions on acceptance
 
-1. **Model and budget.** The provider adapter is OpenAI-compatible (ADR 0006). Which
-   model runs the committed desk evidence, and what is the call budget? Recommended: a
-   fast, inexpensive model, a 60 s cadence (60 decisions per one-hour run), and 20 seeds
-   for the desk experiment, so about 1,200 calls.
-2. **Directive vocabulary.** Recommended as above: `quote`, `pause`, `reduce`. Letting the
-   model send individual orders is not recommended: it makes the execution layer the
-   model's and the decisions far more numerous.
-3. **Policy switches in plain forks.** Recommended yes, with the cold-start caveat.
-4. **Reference evidence.** Recommended: the desk as agent 3 in
-   `configs/latency_shock.json` (seed 42) with the mandate "make markets, keep inventory
-   within 500 shares", its decision ledger, and the desk against the baseline maker over
-   20 seeds.
+Recorded on 2026-10-22, when the owner asked for the build to go ahead:
+
+1. **Model and budget.** No model was configured, so the committed evidence uses the
+   `FIXTURE MODEL` and says so. `services/api/scripts/desk_evidence.py --source model`
+   produces the same files with the configured model once its exact call count is
+   approved. Budgets: 600 decisions per desk run and 50 seeds per desk experiment by
+   default (`MARKETTWIN_DESK_MAX_DECISIONS`, `MARKETTWIN_DESK_MAX_SEEDS`).
+2. **Directive vocabulary:** `quote`, `pause`, `reduce`, as proposed.
+3. **Policy switches in plain forks:** yes, with the cold-start caveat.
+4. **Fork experiments:** in Phase 6, as experiment schema 2. A fork variant of an AI desk
+   is rejected, because only a run records a desk's decisions; the API instead repeats a
+   desk run as the desk-against-baseline experiment above.
+5. **Reference evidence:** in `docs/experiments/phase6-desk/`, with the desk's cap at the
+   agent's 2,000-share limit instead of the proposed 500, so that the desk and the
+   baseline maker are compared under the same cap. The README records the first run's
+   500-share comparison and why it was replaced.
