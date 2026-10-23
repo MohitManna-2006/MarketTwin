@@ -368,6 +368,99 @@ def test_native_investigation_and_claim_verification(client: TestClient) -> None
     assert unavailable.json()["error"]["code"] == "ProviderUnavailable"
 
 
+SHOCKS = {
+    "fundamental_shock": ("FundamentalJump", 1),
+    "liquidity_shock": ("LiquidityWithdrawal", 1),
+    "volatility_shock": ("VolatilityRegime", 1),
+    "order_flow_shock": ("OrderFlowImbalance", 8),
+    "latency_shock": ("LatencyDegradation", 1),
+    "quote_stress_shock": ("QuoteWithdrawalStress", 1),
+}
+
+
+def shock_provider(scenario: str, subject: int | None = None) -> FakeProvider:
+    return FakeProvider(
+        Proposal(
+            intent="measure_shock",
+            scenario_key=scenario,
+            seed_count=2,
+            subject_agent_id=subject,
+            primary_metric="mean_spread",
+            secondary_metrics=["total_pnl", "midpoint_return_volatility"],
+            hypothesis="The shock widens spreads after it starts.",
+        )
+    )
+
+
+@pytest.mark.parametrize("scenario", sorted(SHOCKS))
+def test_shock_plans_remove_the_scenario_shock_at_its_start(
+    client: TestClient, scenario: str
+) -> None:
+    client.app.state.ai.provider = shock_provider(scenario)
+    result = plan(client, create(client, f"What does {scenario} do to spreads?"))
+    assert result["status"] == "AWAITING_APPROVAL", result
+    current = result["plan"]
+    kind, subject = SHOCKS[scenario]
+    assert (current["baseline"], current["candidate"]) == ("no_shock", "shock")
+    assert current["shock"]["kind"] == kind
+    assert current["subject_agent_id"] == subject
+    assert current["total_runs"] == 4
+    config = current["experiment_config"]
+    assert config["schema_version"] == 2
+    shock, no_shock = config["variants"]
+    assert shock["name"] == "shock" and shock.get("fork") is None
+    assert no_shock["fork"]["parent"] == "shock"
+    assert no_shock["fork"]["remove_shocks"] == [0]
+    assert no_shock["fork"]["add_shocks"] == []
+    assert no_shock["fork"]["at_ns"] == current["shock"]["start_ns"]
+    assert config["comparison"]["baseline"] == "no_shock"
+    assert config["comparison"]["candidate"] == "shock"
+
+
+def test_shock_plan_needs_a_scenario_with_one_shock(client: TestClient) -> None:
+    client.app.state.ai.provider = shock_provider("baseline")
+    result = plan(client, create(client))
+    assert result["status"] == "UNSUPPORTED"
+    assert result["error_code"] == "UnsupportedShockDesign"
+
+
+def test_shock_plan_subject_must_be_in_the_scenario(client: TestClient) -> None:
+    client.app.state.ai.provider = shock_provider("liquidity_shock", subject=3)
+    assert plan(client, create(client))["plan"]["subject_agent_id"] == 3
+    client.app.state.ai.provider = shock_provider("liquidity_shock", subject=99)
+    result = plan(client, create(client))
+    assert result["status"] == "UNSUPPORTED"
+    assert result["error_code"] == "AmbiguousAgent"
+
+
+def test_native_shock_investigation_measures_the_shock(client: TestClient) -> None:
+    client.app.state.ai.provider = shock_provider("liquidity_shock")
+    investigation_id = create(client, "What does liquidity withdrawal do to spreads?")
+    result = plan(client, investigation_id)
+    endpoint = f"/api/v1/ai/investigations/{investigation_id}"
+    approved = client.post(
+        endpoint + "/approve", json={"config_digest": result["plan"]["config_digest"]}
+    )
+    assert approved.status_code == 200
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        current = client.get(endpoint).json()
+        if current["status"] in ("REPORT_READY", "FAILED", "PARTIAL"):
+            break
+        time.sleep(0.05)
+    assert current["status"] == "REPORT_READY", current
+    report = current["report"]
+    assert (report["baseline"], report["candidate"]) == ("no_shock", "shock")
+    assert report["pairs_completed"] == 2
+    document = client.get(f"/api/v1/experiments/{report['experiment_id']}/results").json()[
+        "document"
+    ]
+    verify_claims(report, document)
+    spread = next(claim for claim in report["claims"] if claim["metric"] == "mean_spread")
+    # Removing the withdrawal must change the market after it would have started.
+    assert spread["difference_mean_milli"] != 0
+
+
 def test_hallucinated_report_is_rejected(client: TestClient) -> None:
     fake = FakeProvider()
     fake.report.interpretation = "Profit increased by 9000 percent."

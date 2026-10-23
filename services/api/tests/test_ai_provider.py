@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 from pathlib import Path
 from typing import Any
@@ -210,5 +211,32 @@ def test_unparseable_content_is_an_invalid_response(
     body = {"choices": [{"message": {"content": "not json"}}]}
     provider, _ = answer_with(monkeypatch, tmp_path, [httpx.Response(200, json=body)])
     with pytest.raises(ProviderError) as captured:
+        provider.generate_structured_plan("question", [])
+    assert captured.value.code == "ProviderResponseInvalid"
+
+
+def test_reasoning_effort_is_sent_only_when_configured(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    bodies: list[dict[str, Any]] = []
+    original = httpx.Client
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        bodies.append(json.loads(request.content))
+        return unsupported()
+
+    transport = httpx.MockTransport(handler)
+    monkeypatch.setattr(httpx, "Client", lambda **kwargs: original(transport=transport, **kwargs))
+    OpenAICompatibleProvider(configured(tmp_path)).generate_structured_plan("question", [])
+    settings = dataclasses.replace(configured(tmp_path), ai_reasoning_effort="low")
+    OpenAICompatibleProvider(settings).generate_structured_plan("question", [])
+    assert "reasoning_effort" not in bodies[0]
+    assert bodies[1]["reasoning_effort"] == "low"
+
+
+def test_truncated_answer_says_so(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    body = {"choices": [{"finish_reason": "length", "message": {"content": None}}]}
+    provider, _ = answer_with(monkeypatch, tmp_path, [httpx.Response(200, json=body)])
+    with pytest.raises(ProviderError, match="ran out of output tokens") as captured:
         provider.generate_structured_plan("question", [])
     assert captured.value.code == "ProviderResponseInvalid"

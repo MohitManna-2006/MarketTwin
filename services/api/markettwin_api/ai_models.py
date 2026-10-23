@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class Intent(StrEnum):
     COMPARE_STRATEGIES = "compare_strategies"
+    MEASURE_SHOCK = "measure_shock"
     ANALYZE_EXPERIMENT = "analyze_experiment"
     EXPLAIN_METRIC = "explain_metric"
     INSPECT_SEED = "inspect_seed"
@@ -62,6 +63,17 @@ class Proposal(BaseModel):
     clarification: str | None = Field(default=None, max_length=500)
 
 
+class PlanShock(BaseModel):
+    """The scenario shock a `measure_shock` plan removes from its `no_shock` variant."""
+
+    model_config = ConfigDict(extra="forbid")
+    index: int
+    kind: str
+    start_ns: int
+    end_ns: int | None = None
+    agents: list[int] = Field(default_factory=list)
+
+
 class ResearchPlan(BaseModel):
     model_config = ConfigDict(extra="forbid")
     version: Literal[1] = 1
@@ -71,8 +83,9 @@ class ResearchPlan(BaseModel):
     scenario_key: str
     scenario_digest: str
     subject_agent_id: int
-    baseline: Literal["baseline_maker"] = "baseline_maker"
-    candidate: Literal["inventory_maker"] = "inventory_maker"
+    baseline: Literal["baseline_maker", "no_shock"] = "baseline_maker"
+    candidate: Literal["inventory_maker", "shock"] = "inventory_maker"
+    shock: PlanShock | None = None
     seed_count: int
     primary_metric: str
     secondary_metrics: list[str]

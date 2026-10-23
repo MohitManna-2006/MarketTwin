@@ -15,6 +15,7 @@ from markettwin_api.ai_models import (
     NATIVE_EXPERIMENT_METRICS,
     Claim,
     Intent,
+    PlanShock,
     Proposal,
     ResearchPlan,
 )
@@ -30,6 +31,7 @@ from markettwin_api.service import Research, ServiceError
 
 Json = dict[str, Any]
 METRICS = frozenset(NATIVE_EXPERIMENT_METRICS)
+EXECUTABLE = frozenset((Intent.COMPARE_STRATEGIES, Intent.MEASURE_SHOCK))
 TERMINAL = {"REPORT_READY", "REJECTED", "CANCELLED", "FAILED", "PARTIAL", "UNSUPPORTED"}
 
 
@@ -161,11 +163,11 @@ class AIResearch:
             if proposal.intent == Intent.ANALYZE_EXPERIMENT:
                 self._analyze_existing(investigation_id, proposal)
                 return self.view(investigation_id)
-            if proposal.intent != Intent.COMPARE_STRATEGIES:
+            if proposal.intent not in EXECUTABLE:
                 raise ServiceError(
                     422,
                     "UnsupportedIntent",
-                    "New plans currently support a paired maker comparison",
+                    "New plans support a paired maker comparison or a shock's paired effect",
                 )
             validation_started = time.perf_counter()
             unknown = self._unknown_metrics(proposal)
@@ -331,43 +333,21 @@ class AIResearch:
                 "'inventory risk' itself is an analysis topic.",
                 {"unsupported_metrics": unknown, "supported_metrics": NATIVE_EXPERIMENT_METRICS},
             )
-        agents = scenario.config.get("scenario", {}).get("agents", [])
-        candidates = [
-            agent for agent in agents if agent["policy"]["kind"] == "InventoryMarketMaker"
-        ]
-        if proposal.subject_agent_id:
-            candidates = [agent for agent in candidates if agent["id"] == proposal.subject_agent_id]
-        if len(candidates) != 1:
-            raise ServiceError(
-                422, "AmbiguousAgent", "select the inventory-aware maker in this scenario"
-            )
-        agent = candidates[0]
-        aware = agent["policy"]
-        baseline = {
-            key: aware[key]
-            for key in ("half_spread_ticks", "quote_size", "levels", "level_spacing_ticks")
-        }
-        baseline["kind"] = "MarketMaker"
+        if proposal.intent == Intent.MEASURE_SHOCK:
+            design = self._shock_design(scenario.config, proposal)
+        else:
+            design = self._maker_design(scenario.config, proposal)
         config: Json = {
-            "schema_version": 1,
-            "experiment_id": "ai_maker_comparison",
+            "schema_version": design["schema_version"],
+            "experiment_id": design["experiment_id"],
             "base_config": scenario.config,
             "horizon_ns": None,
             "seeds": {"first": 1, "count": proposal.seed_count},
-            "variants": [
-                {
-                    "name": "baseline_maker",
-                    "policy_overrides": [{"agent_id": agent["id"], "policy": baseline}],
-                },
-                {
-                    "name": "inventory_maker",
-                    "policy_overrides": [{"agent_id": agent["id"], "policy": aware}],
-                },
-            ],
+            "variants": design["variants"],
             "comparison": {
-                "baseline": "baseline_maker",
-                "candidate": "inventory_maker",
-                "subject_agent_id": agent["id"],
+                "baseline": design["baseline"],
+                "candidate": design["candidate"],
+                "subject_agent_id": design["subject_agent_id"],
             },
             "bootstrap": {"resamples": 1000, "seed": 20261010},
             "artifacts": "None",
@@ -390,12 +370,15 @@ class AIResearch:
             hypothesis=proposal.hypothesis,
             scenario_key=scenario.key,
             scenario_digest=scenario.config_digest,
-            subject_agent_id=agent["id"],
+            subject_agent_id=design["subject_agent_id"],
+            baseline=design["baseline"],
+            candidate=design["candidate"],
+            shock=design.get("shock"),
             seed_count=proposal.seed_count,
             primary_metric=primary,
             secondary_metrics=list(dict.fromkeys(proposal.secondary_metrics)),
             analysis_topics=proposal.analysis_topics,
-            methodology="Native paired-seed maker comparison with t and bootstrap intervals",
+            methodology=design["methodology"],
             limitations=[
                 *proposal.limitations,
                 "Synthetic single-symbol market; no real-market calibration",
@@ -404,6 +387,99 @@ class AIResearch:
             config_digest=_digest(canonical),
             experiment_config=canonical,
         )
+
+    @staticmethod
+    def _maker_design(base: Json, proposal: Proposal) -> Json:
+        """Baseline maker against the scenario's inventory-aware maker (ADR 0006)."""
+        agents = base.get("scenario", {}).get("agents", [])
+        candidates = [
+            agent for agent in agents if agent["policy"]["kind"] == "InventoryMarketMaker"
+        ]
+        if proposal.subject_agent_id:
+            candidates = [agent for agent in candidates if agent["id"] == proposal.subject_agent_id]
+        if len(candidates) != 1:
+            raise ServiceError(
+                422, "AmbiguousAgent", "select the inventory-aware maker in this scenario"
+            )
+        agent = candidates[0]
+        aware = agent["policy"]
+        baseline = {
+            key: aware[key]
+            for key in ("half_spread_ticks", "quote_size", "levels", "level_spacing_ticks")
+        }
+        baseline["kind"] = "MarketMaker"
+        return {
+            "schema_version": 1,
+            "experiment_id": "ai_maker_comparison",
+            "variants": [
+                {
+                    "name": "baseline_maker",
+                    "policy_overrides": [{"agent_id": agent["id"], "policy": baseline}],
+                },
+                {
+                    "name": "inventory_maker",
+                    "policy_overrides": [{"agent_id": agent["id"], "policy": aware}],
+                },
+            ],
+            "baseline": "baseline_maker",
+            "candidate": "inventory_maker",
+            "subject_agent_id": agent["id"],
+            "methodology": "Native paired-seed maker comparison with t and bootstrap intervals",
+        }
+
+    @staticmethod
+    def _shock_design(base: Json, proposal: Proposal) -> Json:
+        """The scenario as published against a fork of it that removes its one shock at the
+        instant it would start, so each seed's pair shares its history until then (ADR 0013)."""
+        scenario = base.get("scenario") or {}
+        shocks = scenario.get("shocks", [])
+        if len(shocks) != 1:
+            raise ServiceError(
+                422,
+                "UnsupportedShockDesign",
+                "shock impact needs a catalogued scenario with exactly one shock",
+            )
+        shock = shocks[0]
+        agent_ids = [agent["id"] for agent in scenario.get("agents", [])]
+        targeted = [agent for agent in shock.get("agents", []) if agent in agent_ids]
+        if proposal.subject_agent_id:
+            if proposal.subject_agent_id not in agent_ids:
+                raise ServiceError(422, "AmbiguousAgent", "the scenario has no agent with that ID")
+            subject = proposal.subject_agent_id
+        else:
+            subject = targeted[0] if targeted else agent_ids[0]
+        start = shock["start_ns"] if "start_ns" in shock else shock["at_ns"]
+        stage = {
+            "parent": "shock",
+            "at_ns": start,
+            "add_shocks": [],
+            "remove_shocks": [0],
+            "policy_overrides": [],
+            "horizon_ns": None,
+            "decisions": "hold",
+            "directive_overrides": [],
+        }
+        return {
+            "schema_version": 2,
+            "experiment_id": "ai_shock_impact",
+            "variants": [
+                {"name": "shock", "policy_overrides": [], "fork": None},
+                {"name": "no_shock", "policy_overrides": [], "fork": stage},
+            ],
+            "baseline": "no_shock",
+            "candidate": "shock",
+            "subject_agent_id": subject,
+            "shock": PlanShock(
+                index=0,
+                kind=shock["kind"],
+                start_ns=start,
+                end_ns=shock.get("end_ns"),
+                agents=list(shock.get("agents", [])),
+            ),
+            "methodology": "Native paired-seed shock effect: each seed runs the scenario and a "
+            "fork that removes the shock at its start, so a pair shares its history until "
+            "the shock; shock minus no shock, with t and bootstrap intervals",
+        }
 
     @staticmethod
     def _unknown_metrics(proposal: Proposal) -> list[str]:

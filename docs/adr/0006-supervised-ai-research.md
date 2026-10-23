@@ -21,7 +21,7 @@ The workflow states are `CREATED`, `PLANNING`, `AWAITING_APPROVAL`, `APPROVED`, 
 
 ## Scope and limits
 
-Phase 3B initially executes only a baseline maker versus inventory-aware maker comparison within one catalogued scenario. A liquidity-withdrawal scenario can be the base scenario. A direct shocked-versus-unshocked paired comparison is not supported by the current native experiment schema and is rejected instead of simulated by an invalid proxy. The model cannot name local paths, arbitrary policies, or executable code. The AI seed cap is lower than the native API cap. Full run traces are not sent to the model.
+Phase 3B initially executes only a baseline maker versus inventory-aware maker comparison within one catalogued scenario. A liquidity-withdrawal scenario can be the base scenario. A direct shocked-versus-unshocked paired comparison is not supported by the current native experiment schema and is rejected instead of simulated by an invalid proxy. (Superseded for a scenario's own single shock by [ADR 0013](0013-ai-shock-impact-research.md), once experiment schema 2 could express the pair.) The model cannot name local paths, arbitrary policies, or executable code. The AI seed cap is lower than the native API cap. Full run traces are not sent to the model.
 
 A separate distributed graph runtime, Redis, vector database, or C++ change would add operational complexity without a demonstrated need. This decision does not change `architecture.md` because it implements its bounded AI boundary within existing Phase 3A interfaces.
 

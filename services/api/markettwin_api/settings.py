@@ -36,6 +36,8 @@ class Settings:
     ai_base_url: str = "https://api.openai.com/v1"
     ai_api_key: str = ""
     ai_timeout_seconds: float = 30.0
+    # Sent as `reasoning_effort` only when set; not every compatible provider accepts it.
+    ai_reasoning_effort: str = ""
     ai_input_usd_per_million_tokens: str = ""
     ai_output_usd_per_million_tokens: str = ""
     ai_max_seeds: int = 100
@@ -145,6 +147,7 @@ def load_settings() -> Settings:
         ai_timeout_seconds=float(
             os.environ.get("MARKETTWIN_AI_TIMEOUT_SECONDS", defaults.ai_timeout_seconds)
         ),
+        ai_reasoning_effort=os.environ.get("MARKETTWIN_AI_REASONING_EFFORT", "").strip(),
         ai_input_usd_per_million_tokens=os.environ.get(
             "MARKETTWIN_AI_INPUT_USD_PER_MILLION_TOKENS", ""
         ),

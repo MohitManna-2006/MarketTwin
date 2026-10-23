@@ -22,7 +22,7 @@ C++20 simulation                        core   exchange, kernel, agents, scenari
         one logical thread per run
         event scheduler, matching engine, agents, accounting, telemetry
 
-AI research tools                       (planned, Phase 3B)
+AI research tools                       (Phase 3B)
 ```
 
 Subsystem boundaries (exchange, simulation kernel, agents, accounting, and telemetry implemented, with paired experiments in the native CLI; later subsystems planned):

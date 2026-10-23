@@ -2072,7 +2072,7 @@ export interface components {
          * Intent
          * @enum {string}
          */
-        Intent: "compare_strategies" | "analyze_experiment" | "explain_metric" | "inspect_seed" | "unsupported";
+        Intent: "compare_strategies" | "measure_shock" | "analyze_experiment" | "explain_metric" | "inspect_seed" | "unsupported";
         /** InventoryMarketMakerPolicy */
         InventoryMarketMakerPolicy: {
             /**
@@ -2526,6 +2526,22 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /**
+         * PlanShock
+         * @description The scenario shock a `measure_shock` plan removes from its `no_shock` variant.
+         */
+        PlanShock: {
+            /** Index */
+            index: number;
+            /** Kind */
+            kind: string;
+            /** Start Ns */
+            start_ns: number;
+            /** End Ns */
+            end_ns?: number | null;
+            /** Agents */
+            agents?: number[];
+        };
         /** PolicyOverrideModel */
         PolicyOverrideModel: {
             /** Agent Id */
@@ -2662,15 +2678,16 @@ export interface components {
             /**
              * Baseline
              * @default baseline_maker
-             * @constant
+             * @enum {string}
              */
-            baseline: "baseline_maker";
+            baseline: "baseline_maker" | "no_shock";
             /**
              * Candidate
              * @default inventory_maker
-             * @constant
+             * @enum {string}
              */
-            candidate: "inventory_maker";
+            candidate: "inventory_maker" | "shock";
+            shock?: components["schemas"]["PlanShock"] | null;
             /** Seed Count */
             seed_count: number;
             /** Primary Metric */

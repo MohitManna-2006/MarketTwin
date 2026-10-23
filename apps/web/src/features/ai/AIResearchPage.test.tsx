@@ -76,6 +76,21 @@ it("shows the plan and submits its exact digest on approval", async () => {
   unmount();
 });
 
+it("shows the shock a shock-impact plan removes instead of two strategies", async () => {
+  setup({
+    ...investigation,
+    plan: {
+      ...plan,
+      baseline: "no_shock",
+      candidate: "shock",
+      shock: { kind: "LiquidityWithdrawal", start_ns: 1.2e12, end_ns: 1.8e12, agents: [1, 2] },
+    },
+  });
+  expect(await screen.findByText("LiquidityWithdrawal, 1200 s to 1800 s")).toBeTruthy();
+  expect(screen.getByText("With the shock minus a fork without it")).toBeTruthy();
+  expect(screen.queryByText("Strategy A")).toBeNull();
+});
+
 it("shows native numbers and selects their evidence reference", async () => {
   const reference = "experiment:exp-test:metric:total_pnl";
   const detail = {

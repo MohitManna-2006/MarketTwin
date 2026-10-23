@@ -6686,6 +6686,7 @@
         "type": "string",
         "enum": [
           "compare_strategies",
+          "measure_shock",
           "analyze_experiment",
           "explain_metric",
           "inspect_seed",
@@ -7732,6 +7733,49 @@
         ],
         "title": "PairedValues"
       },
+      "PlanShock": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "start_ns": {
+            "type": "integer",
+            "title": "Start Ns"
+          },
+          "end_ns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Ns"
+          },
+          "agents": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Agents"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "index",
+          "kind",
+          "start_ns"
+        ],
+        "title": "PlanShock",
+        "description": "The scenario shock a `measure_shock` plan removes from its `no_shock` variant."
+      },
       "PolicyOverrideModel": {
         "properties": {
           "agent_id": {
@@ -8132,15 +8176,31 @@
           },
           "baseline": {
             "type": "string",
-            "const": "baseline_maker",
+            "enum": [
+              "baseline_maker",
+              "no_shock"
+            ],
             "title": "Baseline",
             "default": "baseline_maker"
           },
           "candidate": {
             "type": "string",
-            "const": "inventory_maker",
+            "enum": [
+              "inventory_maker",
+              "shock"
+            ],
             "title": "Candidate",
             "default": "inventory_maker"
+          },
+          "shock": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanShock"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "seed_count": {
             "type": "integer",

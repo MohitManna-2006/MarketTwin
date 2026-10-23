@@ -19,6 +19,12 @@ type Claim = {
   difference_bootstrap_interval_milli: [number, number] | null;
   evidence_ref: string;
 };
+type PlanShock = {
+  kind: string;
+  start_ns: number;
+  end_ns: number | null;
+  agents: number[];
+};
 type Plan = {
   question: string;
   hypothesis: string;
@@ -29,6 +35,7 @@ type Plan = {
   subject_agent_id: number;
   baseline: string;
   candidate: string;
+  shock?: PlanShock | null;
   primary_metric: string;
   secondary_metrics: string[];
   analysis_topics: string[];
@@ -90,6 +97,11 @@ function value(milli: number | null, unit: string) {
 }
 function label(name: string) {
   return name.replaceAll("_", " ");
+}
+
+function shockWindow(shock: PlanShock) {
+  const start = `${shock.start_ns / 1e9} s`;
+  return shock.end_ns === null ? `at ${start}` : `${start} to ${shock.end_ns / 1e9} s`;
 }
 
 export function AIResearchPage() {
@@ -206,7 +218,7 @@ export function AIResearchPage() {
                 maxLength={2000}
                 minLength={10}
                 rows={3}
-                placeholder="Compare inventory-aware and baseline market making over paired seeds during liquidity withdrawal…"
+                placeholder="Compare inventory-aware and baseline market making during liquidity withdrawal over paired seeds, or ask what the latency shock does to spreads…"
                 className="w-full resize-y border border-line bg-surface-1 p-3 text-sm text-fg outline-none focus:border-accent"
               />
               <div className="mt-3 flex justify-end">
@@ -245,8 +257,20 @@ export function AIResearchPage() {
                     <div className="grid gap-4 text-sm sm:grid-cols-2">
                       <Field title="Scenario" value={label(row.plan.scenario_key)} />
                       <Field title="Subject agent" value={String(row.plan.subject_agent_id)} />
-                      <Field title="Strategy A" value={label(row.plan.baseline)} />
-                      <Field title="Strategy B" value={label(row.plan.candidate)} />
+                      {row.plan.shock ? (
+                        <>
+                          <Field
+                            title="Shock"
+                            value={`${row.plan.shock.kind}, ${shockWindow(row.plan.shock)}`}
+                          />
+                          <Field title="Compared" value="With the shock minus a fork without it" />
+                        </>
+                      ) : (
+                        <>
+                          <Field title="Strategy A" value={label(row.plan.baseline)} />
+                          <Field title="Strategy B" value={label(row.plan.candidate)} />
+                        </>
+                      )}
                       <Field title="Seeds" value={`${row.plan.seed_count} paired`} />
                       <Field title="Expected work" value={`${row.plan.total_runs} native runs`} />
                       <Field title="Primary metric" value={label(row.plan.primary_metric)} />
