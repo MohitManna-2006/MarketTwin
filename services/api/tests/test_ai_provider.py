@@ -138,3 +138,77 @@ def test_provider_correction_receives_rejected_metric_and_original_question(
     payload = json.loads(requests[0]["messages"][1]["content"])
     assert payload["unsupported_metrics"] == ["inventory_risk"]
     assert payload["question"].startswith("Compare makers")
+
+
+def answer_with(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, responses: list[httpx.Response]
+) -> tuple[OpenAICompatibleProvider, list[float]]:
+    """A provider whose transport answers ``responses`` in order, with sleeps recorded."""
+    waits: list[float] = []
+    queue = list(responses)
+    original = httpx.Client
+    transport = httpx.MockTransport(lambda request: queue.pop(0))
+    monkeypatch.setattr(httpx, "Client", lambda **kwargs: original(transport=transport, **kwargs))
+    monkeypatch.setattr("markettwin_api.ai_provider.time.sleep", waits.append)
+    return OpenAICompatibleProvider(configured(tmp_path)), waits
+
+
+def unsupported() -> httpx.Response:
+    content = json.dumps({"intent": "unsupported", "hypothesis": "Out of scope"})
+    return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
+
+
+def test_rate_limit_waits_for_retry_after_then_succeeds(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    provider, waits = answer_with(
+        monkeypatch,
+        tmp_path,
+        [httpx.Response(429, headers={"retry-after": "7"}), httpx.Response(429), unsupported()],
+    )
+    assert provider.generate_structured_plan("question", []).intent == "unsupported"
+    assert waits == [7.0, 15.0]
+
+
+def test_rate_limit_that_persists_is_reported_as_one(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    provider, waits = answer_with(
+        monkeypatch, tmp_path, [httpx.Response(429, headers={"retry-after": "600"})] * 3
+    )
+    with pytest.raises(ProviderError) as captured:
+        provider.generate_structured_plan("question", [])
+    assert captured.value.code == "ProviderRateLimited"
+    assert waits == [30.0, 30.0]
+
+
+@pytest.mark.parametrize(
+    ("status", "code"), [(404, "ProviderRequestRejected"), (400, "ProviderRequestRejected")]
+)
+def test_rejected_request_is_not_reported_as_an_invalid_response(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, status: int, code: str
+) -> None:
+    provider, waits = answer_with(monkeypatch, tmp_path, [httpx.Response(status)])
+    with pytest.raises(ProviderError) as captured:
+        provider.generate_structured_plan("question", [])
+    assert captured.value.code == code
+    assert waits == []
+
+
+def test_server_error_that_persists_is_unavailable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    provider, _ = answer_with(monkeypatch, tmp_path, [httpx.Response(503)] * 3)
+    with pytest.raises(ProviderError) as captured:
+        provider.generate_structured_plan("question", [])
+    assert captured.value.code == "ProviderUnavailable"
+
+
+def test_unparseable_content_is_an_invalid_response(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    body = {"choices": [{"message": {"content": "not json"}}]}
+    provider, _ = answer_with(monkeypatch, tmp_path, [httpx.Response(200, json=body)])
+    with pytest.raises(ProviderError) as captured:
+        provider.generate_structured_plan("question", [])
+    assert captured.value.code == "ProviderResponseInvalid"

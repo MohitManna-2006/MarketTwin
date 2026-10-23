@@ -28,6 +28,16 @@ class ProviderError(Exception):
         self.code = code
 
 
+def _rate_limit_wait(response: httpx.Response, attempt: int) -> float:
+    """Seconds to wait after a 429: the provider's Retry-After when it sends one, else a
+    backoff long enough for a per-minute quota to recover. Capped so a desk never stalls."""
+    try:
+        wait = float(response.headers.get("retry-after", ""))
+    except ValueError:
+        wait = 5.0 * (3**attempt)
+    return min(max(wait, 0.0), 30.0)
+
+
 class ModelProvider(Protocol):
     def generate_structured_plan(
         self, question: str, catalogue: list[dict[str, Any]]
@@ -75,14 +85,27 @@ class OpenAICompatibleProvider:
                         headers={"Authorization": f"Bearer {self.settings.ai_api_key}"},
                         json=payload,
                     )
-                if response.status_code in (429, 500, 502, 503, 504) and attempt < 2:
+                status = response.status_code
+                if status == 429 and attempt < 2:
+                    time.sleep(_rate_limit_wait(response, attempt))
+                    continue
+                if status in (500, 502, 503, 504) and attempt < 2:
                     time.sleep(0.25 * (2**attempt))
                     continue
-                if response.status_code in (401, 403):
+                if status in (401, 403):
                     raise ProviderError(
                         "ProviderAuthentication", "Model provider rejected credentials"
                     )
-                response.raise_for_status()
+                if status == 429:
+                    raise ProviderError("ProviderRateLimited", "Model provider rate limit reached")
+                if status >= 500:
+                    raise ProviderError(
+                        "ProviderUnavailable", f"Model provider returned HTTP {status}"
+                    )
+                if status >= 400:
+                    raise ProviderError(
+                        "ProviderRequestRejected", f"Model provider returned HTTP {status}"
+                    )
                 body = response.json()
                 self.last_usage = body.get("usage") or {}
                 self.last_latency_ms = round((time.perf_counter() - start) * 1000)
@@ -96,7 +119,6 @@ class OpenAICompatibleProvider:
                     ) from error
                 time.sleep(0.25 * (2**attempt))
             except (
-                httpx.HTTPStatusError,
                 KeyError,
                 TypeError,
                 ValueError,
